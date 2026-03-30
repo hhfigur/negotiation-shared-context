@@ -61,38 +61,60 @@ This document defines the contracts between the React SPA (`negotiation-buddy`) 
 
 ---
 
-### `POST /api/plan`
+## POST /api/plan — Plan Generation Contract
 
-**Purpose:** Generate structured negotiation plan from analysis results
+> Status: Verified 2026-03-30 | Classification: Observed
+> Canonical owner: negotiationcoach-backend (`src/api/planHelpers.ts`)
 
-**Request:**
+### Request (frontend → backend)
 ```typescript
 {
-  messages: ChatMessage[];          // conversation history
-  extractedInputs: ExtractedInputs; // negotiation parameters
-  zopaResult?: ZopaToolResult;      // ZOPA analysis if available
-  analysis?: AnalysisResult;        // full layer 1 analysis if available
+  messages?: ChatMessage[];        // optional: chat history
+  extractedInputs: ExtractedInputs;
+  zopaResult?: object;             // optional: ZOPA calculation output
+  analysis?: object;               // optional: analyze-full result
 }
 ```
 
-**Response:**
+### Response (backend → frontend)
 ```typescript
 {
-  summary: string;                  // 3-4 sentence professional overview
-  situationAnalysis: string;        // situation breakdown
-  opening: string;                  // exact negotiation opening statement
-  objections: Array<{
-    objection: string;
-    response: string;
-  }>;                               // 3 expected objections + responses
-  recommendations: string[];        // 3 actionable recommendations
-  nextStep: string;                 // concrete next action
+  summary: string;
+  situationAnalysis: string;
+  opening: string;
+  objections: Array<{ title: string; objection: string; response: string }>;
+  recommendations: string[];
+  nextStep: string;
 }
 ```
 
-**Auth:** Bearer JWT (optional)
-**Tier Gate:** None
-**Model:** Hardcoded `claude-sonnet-4-6` — does NOT use modelRouter
+### Type declarations
+| Side | File | Interface name |
+|---|---|---|
+| Backend | `src/api/planHelpers.ts:69–76` | `PlanResponse` |
+| Frontend | `src/lib/apiClient.ts:76–83` | `PlanResponse` (local) |
+
+⚠️ No shared canonical type file. PlanResponse is declared independently in
+both repos. They are currently aligned but not enforced by a shared schema.
+
+### Legacy fields (deprecated — frontend only)
+The following fields exist in `StrategyDialog.tsx NegotiationPlan` interface
+as optional fallbacks. They are never populated by either the Railway backend
+or the Edge Function. They are dead code candidates.
+
+| Field | Status |
+|---|---|
+| `executive_summary?` | Dead — legacy fallback |
+| `situation_analysis?` | Dead — legacy fallback |
+| `opening_script?` | Dead — legacy fallback |
+| `numbers?` | Dead — legacy fallback |
+
+### Active architectural gap
+The frontend does NOT currently call `POST /api/plan` on Railway.
+`StrategyDialog` receives plan data as a prop from `Index.tsx` via `BottomBar`,
+sourced from a Supabase Edge Function. The Railway endpoint is deployed but
+unused. Decision required before Release 1: deprecate Railway `/api/plan` or
+migrate Edge Function call to Railway.
 
 ---
 

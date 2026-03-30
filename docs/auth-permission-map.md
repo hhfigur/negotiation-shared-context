@@ -147,7 +147,7 @@ free (0) < privat (1) < kmu (2) < profi (3)
 | AUTH-04 | Token fetching duplicated in 6 frontend files — no centralized accessor | Medium | Observed |
 | AUTH-05 | modelRouter bypassed in /api/chat and /api/plan — tier-based model control absent | Medium | Observed |
 | AUTH-06 | subscription_tier hardcoded as "free" in Edge Function chat persona | Medium | Observed |
-| AUTH-07 | CORS wildcard header overrides allowlist in Railway backend | Medium | Observed |
+| AUTH-07 | CORS wildcard header overrides allowlist in Railway backend | Medium | Resolved — fixed in `fix(rfb-005)`: wildcard middleware removed, `ngrok-skip-browser-warning` moved to `cors()` `allowedHeaders` |
 | AUTH-08 | Railway anon fallback assigns 'privat' tier — free-tier users get privat access without a token | Low | Observed |
 
 ---

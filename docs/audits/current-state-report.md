@@ -136,6 +136,7 @@ These are the two highest-traffic endpoints. Profi users do not get upgraded mod
 #### MED-02: CORS Wildcard Overrides Allowlist
 **Classification:** Observed
 **Affected:** `negotiationcoach-backend/src/api/routes.ts`
+**Status: Fixed** — resolved in commit e00e400 (rfb-005). Wildcard middleware removed. Single cors() mechanism now enforces allowlist.
 
 A wildcard CORS header is set before the CORS middleware:
 ```typescript

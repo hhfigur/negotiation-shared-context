@@ -213,6 +213,13 @@ Remove the `res.header('Access-Control-Allow-Origin', '*')` line. The `cors()` m
 
 **Depends On:** Nothing
 
+**Status: DONE**
+Commits: e00e400 (negotiationcoach-backend), c52d8b5 (shared-context)
+Verified: tsc clean ✓ | curl checks ✓ (all 4 PASS on live server)
+Auth-map: AUTH-07 → Resolved
+current-state-report: MED-02 → Fixed
+Remaining: 500 vs 403 for disallowed origins — pre-existing, tracked separately
+
 ---
 
 ## P1 — Duplicate Logic, Conflicting Validation, Contract Mismatches

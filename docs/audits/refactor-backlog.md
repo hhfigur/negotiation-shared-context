@@ -1,7 +1,7 @@
 # Refactor Backlog — NegotiationCoach AI
 
 > Derived from: `docs/audits/current-state-report.md`, `docs/bounded-contexts.md`, `docs/auth-permission-map.md`, `docs/source-of-truth-matrix.md`, `docs/contracts/frontend-backend.md`
-> Last updated: 2026-03-27
+> Last updated: 2026-03-31
 > Classification: **Observed** | **Inferred** | **Missing** | **Proposed**
 
 ---
@@ -890,6 +890,104 @@ inherits the HTTP 500 behavior introduced in REF-BE-02 without knowing it.
 
 ---
 
+## Completed — Out-of-Band Items
+
+Items in this section were implemented and verified before being registered
+in the backlog. They are recorded here for traceability.
+
+---
+
+### RFB-024
+
+**Title:** Fix `parsePlanResponse()` silent fallback — return null on parse failure; `POST /api/plan` returns HTTP 500 with `PLAN_PARSE_ERROR`
+
+**Repo:** `negotiationcoach-backend`
+
+**Category:** `boundary-violation`
+
+**Evidence (Observed):**
+`src/api/planHelpers.ts parsePlanResponse()` returned an all-empty `PlanResponse`
+fallback object on Claude API parse failure, causing `POST /api/plan` to return
+HTTP 200 with empty `summary`, `opening`, `objections`, and `recommendations`
+fields. Silent data corruption — no error surfaced to the frontend or logs.
+
+**Confidence:** High — directly observed in source
+
+**Risk:** Frontend rendered a blank strategy plan with no indication of failure.
+Users received silently degraded output with no retry opportunity.
+
+**Canonical Owner:** `negotiationcoach-backend` — `src/api/planHelpers.ts`
+
+**Recommended Action:**
+1. Change `parsePlanResponse()` return type to `PlanResponse | null`
+2. Return `null` on JSON parse failure instead of empty fallback object
+3. Add null guard in `POST /api/plan` handler; throw `AppError(500, 'PLAN_PARSE_ERROR')`
+
+**Required Docs/Contracts to Update:**
+- `docs/api-catalog.md` — REF-BE-01 note
+- `docs/contracts/frontend-backend.md` — add `PLAN_PARSE_ERROR` to error contract
+
+**Required Tests to Run:**
+- tsc --noEmit clean
+- Existing tests passing
+
+**Depends On:** Nothing
+
+**Status: DONE**
+Commit: `fd031cc` (negotiationcoach-backend) — 2026-03-30
+Verified: tsc --noEmit clean ✓ | existing tests passing ✓
+api-catalog.md: REF-BE-01 → recorded
+
+---
+
+### RFB-025
+
+**Title:** Fix `parseChatResponse()` silent fallback — return null on parse failure; `POST /api/chat` returns HTTP 500 with `CHAT_PARSE_ERROR`
+
+**Repo:** `negotiationcoach-backend`
+
+**Category:** `boundary-violation`
+
+**Evidence (Observed):**
+`src/api/chatHelpers.ts parseChatResponse()` returned an all-empty `ChatResponse`
+fallback object on Claude API parse failure, causing `POST /api/chat` to return
+HTTP 200 with empty `message` and `extractedInputs` fields. The active call site
+`Index.tsx:398` silently swallows any error — users received no indication of
+failure.
+
+**Confidence:** High — directly observed in source; call site confirmed active
+
+**Risk:** Frontend displayed empty assistant reply with no indication of failure.
+`extractedInputs` remained at previous value silently. Higher risk than RFB-024
+as `/api/chat` is an active production call site.
+
+**Canonical Owner:** `negotiationcoach-backend` — `src/api/chatHelpers.ts`
+
+**Recommended Action:**
+1. Change `parseChatResponse()` return type to `ChatResponse | null`
+2. Return `null` on both failure paths instead of empty fallback
+3. Add null guard in `POST /api/chat` handler; throw `AppError(500, 'CHAT_PARSE_ERROR')`
+4. Add smoke tests: `tests/chatHelpers.smoke.ts`
+
+**Required Docs/Contracts to Update:**
+- `docs/api-catalog.md` — REF-BE-02 note
+- `docs/contracts/frontend-backend.md` — add `CHAT_PARSE_ERROR` to error contract (Section 5)
+
+**Required Tests to Run:**
+- tsc --noEmit clean
+- `tests/chatHelpers.smoke.ts` — 4 cases
+
+**Depends On:** Nothing
+
+**Status: DONE**
+Commit: `fe961ee` (negotiationcoach-backend) — 2026-03-31
+Verified: tsc --noEmit clean ✓ | smoke tests 4/4 passing ✓
+api-catalog.md: REF-BE-02 → recorded
+contracts/frontend-backend.md: CHAT_PARSE_ERROR → Section 5 updated
+Follow-up: DCC-FE-02 / RFB-023 (dead `useChatApi` export) unblocked — open
+
+---
+
 ## Summary Index
 
 | ID | Title | Priority | Repo | Category |
@@ -917,6 +1015,8 @@ inherits the HTTP 500 behavior introduced in REF-BE-02 without knowing it.
 | RFB-021 | Wire Zod for API input validation | P3 | backend | dead-code |
 | RFB-022 | Fix broken test suite — align with Railway schema | P3 | backend | contract-gap |
 | RFB-023 | Remove dead useChatApi export | P3 | frontend | dead-code |
+| RFB-024 | Fix `parsePlanResponse()` silent fallback — ✅ DONE `fd031cc` | P1 | backend | boundary-violation |
+| RFB-025 | Fix `parseChatResponse()` silent fallback — ✅ DONE `fe961ee` | P1 | backend | boundary-violation |
 
 ---
 
@@ -944,4 +1044,7 @@ RFB-010 (Stripe webhook)
 
 RFB-005, RFB-012, RFB-013, RFB-014, RFB-015, RFB-016,
 RFB-017, RFB-018, RFB-019, RFB-020, RFB-021 — no dependencies
+
+RFB-024, RFB-025 — no dependencies; DONE (fd031cc, fe961ee)
+RFB-023 (dead useChatApi / DCC-FE-02) — no dependencies; unblocked by RFB-025
 ```

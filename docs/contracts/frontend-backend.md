@@ -294,6 +294,8 @@ migrate Edge Function call to Railway.
 
 **Tier gate error (403):** `requireTier('kmu')` returns 403 with `TierError` for `/api/enrich` when tier insufficient. Frontend does not handle this with a dedicated upgrade prompt — generic error toast shown (Inferred).
 
+**`POST /api/chat` parse error (500):** `CHAT_PARSE_ERROR` — returned when `parseChatResponse()` cannot extract a valid JSON block from the Claude API response. The frontend `sendChatMessage()` call site (`Index.tsx:398`) catches this silently — `extractedInputs` remains at its previous value. Fixed in REF-BE-02, commit `fe961ee`.
+
 ---
 
 ## 6. Known Contract Violations

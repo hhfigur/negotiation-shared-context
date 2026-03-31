@@ -849,6 +849,47 @@ State machine transitions should be moved to a `useCoachingFlow` hook.
 
 ---
 
+### RFB-023
+
+**Title:** Remove dead `useChatApi` export from `ChatInterface.tsx`
+
+**Repo:** `negotiation-buddy`
+
+**Category:** `dead-code`
+
+**Evidence (Observed):**
+`src/components/chat/ChatInterface.tsx` exports `useChatApi()` (line 41)
+which calls `sendChatMessage()` at line 53. Confirmed by audit 2026-03-31:
+`useChatApi` has zero import consumers anywhere in the codebase.
+The `sendChatMessage` call inside it is unreachable in production.
+Documented in `negotiation-buddy/docs/dead-code-candidates.md` as DCC-FE-02.
+
+**Confidence:** High — zero consumers confirmed by full codebase search
+
+**Risk:** None if removed. If left: any future import of `useChatApi`
+inherits the HTTP 500 behavior introduced in REF-BE-02 without knowing it.
+
+**Canonical Owner:** `negotiation-buddy` — `src/components/chat/ChatInterface.tsx`
+
+**Recommended Action:**
+1. Confirm no external consumers outside the Lovable-managed repo
+   (no dynamic imports, no runtime references)
+2. Remove the `useChatApi` function and its `sendChatMessage` call
+3. If `ChatInterface.tsx` becomes empty after removal, remove the file entirely
+
+**Required Docs/Contracts to Update:**
+- `negotiation-buddy/docs/dead-code-candidates.md` — mark DCC-FE-02
+  as removed after completion
+
+**Required Tests to Run:**
+- Regression: Chat UI continues to function after removal.
+  Primary chat path is `useChat.ts` → Supabase Edge Function — unaffected
+  by removal of this dead hook.
+
+**Depends On:** Nothing
+
+---
+
 ## Summary Index
 
 | ID | Title | Priority | Repo | Category |
@@ -875,6 +916,7 @@ State machine transitions should be moved to a `useCoachingFlow` hook.
 | RFB-020 | Decompose Index.tsx god component | P3 | frontend | dead-code |
 | RFB-021 | Wire Zod for API input validation | P3 | backend | dead-code |
 | RFB-022 | Fix broken test suite — align with Railway schema | P3 | backend | contract-gap |
+| RFB-023 | Remove dead useChatApi export | P3 | frontend | dead-code |
 
 ---
 

@@ -697,33 +697,15 @@ Choose Option B if there is no near-term roadmap for the knowledge pipeline.
 
 ### RFB-017
 
-**Title:** Deduplicate password validation — consolidate to canonical passwordValidation.ts
-
-**Repo:** `negotiation-buddy`
-
-**Category:** `duplicate-logic`
-
-**Evidence (Observed):**
-Password validation requirements (8+ chars, upper, lower, digit, special character) are defined in three locations:
-1. `src/lib/passwordValidation.ts` — canonical definition
-2. `Auth.tsx` — inline duplication
-3. `PasswordStrengthIndicator.tsx` — display duplication
-
-**Confidence:** High — directly observed in auth-permission-map.md Section 7
-
-**Risk:** A change to password rules must be applied in three places; drift causes inconsistent validation between signup form, login form, and strength indicator.
-
-**Canonical Owner:** `negotiation-buddy` — `src/lib/passwordValidation.ts`
-
-**Recommended Action:**
-Remove the inline validation logic from `Auth.tsx` and `PasswordStrengthIndicator.tsx`. Both should import and use the exported rules from `passwordValidation.ts`.
-
-**Required Docs/Contracts to Update:** None
-
-**Required Tests to Run:**
-- Unit: Password validation rules applied consistently across all three usage sites
-
-**Depends On:** Nothing
+**Title:** Deduplicate password validation
+**Repo:** negotiation-buddy
+**Status: DONE**
+**Commit:** 48d0edc (negotiation-buddy — docs only)
+**Verified:** tsc --noEmit clean ✓ | inline password rules → 0 remaining ✓
+Canonical source: src/lib/passwordValidation.ts — unchanged.
+Duplicates removed from: none required — all call sites were already
+importing from the canonical source.
+docs/redundancy-register.md R-006 updated: Inferred/Medium → Resolved.
 
 ---
 
@@ -733,63 +715,32 @@ Remove the inline validation logic from `Auth.tsx` and `PasswordStrengthIndicato
 
 ### RFB-018
 
-**Title:** Rename webSearch.ts to accurately reflect that it uses Claude training data, not live web search
-
-**Repo:** `negotiationcoach-backend`
-
-**Category:** `contract-gap`
-
-**Evidence (Observed):**
-`src/layer2/webSearch.ts` exports `searchMarketData()`. Internally it calls Claude's `tool_use` with structured prompts — no external web search API (Serper, Bing, Brave, Tavily, etc.) is integrated. The name implies live internet lookup. MED-05 in current-state-report.
-
-**Confidence:** High — directly observed
-
-**Risk:** Developer confusion. Engineers may believe market data is current when it reflects Claude's training cutoff.
-
-**Canonical Owner:** `negotiationcoach-backend` — `src/layer2/`
-
-**Recommended Action:**
-Rename `webSearch.ts` → `knowledgeSearch.ts` (or `llmMarketSearch.ts`). Update all imports. Add a comment on `searchMarketData()` noting that this uses Claude training-data knowledge, not live APIs. When a real web search integration is built (Stufe 2 roadmap), replace this implementation.
-
-**Required Docs/Contracts to Update:**
-- `docs/bounded-contexts.md` — BC-04 Violations (naming note)
-- `docs/source-of-truth-matrix.md` — Entity 6 Violations
-
-**Required Tests to Run:**
-- Build: No broken imports after rename
-
-**Depends On:** Nothing
+**Title:** Rename webSearch.ts to marketDataInterpreter.ts
+**Repo:** negotiationcoach-backend
+**Status: DONE**
+**Commit:** 675cc21 (negotiationcoach-backend)
+**Verified:** tsc --noEmit clean ✓ | grep webSearch src/ → 0 module references ✓
+Renamed src/layer2/webSearch.ts → src/layer2/marketDataInterpreter.ts
+Import in src/layer2/marketDataResolver.ts updated (scope expanded from
+plan — index.ts had no direct import).
+No logic changes. service-catalog.md, redundancy-register.md,
+repo-map.md updated.
 
 ---
 
 ### RFB-019
 
-**Title:** Consolidate dual toast systems — standardise on one notification library
-
-**Repo:** `negotiation-buddy`
-
-**Category:** `dead-code`
-
-**Evidence (Observed):**
-Both Radix `useToast` and Sonner `toast` are installed and used inconsistently across components. LOW-02 in current-state-report.
-
-**Confidence:** High — directly observed
-
-**Risk:** Inconsistent UX (toast position, duration, styling varies). Unnecessary bundle size.
-
-**Canonical Owner:** `negotiation-buddy` — pick one (Sonner preferred as more modern)
-
-**Recommended Action:**
-1. Audit all `useToast` call sites
-2. Replace all `useToast` calls with Sonner `toast()`
-3. Remove Radix toast package and its `Toaster` component from `App.tsx`
-
-**Required Docs/Contracts to Update:** None
-
-**Required Tests to Run:**
-- Visual: Toast notifications render consistently across all pages
-
-**Depends On:** Nothing
+**Title:** Consolidate dual toast systems
+**Repo:** negotiation-buddy
+**Status: DONE**
+**Commit:** 056e672 (negotiation-buddy)
+**Verified:** tsc --noEmit clean ✓ | useToast imports → 0 remaining ✓
+Canonical toast system: Sonner.
+Radix Toaster removed from App.tsx.
+useToast replaced in: Index.tsx, Auth.tsx, ResetPassword.tsx,
+Profile.tsx, TeamDashboard.tsx, ForgotPassword.tsx, ZopaCalculator.tsx,
+DebriefDashboard.tsx, NegotiationCanvas.tsx, WhatIfSimulator.tsx
+redundancy-register.md R-007 updated: Observed → Resolved.
 
 ---
 

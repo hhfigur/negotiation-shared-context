@@ -476,6 +476,15 @@ Follow-up (open):
 - selectModel smoke test: selectModel('strategy_coaching', 'free') === MODELS.HAIKU,
   selectModel('generate_plan', 'privat') === MODELS.SONNET — not yet written
 - service-catalog.md stale entries (market_analysis, batch_processing, document_analysis) — pre-existing
+
+**Status: PARTIALLY DONE**
+Commit: `0308b0e` (negotiationcoach-backend)
+Verified: tsc --noEmit clean ✓ | CLAUDE_MODEL cleared from src/layer1/ ✓
+Node.js fix: selectModel('validate_input', inputs.tier ?? 'privat') ?? MODELS.SONNET
+max_tokens preserved at 512
+Edge function copy: HOLD — DCC-EF-01 (broken import, schema divergence,
+NegotiationTier gap). Tracked as RFB-026. Depends on RFB-006 resolution.
+
 ---
 
 ### RFB-012
@@ -908,6 +917,44 @@ dead-code-candidates.md: DCC-FE-02 → Removed
 
 ---
 
+### RFB-026
+
+**Title:** Investigate and repair broken claudeClient import in
+`supabase/functions/_shared/engine/batnaDetector.ts`
+
+**Repo:** `negotiationcoach-backend` (supabase functions)
+
+**Category:** `boundary-violation`
+
+**Evidence (Observed):**
+DCC-EF-01 in `docs/dead-code-candidates.md`. Three blockers confirmed:
+broken import path, `NegotiationTier` excludes `'free'`, schema divergence
+from Node.js copy. File is currently undeployable.
+
+**Confidence:** High — directly observed; Node.js fix in `0308b0e` held at
+Edge Function boundary due to these blockers.
+
+**Risk:** Edge Function `batnaDetector.ts` is undeployable in current state.
+If deployed, `'free'` tier users would hit a type error. Schema divergence
+means any fix must align with RFB-006 resolution.
+
+**Canonical Owner:** `negotiationcoach-backend` — `supabase/functions/_shared/engine/batnaDetector.ts`
+
+**Recommended Action:**
+1. Resolve RFB-006 (dual Layer 1 unification) first
+2. After RFB-006: fix import path, align `NegotiationTier` to include `'free'`,
+   reconcile schema with Node.js copy
+
+**Required Docs/Contracts to Update:**
+- `docs/dead-code-candidates.md` — resolve DCC-EF-01
+
+**Required Tests to Run:**
+- Deno type check on the repaired Edge Function file
+
+**Depends On:** RFB-006 (dual Layer 1 resolution)
+
+---
+
 ## Completed — Out-of-Band Items
 
 Items in this section were implemented and verified before being registered
@@ -1035,6 +1082,7 @@ Follow-up: DCC-FE-02 / RFB-023 (dead `useChatApi` export) unblocked — open
 | RFB-023 | Remove dead useChatApi export | P3 | frontend | dead-code |
 | RFB-024 | Fix `parsePlanResponse()` silent fallback — ✅ DONE `fd031cc` | P1 | backend | boundary-violation |
 | RFB-025 | Fix `parseChatResponse()` silent fallback — ✅ DONE `fe961ee` | P1 | backend | boundary-violation |
+| RFB-026 | Repair broken claudeClient import in Edge Function batnaDetector.ts | P2 | backend | boundary-violation |
 
 ---
 

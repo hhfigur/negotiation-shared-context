@@ -477,13 +477,15 @@ Follow-up (open):
   selectModel('generate_plan', 'privat') === MODELS.SONNET — not yet written
 - service-catalog.md stale entries (market_analysis, batch_processing, document_analysis) — pre-existing
 
-**Status: PARTIALLY DONE**
-Commit: `0308b0e` (negotiationcoach-backend)
-Verified: tsc --noEmit clean ✓ | CLAUDE_MODEL cleared from src/layer1/ ✓
-Node.js fix: selectModel('validate_input', inputs.tier ?? 'privat') ?? MODELS.SONNET
-max_tokens preserved at 512
-Edge function copy: HOLD — DCC-EF-01 (broken import, schema divergence,
-NegotiationTier gap). Tracked as RFB-026. Depends on RFB-006 resolution.
+**Status: DONE (Node.js scope)**
+Commits:
+- `0308b0e` — RFB-011A: batnaDetector.ts (validate_input, tier-aware)
+- `d0b2bff` — RFB-011B: webSearch.ts + layer2/index.ts (MODELS.SONNET, tier-invariant)
+
+Verified: tsc --noEmit clean ✓ | CLAUDE_MODEL cleared from all src/ call sites ✓
+REDUNDANCY-04: fully resolved for all Node.js call sites.
+Remaining: CLAUDE_MODEL definition in claudeClient.ts → DEAD-02 (separate item).
+Edge function batnaDetector: deferred — DCC-EF-01 / RFB-026 (blocked, depends on RFB-006).
 
 ---
 

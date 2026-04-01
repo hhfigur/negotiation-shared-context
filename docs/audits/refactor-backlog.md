@@ -902,8 +902,9 @@ inherits the HTTP 500 behavior introduced in REF-BE-02 without knowing it.
 **Depends On:** Nothing
 
 **Status: DONE**
-Commit: `aa703bd` (negotiation-buddy) — 2026-04-01
-Verified: zero consumers confirmed ✓ | DCC-FE-02 marked removed in dead-code-candidates.md ✓
+Commit: `aa703bd` (negotiation-buddy) — 2026-03-31
+Verified: zero import consumers confirmed ✓ | useChatApi export removed ✓
+dead-code-candidates.md: DCC-FE-02 → Removed
 
 ---
 

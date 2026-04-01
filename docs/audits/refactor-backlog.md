@@ -489,6 +489,18 @@ Edge function batnaDetector: deferred — DCC-EF-01 / RFB-026 (blocked, depends 
 
 ---
 
+### DEAD-02
+
+**Title:** Remove dead CLAUDE_MODEL constant from claudeClient.ts
+**Repo:** negotiationcoach-backend
+**Status: DONE**
+**Commit:** efc1d28 (negotiationcoach-backend)
+**Verified:** tsc --noEmit clean ✓ | grep CLAUDE_MODEL src/ → 0 results ✓
+All call sites cleared in RFB-011A (0308b0e) and RFB-011B (d0b2bff).
+Constant removed. claudeClient.ts exports unaffected.
+
+---
+
 ### RFB-012
 
 **Title:** Resolve missing user_profiles creation on signup — VG-04
@@ -561,6 +573,16 @@ Files: `useSessionManager.ts`, `NegotiationCanvas.tsx`, `DebriefDashboard.tsx`, 
 - Unit: `getToken()` returns the access token when session is valid
 
 **Depends On:** Nothing
+
+**Status: DONE — 2026-03-31**
+
+| Sub-item | Commit | Notes |
+|---|---|---|
+| `getToken()` added to `useAuth.tsx` | `c507353` | Returns `string \| null` |
+| 5 inline patterns replaced | `c507353` | Index.tsx, NegotiationCanvas.tsx, DebriefDashboard.tsx, WhatIfSimulator.tsx, ZopaCalculator.tsx |
+| `supabase` import removed where auth-only | `c507353` | DebriefDashboard, NegotiationCanvas, WhatIfSimulator, ZopaCalculator |
+
+Note: `useSessionManager.ts` uses the same pattern but was not in scope (inline pattern already wraps a helper there). `ChatInterface.tsx` DCC-FE-02 is a separate item.
 
 ---
 

@@ -145,7 +145,7 @@ free (0) < privat (1) < kmu (2) < profi (3)
 | AUTH-02 | Team admin check is React UI code only — no server-side enforcement verified | Critical | Observed |
 | AUTH-03 | Frontend direct DB writes to teams/team_members bypass all API auth layers | High | Observed |
 | AUTH-04 | Token fetching duplicated in 6 frontend files — no centralized accessor | Medium | Observed |
-| AUTH-05 | modelRouter bypassed in /api/chat and /api/plan — tier-based model control absent | Medium | Observed |
+| AUTH-05 | modelRouter bypassed in /api/chat and /api/plan | Medium | Resolved — fixed in feat(rfb-011) 60848db; selectModel() wired into both handlers
 | AUTH-06 | subscription_tier hardcoded as "free" in Edge Function chat persona | Medium | Observed |
 | AUTH-07 | CORS wildcard header overrides allowlist in Railway backend | Medium | Resolved — fixed in `fix(rfb-005)`: wildcard middleware removed, `ngrok-skip-browser-warning` moved to `cors()` `allowedHeaders` |
 | AUTH-08 | Railway anon fallback assigns 'privat' tier — free-tier users get privat access without a token | Low | Observed |

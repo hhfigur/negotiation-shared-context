@@ -124,6 +124,7 @@ The frontend `persona_type` (pro/kmu/private) has no defined mapping to Railway 
 #### MED-01: modelRouter Bypassed in High-Traffic Endpoints
 **Classification:** Observed
 **Affected:** `negotiationcoach-backend/src/api/routes.ts`, `chatHelpers.ts`, `planHelpers.ts`
+**Status:** Fixed — resolved in commit 60848db (rfb-011). Both /api/chat and /api/plan now use selectModel() with tier-aware routing.
 
 `modelRouter.ts` provides tier-aware model selection with cost optimization (haiku for free tier, sonnet for standard, opus for profi). However:
 - `/api/chat` hardcodes `claude-haiku-4-5-20251001`

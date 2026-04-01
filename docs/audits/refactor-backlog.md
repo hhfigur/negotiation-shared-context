@@ -463,6 +463,19 @@ Profi users get haiku for chat and sonnet for plan regardless of tier.
 
 **Depends On:** RFB-001 (auth must populate `req.user.tier` correctly)
 
+**Status: DONE**
+Commit: `60848db` (negotiationcoach-backend) — 2026-04-01
+Verified: tsc --noEmit clean ✓ | modelRouter wired into both handlers ✓ |
+both modelRouter copies byte-for-byte identical (diff = empty) ✓
+Behavioral change accepted: /api/chat — privat/kmu/profi now Sonnet (was Haiku).
+/api/plan — all tiers Sonnet via generate_plan (was hardcoded Sonnet — no regression).
+Docs updated in commit: api-catalog.md ✓ | service-catalog.md ✓
+Docs updated post-verify: auth-permission-map.md AUTH-05 ✓ | current-state-report.md MED-01 ✓
+
+Follow-up (open):
+- selectModel smoke test: selectModel('strategy_coaching', 'free') === MODELS.HAIKU,
+  selectModel('generate_plan', 'privat') === MODELS.SONNET — not yet written
+- service-catalog.md stale entries (market_analysis, batch_processing, document_analysis) — pre-existing
 ---
 
 ### RFB-012

@@ -1066,6 +1066,11 @@ Recommend Option B as interim, Option A as target.
 
 **Depends On:** RFB-022 (fixture alignment must be done first)
 
+**Status: DONE**
+Commit: `0665780` (negotiationcoach-backend) — 2026-04-02
+Verified: ts-node runner wired ✓ | MODULE_NOT_FOUND resolved ✓ | live API calls require env vars — documented
+Docs updated: docs/audits/current-state-report.md — LOW-04 (schema + runner both resolved)
+
 ---
 
 ## Summary Index
@@ -1098,7 +1103,7 @@ Recommend Option B as interim, Option A as target.
 | RFB-024 | Fix `parsePlanResponse()` silent fallback — ✅ DONE `fd031cc` | P1 | backend | boundary-violation |
 | RFB-025 | Fix `parseChatResponse()` silent fallback — ✅ DONE `fe961ee` | P1 | backend | boundary-violation |
 | RFB-026 | Repair broken claudeClient import in Edge Function batnaDetector.ts | P2 | backend | boundary-violation |
-| RFB-027 | Repair npm test runner — install Jest or wire ts-node | P3 | backend | contract-gap |
+| RFB-027 | Repair npm test runner — install Jest or wire ts-node — ✅ DONE `0665780` | P3 | backend | contract-gap |
 
 ---
 

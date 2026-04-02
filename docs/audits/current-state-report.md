@@ -212,10 +212,10 @@ The main coaching interface combines mode selection, chat UI, session sidebar, r
 ---
 
 #### LOW-04: Broken Test Suite
-**Classification:** Observed
-**Affected:** `negotiationcoach-backend/tests/layer1/`
+**Classification:** Resolved
+**Affected:** `negotiationcoach-backend/tests/layer1/`, `tests/layer2/`
 
-Tests reference `user_goal / user_walkaway / counterpart_goal / counterpart_walkaway` (Edge Function schema). Current `src/layer1/` uses `own_target / own_minimum / opponent_estimated_max / opponent_estimated_min`. Tests fail and should not be trusted.
+~~Tests reference `user_goal / user_walkaway / counterpart_goal / counterpart_walkaway` (Edge Function schema).~~ Schema aligned in RFB-022 (`ccc4460`). Runner wired in RFB-027 (`0665780`) — `npm test` now invokes ts-node directly. Live execution requires `SUPABASE_SERVICE_KEY` + `ANTHROPIC_API_KEY` env vars. Tests contain no assertions (execution-proof only) — correctness coverage remains a gap.
 
 ---
 

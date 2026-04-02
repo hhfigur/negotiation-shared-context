@@ -1049,7 +1049,7 @@ Follow-up: DCC-FE-02 / RFB-023 (dead `useChatApi` export) unblocked — open
 | RFB-015 | Add TTL/versioning to localStorage state | P2 | frontend | contract-gap |
 | RFB-016 | Complete or remove knowledge candidate pipeline | P2 | frontend + backend | dead-code |
 | RFB-017 | Deduplicate password validation | P2 | frontend | duplicate-logic |
-| RFB-018 | Rename webSearch.ts to reflect actual behaviour | P3 | backend | contract-gap |
+| RFB-018 | Rename webSearch.ts to reflect actual behaviour — ✅ DONE `675cc21` | P3 | backend | contract-gap |
 | RFB-019 | Consolidate dual toast systems | P3 | frontend | dead-code |
 | RFB-020 | Decompose Index.tsx god component | P3 | frontend | dead-code |
 | RFB-021 | Wire Zod for API input validation | P3 | backend | dead-code |

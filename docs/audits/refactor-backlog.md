@@ -844,6 +844,11 @@ State machine transitions should be moved to a `useCoachingFlow` hook.
 
 **Depends On:** RFB-006 (if Edge Function engine is retired, tests only need to cover one implementation)
 
+**Status: DONE**
+Commit: `ccc4460` (negotiationcoach-backend) — 2026-04-02
+Verified: Part A only — fixture alignment. tsc --noEmit -p tsconfig.test.json 12 errors → 0 ✓ | tsc --noEmit (src) clean ✓ | Test runner repair tracked in RFB-027.
+Docs updated: none
+
 ---
 
 ### RFB-023
@@ -1053,7 +1058,7 @@ Follow-up: DCC-FE-02 / RFB-023 (dead `useChatApi` export) unblocked — open
 | RFB-019 | Consolidate dual toast systems | P3 | frontend | dead-code |
 | RFB-020 | Decompose Index.tsx god component | P3 | frontend | dead-code |
 | RFB-021 | Wire Zod for API input validation | P3 | backend | dead-code |
-| RFB-022 | Fix broken test suite — align with Railway schema | P3 | backend | contract-gap |
+| RFB-022 | Fix broken test suite — align with Railway schema — ✅ DONE `ccc4460` | P3 | backend | contract-gap |
 | RFB-023 | Remove dead useChatApi export — ✅ DONE `aa703bd` | P3 | frontend | dead-code |
 | RFB-024 | Fix `parsePlanResponse()` silent fallback — ✅ DONE `fd031cc` | P1 | backend | boundary-violation |
 | RFB-025 | Fix `parseChatResponse()` silent fallback — ✅ DONE `fe961ee` | P1 | backend | boundary-violation |

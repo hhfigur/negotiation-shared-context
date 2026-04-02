@@ -1098,6 +1098,7 @@ Recommend Option B as interim, Option A as target.
 | RFB-024 | Fix `parsePlanResponse()` silent fallback — ✅ DONE `fd031cc` | P1 | backend | boundary-violation |
 | RFB-025 | Fix `parseChatResponse()` silent fallback — ✅ DONE `fe961ee` | P1 | backend | boundary-violation |
 | RFB-026 | Repair broken claudeClient import in Edge Function batnaDetector.ts | P2 | backend | boundary-violation |
+| RFB-027 | Repair npm test runner — install Jest or wire ts-node | P3 | backend | contract-gap |
 
 ---
 

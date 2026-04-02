@@ -1054,7 +1054,7 @@ Follow-up: DCC-FE-02 / RFB-023 (dead `useChatApi` export) unblocked — open
 | RFB-020 | Decompose Index.tsx god component | P3 | frontend | dead-code |
 | RFB-021 | Wire Zod for API input validation | P3 | backend | dead-code |
 | RFB-022 | Fix broken test suite — align with Railway schema | P3 | backend | contract-gap |
-| RFB-023 | Remove dead useChatApi export | P3 | frontend | dead-code |
+| RFB-023 | Remove dead useChatApi export — ✅ DONE `aa703bd` | P3 | frontend | dead-code |
 | RFB-024 | Fix `parsePlanResponse()` silent fallback — ✅ DONE `fd031cc` | P1 | backend | boundary-violation |
 | RFB-025 | Fix `parseChatResponse()` silent fallback — ✅ DONE `fe961ee` | P1 | backend | boundary-violation |
 | RFB-026 | Repair broken claudeClient import in Edge Function batnaDetector.ts | P2 | backend | boundary-violation |

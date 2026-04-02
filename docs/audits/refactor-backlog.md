@@ -1033,6 +1033,41 @@ Follow-up: DCC-FE-02 / RFB-023 (dead `useChatApi` export) unblocked — open
 
 ---
 
+### RFB-027
+
+**Title:** Repair npm test runner — install Jest or wire ts-node for layer1/layer2 test scripts
+
+**Repo:** `negotiationcoach-backend`
+
+**Category:** `contract-gap`
+
+**Evidence (Observed):**
+Jest referenced in npm test script but not installed (MODULE_NOT_FOUND).
+Test files use standalone async scripts, not Jest describe/it/expect format.
+Discovered during RFB-022 fixture alignment.
+
+**Confidence:** High — directly observed
+
+**Risk:** Tests compile after RFB-022 but cannot be executed via npm test.
+No regression gate exists.
+
+**Canonical Owner:** `negotiationcoach-backend` — package.json + tsconfig
+
+**Recommended Action:**
+Option A: Install ts-jest + @types/jest, convert test files to Jest format
+Option B: Change npm test to ts-node runner for standalone scripts (minimal change)
+Recommend Option B as interim, Option A as target.
+
+**Required Docs/Contracts to Update:**
+- docs/audits/current-state-report.md — LOW-04 (partial — note runner still broken)
+
+**Required Tests to Run:**
+- npm test exits 0 after fix
+
+**Depends On:** RFB-022 (fixture alignment must be done first)
+
+---
+
 ## Summary Index
 
 | ID | Title | Priority | Repo | Category |

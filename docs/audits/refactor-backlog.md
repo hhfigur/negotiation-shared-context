@@ -1076,21 +1076,21 @@ Recommend Option B as interim, Option A as target.
 | RFB-002 | Verify/harden Supabase RLS for team admin | P0 | backend (migrations) | boundary-violation |
 | RFB-003 | Move team CRUD to Railway API | P0 | backend + frontend | boundary-violation |
 | RFB-004 | Move session/message writes to Railway API | P0 | backend + frontend | boundary-violation |
-| RFB-005 | Fix CORS — wildcard overrides allowlist | P0 | backend | boundary-violation |
+| RFB-005 | Fix CORS — wildcard overrides allowlist — ✅ DONE `e00e400` | P0 | backend | boundary-violation |
 | RFB-006 | Unify dual Layer 1 implementations | P1 | backend | duplicate-logic |
 | RFB-007 | Unify three incompatible tier systems | P1 | backend + frontend | contract-gap |
 | RFB-008 | Eliminate parallel type maintenance | P1 | backend + frontend | contract-gap |
 | RFB-009 | Propagate actual user tier to Edge Function | P1 | frontend | contract-gap |
 | RFB-010 | Verify Stripe webhook tier update path | P1 | backend | contract-gap |
-| RFB-011 | Integrate modelRouter into /api/chat and /api/plan | P1 | backend | duplicate-logic |
+| RFB-011 | Integrate modelRouter into /api/chat and /api/plan — ✅ DONE `60848db` | P1 | backend | duplicate-logic |
 | RFB-012 | Resolve missing user_profiles creation on signup | P1 | backend (migrations) | contract-gap |
-| RFB-013 | Centralize token accessor in useAuth.tsx | P2 | frontend | dead-code |
+| RFB-013 | Centralize token accessor in useAuth.tsx — ✅ DONE `c507353` | P2 | frontend | dead-code |
 | RFB-014 | Fix session message fire-and-forget persistence | P2 | frontend | boundary-violation |
 | RFB-015 | Add TTL/versioning to localStorage state | P2 | frontend | contract-gap |
 | RFB-016 | Complete or remove knowledge candidate pipeline | P2 | frontend + backend | dead-code |
-| RFB-017 | Deduplicate password validation | P2 | frontend | duplicate-logic |
+| RFB-017 | Deduplicate password validation — ✅ DONE `48d0edc` | P2 | frontend | duplicate-logic |
 | RFB-018 | Rename webSearch.ts to reflect actual behaviour — ✅ DONE `675cc21` | P3 | backend | contract-gap |
-| RFB-019 | Consolidate dual toast systems | P3 | frontend | dead-code |
+| RFB-019 | Consolidate dual toast systems — ✅ DONE `056e672` | P3 | frontend | dead-code |
 | RFB-020 | Decompose Index.tsx god component | P3 | frontend | dead-code |
 | RFB-021 | Wire Zod for API input validation | P3 | backend | dead-code |
 | RFB-022 | Fix broken test suite — align with Railway schema — ✅ DONE `ccc4460` | P3 | backend | contract-gap |

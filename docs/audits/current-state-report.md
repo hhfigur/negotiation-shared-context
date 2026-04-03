@@ -99,7 +99,10 @@ The following tables are written directly from browser JavaScript via the Supaba
 **Classification:** Observed
 **Affected:** `negotiation-buddy/src/hooks/useSessionManager.ts`
 
-Message saves use a fire-and-forget pattern with 2 retries and 1500ms delay. Failed saves are logged but not surfaced to the user and do not block the UI. A failed message save means the session history is silently incomplete — the user may resume a session with missing messages.
+HIGH-02: PARTIALLY RESOLVED 2026-04-03 — Sonner toast now surfaces message
+save failure to user after retries exhausted (useSessionManager.ts).
+Silent data loss UX gap closed. Write path still fire-and-forget —
+full resolution deferred to RFB-004 (Railway session message API).
 
 ---
 
@@ -150,16 +153,12 @@ The wildcard takes precedence. The allowlist (localhost:8080, localhost:5173, *.
 ---
 
 #### MED-03: localStorage State Without TTL, Versioning, or Size Limit
-**Classification:** Observed
-**Affected:** `negotiation-buddy/src/contexts/AnalysisContext.tsx`, `useChat.ts`
+**Classification:** Resolved 2026-04-03
 
-Four localStorage keys accumulate indefinitely:
-- `negotiationcoach_session` — full session state (messages, analysis, ZOPA, plan, acceptance curves)
-- `knowledge_candidates` — extracted knowledge tags from Edge Function (no reader/submitter found)
-- Persona preferences (persona type, frameworks, experience level)
-- Supabase auth session (managed by Supabase JS)
-
-No TTL, no versioning, no size validation. A schema change to AnalysisContext will silently deserialize stale data. The `knowledge_candidates` key accumulates without bound since no submission mechanism exists.
+MED-03: RESOLVED 2026-04-03 — localStorage versioning and TTL added to
+AnalysisContext.tsx. STORAGE_VERSION=2 clears stale state on schema change.
+STORAGE_TTL=7 days clears expired sessions on load.
+knowledge_candidates accumulation remains open — tracked as RFB-016.
 
 ---
 

@@ -533,6 +533,15 @@ Constant removed. claudeClient.ts exports unaffected.
 
 **Depends On:** Nothing
 
+**Status: DONE**
+Applied: direct SQL on Lovable-managed Supabase instance — 2026-04-03
+Verified: on_auth_user_created trigger confirmed (auth.users → handle_new_user())
+Defaults: persona_type='private', subscription_tier='free', experience_level=1
+Note: table lives in Lovable instance only — backend instance has no user_profiles table.
+Note: subscription_tier enum (free/starter/professional/expert/team) diverges from
+Railway tier enum (free/privat/kmu/profi) — tracked as RFB-007, out of scope here.
+Backfill for existing users: not required (4 existing rows already present).
+
 ---
 
 ## P2 — Redundant Hooks, Components, Services, Utilities
@@ -620,6 +629,13 @@ Message persistence moves to Railway — use the structured error contract inste
 
 **Depends On:** Nothing for interim fix; RFB-004 for final resolution
 
+**Status: DONE**
+Implemented: Lovable — 2026-04-03
+Change: Sonner toast.error() added to useSessionManager.ts, fires once
+after all retries exhausted. console.error preserved.
+Scope: useSessionManager.ts only. localStorage queuing excluded (RFB-004).
+Note: Interim fix — final resolution deferred to RFB-004 (Railway message API).
+
 ---
 
 ### RFB-015
@@ -658,6 +674,13 @@ Any schema change to `AnalysisContext` will silently deserialize stale data. MED
 - Unit: Expired session is cleared on read
 
 **Depends On:** Nothing for TTL/versioning; RFB-016 for knowledge candidates
+
+**Status: DONE**
+Implemented: Lovable — 2026-04-03
+STORAGE_VERSION = 2, STORAGE_TTL = 604_800_000 (7 days)
+Guards: version mismatch → clear, TTL expired → clear, parse error → clear
+Scope: AnalysisContext.tsx only. knowledge_candidates excluded (RFB-016).
+Note: existing sessions reset on first deploy — intended behavior.
 
 ---
 
@@ -810,6 +833,11 @@ State machine transitions should be moved to a `useCoachingFlow` hook.
 - Unit: `/api/chat` rejects malformed message arrays
 
 **Depends On:** Nothing
+
+**Status: DONE**
+Commit: `5eed133` (negotiationcoach-backend) — 2026-04-03
+Verified: tsc clean ✓ | validateNegotiationInputs removed ✓ | 5 routes covered ✓ | Section 5 corrected ✓
+Docs updated: shared-context/docs/contracts/frontend-backend.md (Section 5) | docs/api-catalog.md | docs/audit-findings.md (FINDING-V01, DEAD-01 resolved)
 
 ---
 
@@ -1088,16 +1116,16 @@ Docs updated: docs/audits/current-state-report.md — LOW-04 (schema + runner bo
 | RFB-009 | Propagate actual user tier to Edge Function | P1 | frontend | contract-gap |
 | RFB-010 | Verify Stripe webhook tier update path | P1 | backend | contract-gap |
 | RFB-011 | Integrate modelRouter into /api/chat and /api/plan — ✅ DONE `60848db` | P1 | backend | duplicate-logic |
-| RFB-012 | Resolve missing user_profiles creation on signup | P1 | backend (migrations) | contract-gap |
+| RFB-012 | Resolve missing user_profiles creation on signup — ✅ DONE 2026-04-03 | P1 | backend (Lovable Supabase) | contract-gap |
 | RFB-013 | Centralize token accessor in useAuth.tsx — ✅ DONE `c507353` | P2 | frontend | dead-code |
-| RFB-014 | Fix session message fire-and-forget persistence | P2 | frontend | boundary-violation |
-| RFB-015 | Add TTL/versioning to localStorage state | P2 | frontend | contract-gap |
+| RFB-014 | Fix session message fire-and-forget persistence — ✅ DONE 2026-04-03 | P2 | frontend | boundary-violation |
+| RFB-015 | Add TTL/versioning to localStorage state — ✅ DONE 2026-04-03 | P2 | frontend | contract-gap |
 | RFB-016 | Complete or remove knowledge candidate pipeline | P2 | frontend + backend | dead-code |
 | RFB-017 | Deduplicate password validation — ✅ DONE `48d0edc` | P2 | frontend | duplicate-logic |
 | RFB-018 | Rename webSearch.ts to reflect actual behaviour — ✅ DONE `675cc21` | P3 | backend | contract-gap |
 | RFB-019 | Consolidate dual toast systems — ✅ DONE `056e672` | P3 | frontend | dead-code |
 | RFB-020 | Decompose Index.tsx god component | P3 | frontend | dead-code |
-| RFB-021 | Wire Zod for API input validation | P3 | backend | dead-code |
+| RFB-021 | Wire Zod for API input validation — ✅ DONE `5eed133` | P3 | backend | dead-code |
 | RFB-022 | Fix broken test suite — align with Railway schema — ✅ DONE `ccc4460` | P3 | backend | contract-gap |
 | RFB-023 | Remove dead useChatApi export — ✅ DONE `aa703bd` | P3 | frontend | dead-code |
 | RFB-024 | Fix `parsePlanResponse()` silent fallback — ✅ DONE `fd031cc` | P1 | backend | boundary-violation |

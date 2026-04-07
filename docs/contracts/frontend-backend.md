@@ -53,7 +53,7 @@ This document defines the contracts between the React SPA (`negotiation-buddy`) 
 }
 ```
 
-**Auth:** Bearer JWT (optional in backend — never rejects)
+**Auth:** `Authorization: Bearer <JWT>` required. Returns 401 `AUTH_ERROR` if missing or invalid. Bypass: `AUTH_REQUIRED=false` env flag (dev only). (Enforced: fd68e1e, 2026-04-03)
 **Tier Gate:** None explicit. Tier read and used for system prompt tone.
 **Model:** Hardcoded `claude-haiku-4-5-20251001` — does NOT use modelRouter
 
@@ -155,7 +155,7 @@ migrate Edge Function call to Railway.
 }
 ```
 
-**Auth:** Bearer JWT (optional — anonymous gets 'privat' tier)
+**Auth:** `Authorization: Bearer <JWT>` required. Returns 401 `AUTH_ERROR` if missing or invalid. (Enforced: fd68e1e, 2026-04-03)
 **Tier Gate:** None explicit
 
 ---
@@ -186,7 +186,7 @@ migrate Edge Function call to Railway.
 }
 ```
 
-**Auth:** Bearer JWT (optional)
+**Auth:** `Authorization: Bearer <JWT>` required. Returns 401 `AUTH_ERROR` if missing or invalid. (Enforced: fd68e1e, 2026-04-03)
 **Tier Gate:** `requireTier('kmu')` — explicit middleware gate, returns 403 for free/privat
 
 ---
@@ -199,7 +199,7 @@ migrate Edge Function call to Railway.
 
 **Response:** Combined `AnalysisResult` + optional `EnrichedData` fields (Layer 2 skipped if tier < kmu)
 
-**Auth:** Bearer JWT (optional)
+**Auth:** `Authorization: Bearer <JWT>` required. Returns 401 `AUTH_ERROR` if missing or invalid. (Enforced: fd68e1e, 2026-04-03)
 **Tier Gate:** Layer 2 implicitly skipped for free/privat; no 403 thrown
 
 ---
@@ -222,7 +222,87 @@ migrate Edge Function call to Railway.
 }
 ```
 
-**Auth:** Bearer JWT. Access enforced via `.eq('user_id', req.user.id)` code-side (SERVICE_ROLE_KEY bypasses RLS).
+**Auth:** `Authorization: Bearer <JWT>` required. Returns 401 `AUTH_ERROR` if missing or invalid. (Enforced: fd68e1e, 2026-04-03). Access further enforced via `.eq('user_id', req.user.id)` code-side (SERVICE_ROLE_KEY bypasses RLS).
+
+---
+
+### `POST /api/teams`
+
+**Purpose:** Team erstellen — Aufrufer wird automatisch `admin_user_id`
+
+**Request:**
+```typescript
+{
+  name: string;           // min 1, max 100 Zeichen
+  max_members?: number;   // default 5, min 2, max 50
+}
+```
+
+**Response 201:**
+```typescript
+{ data: Team }
+```
+
+**Auth:** `Authorization: Bearer <JWT>` required. Returns 401 if missing.
+**Errors:** 400 `VALIDATION_ERROR`, 401 `UNAUTHORIZED`, 500 `TEAM_CREATE_ERROR`
+
+---
+
+### `POST /api/teams/:id/members`
+
+**Purpose:** Mitglied zum Team hinzufügen (nur Team-Admin)
+
+**Request:**
+```typescript
+{
+  user_id: string;  // uuid
+  role?: string;    // default 'member'
+}
+```
+
+**Response 201:**
+```typescript
+{ data: TeamMember }
+```
+
+**Auth:** Bearer JWT — Aufrufer muss `admin_user_id` des Teams sein.
+**Errors:** 400 `VALIDATION_ERROR` | `INVALID_UUID`, 401, 403 `FORBIDDEN`, 404 `TEAM_NOT_FOUND`, 500 `MEMBER_ADD_ERROR`
+
+---
+
+### `DELETE /api/teams/:id/members/:userId`
+
+**Purpose:** Mitglied aus Team entfernen (nur Team-Admin)
+
+**Response 204:** no content
+
+**Auth:** Bearer JWT — Aufrufer muss `admin_user_id` des Teams sein.
+**Errors:** 400 `INVALID_UUID`, 401, 403 `FORBIDDEN`, 404 `TEAM_NOT_FOUND`, 500 `MEMBER_REMOVE_ERROR`
+
+---
+
+### `PATCH /api/teams/:id/tasks/:taskId`
+
+**Purpose:** Training-Task aktualisieren (nur Team-Admin)
+
+**Request:**
+```typescript
+{
+  status?: string;
+  title?: string;
+  description?: string | null;
+  due_date?: string | null;
+  assigned_to?: string | null;  // uuid
+}
+```
+
+**Response 200:**
+```typescript
+{ data: TeamTrainingTask }
+```
+
+**Auth:** Bearer JWT — Aufrufer muss `admin_user_id` des Teams sein.
+**Errors:** 400 `VALIDATION_ERROR` | `INVALID_UUID`, 401, 403 `FORBIDDEN`, 404 `TEAM_NOT_FOUND`, 500 `TASK_UPDATE_ERROR`
 
 ---
 
@@ -284,11 +364,27 @@ migrate Edge Function call to Railway.
 **Railway errors follow AppError shape:**
 ```typescript
 {
-  error: string;     // error.code (e.g., "AUTH_ERROR", "TIER_ERROR", "VALIDATION_ERROR")
-  message: string;   // human-readable message
-  status: number;    // HTTP status code
+  error: {
+    code: string;       // e.g., "AUTH_ERROR", "TIER_ERROR", "VALIDATION_ERROR"
+    message: string;    // human-readable message
+    statusCode: number; // HTTP status code
+  }
 }
 ```
+
+**Validation error (400):** `VALIDATION_ERROR` — returned when Zod schema parse fails on request body (wired in RFB-021).
+Field-level detail is included in `error.message` as a comma-separated string of `field: reason` pairs.
+Example:
+```json
+{
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "negotiation_type: Invalid enum value, own_target: Required",
+    "statusCode": 400
+  }
+}
+```
+Routes covered: `/api/analyze`, `/api/chat`, `/api/plan`, `/api/enrich`, `/api/analyze-full`
 
 **Frontend error handling:** Each page/hook independently catches errors and displays a toast. No centralized error boundary. Pattern repeated in 4+ locations (redundancy R-002 in frontend audit).
 

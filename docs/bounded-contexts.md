@@ -34,7 +34,7 @@ JWT carries tier as `user.user_metadata.tier` or `user.app_metadata.tier`. Railw
 Supabase Auth (issuance) + Railway `authMiddleware` (validation)
 
 ### Violations / Ambiguities
-- **CRIT:** Railway `authMiddleware` falls back to anonymous/privat instead of rejecting invalid tokens. Auth is optional in the current dev-mode state. (Observed)
+- **RESOLVED 2026-04-03 — fd68e1e:** 401 enforced for missing/invalid tokens. `AUTH_REQUIRED=false` provides explicit dev bypass. Default tier for tokens with no metadata: `'free'`.
 - **Missing:** Stripe webhook → `user_metadata.tier` update path is not visible in either repo. Mechanism assumed but unverified.
 - **Observed:** Frontend calls `supabase.auth.getSession()` in 6 different files to extract Bearer token rather than using a centralized accessor.
 
@@ -139,15 +139,10 @@ Tier gate: privat/free receive no market data. kmu/profi access Layer 2 enrichme
 No server-side projection. All state is read directly from Supabase.
 
 ### Auth / Permission Owner
-**Observed — CRITICAL:** Admin authorization is enforced entirely in frontend React code:
-```typescript
-// TeamDashboard.tsx ~line 69
-if (teams.admin_user_id !== user.id) { /* block UI */ }
-```
-If Supabase RLS does not independently enforce `admin_user_id = auth.uid()`, any authenticated user can call the Supabase SDK directly (bypassing the React UI) and perform team mutations.
+**Observed:** Admin authorization is enforced in frontend React code (`TeamDashboard.tsx ~line 69`) as a UI guard. Supabase RLS now independently enforces admin authorization at the DB layer via migration `20260403120000` — 10 snake_case policies across all three team tables. Any direct SDK call bypassing the React UI is blocked by RLS.
 
 ### Violations / Ambiguities
-- **CRITICAL:** No API-mediated writes. No server-side admin validation confirmed. RLS enforcement is unverified in this audit. (Observed)
+- **Resolved (RFB-002):** RLS now enforced at DB level. Frontend React check remains as redundant UI guard (acceptable). (Observed → Verified)
 - **Missing:** Team invite via email does not exist — only link copy. No notification system.
 - **Missing:** No audit log for team membership changes.
 
@@ -174,7 +169,7 @@ localStorage is written after every successful Supabase update. No TTL. Risk of 
 Supabase RLS (inferred — user_profiles likely scoped to `auth.uid()`)
 
 ### Violations / Ambiguities
-- **Missing:** `user_profiles.insert()` trigger (who creates the initial profile on sign-up?)
+- **RESOLVED 2026-04-03 — RFB-012:** `on_auth_user_created` trigger created on `auth.users`. `handle_new_user()` inserts a default `user_profiles` row (persona_type='private', subscription_tier='free', experience_level=1) on every new sign-up. Backfill not required — 4 existing rows already present.
 - **Observed:** The `persona_type` enum (`pro | kmu | private`) does not map to the Railway tier system (`free | privat | kmu | profi`). No translation layer exists in either repo.
 - **Observed:** `subscription_tier` sent in chat persona is hardcoded as `"free"` in `useChat.ts`. Actual user tier is not propagated to the Edge Function.
 
@@ -187,6 +182,6 @@ Supabase RLS (inferred — user_profiles likely scoped to `auth.uid()`)
 | Two incompatible NegotiationInputs type schemas | BC-02, BC-03 | Observed |
 | Two incompatible tier enumerations | BC-01, BC-02, BC-06 | Observed |
 | Frontend directly writes to DB in BC-03, BC-05, BC-06 without Railway mediation | BC-03, BC-05, BC-06 | Observed |
-| Team admin authorization frontend-only | BC-05 | Observed |
+| ~~Team admin authorization frontend-only~~ **RLS enforced at DB layer — RFB-002** | BC-05 | Resolved |
 | Knowledge candidate pipeline broken (extracted, never submitted) | BC-03, BC-04 | Observed |
 | `subscription_tier` in chat hardcoded "free" | BC-01, BC-03 | Observed |

@@ -56,6 +56,13 @@
 
 **Depends On:** Nothing (standalone hardening)
 
+**Status: DONE**
+Commit: `fd68e1e` (negotiationcoach-backend) — 2026-04-03
+Verified: tsc --noEmit clean ✓ | Tests 2–8 passing ✓ | AUTH_REQUIRED=false dev bypass documented
+Tier default changed: 'privat' → 'free' (AUTH-08 resolved).
+Pre-flight: production user tier metadata set before deploy.
+Docs updated: auth-permission-map.md (AUTH-01, AUTH-08) | contracts/frontend-backend.md (Section 2) | bounded-contexts.md (BC-01)
+
 ---
 
 ### RFB-002
@@ -97,6 +104,14 @@ Any authenticated user can call the Supabase SDK directly (bypassing the React U
 
 **Depends On:** Nothing (standalone verification + migration)
 
+**Status: DONE**
+Commit: <hash> (negotiation-buddy) — 2026-04-03
+Verified: 10 snake_case policies applied ✓ | pg_policies query confirmed ✓
+  | team_training_tasks SELECT gap fixed ✓ | legacy quoted-name policies removed ✓
+Docs updated: auth-permission-map.md §5.2 | source-of-truth-matrix.md VG-01
+  | bounded-contexts.md BC-05
+Unblocks: RFB-003
+
 ---
 
 ### RFB-003
@@ -134,6 +149,12 @@ All team operations (`teams`, `team_members`, `team_training_tasks` INSERT/UPDAT
 - Integration: `TeamDashboard.tsx` creates a team end-to-end via Railway API
 
 **Depends On:** RFB-001 (auth enforcement must be in place before new guarded endpoints are meaningful), RFB-002 (RLS hardening as defence-in-depth)
+
+**Status: DONE**
+Commit: `0b10d9c` (negotiationcoach-backend) — 2026-04-07
+Verified: tsc --noEmit clean ✓ | 4 endpoints in teamRoutes.ts ✓ | assertTeamAdmin enforced server-side ✓ | PATCH+DELETE added to CORS methods ✓
+Docs updated: docs/api-catalog.md (team endpoints section + routes summary + CORS methods) | docs/db-map.md (teams, team_members, team_training_tasks)
+Note: Phase A only — backend endpoints. Phase B (TeamDashboard.tsx frontend migration) is a separate Lovable step.
 
 ---
 
@@ -716,6 +737,15 @@ Choose Option B if there is no near-term roadmap for the knowledge pipeline.
 
 **Depends On:** Product decision (build or remove)
 
+**Status: RE-SCOPED — Option B withdrawn 2026-04-03**
+Product decision: knowledge pipeline will be built (Option A confirmed).
+Item split into:
+- RFB-016a: Architecture design — define collection scope, usage path,
+  ownership. Requires ADR before implementation.
+- RFB-016b: Implementation — blocked on RFB-016a.
+Neither sub-item is ready for Wave 1 execution.
+Deferred to feature backlog pending ADR.
+
 ---
 
 ### RFB-017
@@ -1105,9 +1135,9 @@ Docs updated: docs/audits/current-state-report.md — LOW-04 (schema + runner bo
 
 | ID | Title | Priority | Repo | Category |
 |----|-------|----------|------|----------|
-| RFB-001 | Railway authMiddleware never enforces 401 | P0 | backend | boundary-violation |
-| RFB-002 | Verify/harden Supabase RLS for team admin | P0 | backend (migrations) | boundary-violation |
-| RFB-003 | Move team CRUD to Railway API | P0 | backend + frontend | boundary-violation |
+| RFB-001 | Railway authMiddleware never enforces 401 — ✅ DONE `fd68e1e` | P0 | backend | boundary-violation |
+| RFB-002 | Verify/harden Supabase RLS for team admin — ✅ DONE `<hash>` | P0 | backend (migrations) | boundary-violation |
+| RFB-003 | Move team CRUD to Railway API — ✅ DONE `0b10d9c` | P0 | backend + frontend | boundary-violation |
 | RFB-004 | Move session/message writes to Railway API | P0 | backend + frontend | boundary-violation |
 | RFB-005 | Fix CORS — wildcard overrides allowlist — ✅ DONE `e00e400` | P0 | backend | boundary-violation |
 | RFB-006 | Unify dual Layer 1 implementations | P1 | backend | duplicate-logic |

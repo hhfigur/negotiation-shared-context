@@ -125,12 +125,14 @@ Tier gate: privat/free receive no market data. kmu/profi access Layer 2 enrichme
 
 **Canonical Owner:** Frontend (`TeamDashboard.tsx`) — **VIOLATION**
 **Primary Datastore:** `teams`, `team_members`, `team_training_tasks` tables
-**Business Logic Owner:** Frontend only (no backend API endpoints for team operations)
+**Business Logic Owner:** Railway backend (Phase A complete — commit 0b10d9c)
 
-### Write Path
-- Frontend `TeamDashboard.tsx` → `supabase.from('teams').insert()` directly
-- Frontend `TeamDashboard.tsx` → `supabase.from('team_members').insert()/delete()` directly
-- Frontend `TeamDashboard.tsx` → `supabase.from('team_training_tasks').insert()/update()` directly
+### Write Path (Phase A complete — Railway endpoints live)
+- `POST /api/teams` — Team erstellen, Aufrufer wird admin_user_id
+- `POST /api/teams/:id/members` — Mitglied hinzufügen (admin only)
+- `DELETE /api/teams/:id/members/:userId` — Mitglied entfernen (admin only)
+- `PATCH /api/teams/:id/tasks/:taskId` — Task aktualisieren (admin only)
+- **Phase B pending:** TeamDashboard.tsx ruft Supabase noch direkt — Migration folgt
 
 ### Read Path
 - Frontend `TeamDashboard.tsx` → direct Supabase SDK reads

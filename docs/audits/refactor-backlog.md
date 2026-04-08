@@ -878,6 +878,44 @@ State machine transitions should be moved to a `useCoachingFlow` hook.
 
 **Depends On:** Nothing (pure refactor, no logic changes)
 
+**Status: DONE (Phase 1)**
+**Commit:** <hash einfügen> (negotiation-buddy)
+**Verified:** tsc --noEmit clean ✓ | Index.tsx 931 → 870 Zeilen (−61) ✓
+Guided Flow, Strategie-Modus, Plan-Generierung strukturell unverändert ✓
+Kein State verschoben ✓
+
+Extracted in Phase 1:
+- src/components/CoachHeader.tsx (neu)
+- src/components/ChatProgressBar.tsx (neu)
+- src/utils/buildPlanData.ts (neu)
+
+Phase 2 (useGuidedFlow) → RFB-020b (offen, eigener Testplan erforderlich)
+Phase 3 (useProgressEngine) → RFB-020c (offen, eigener Testplan erforderlich)
+
+---
+
+### RFB-020b
+
+**Title:** Extract useGuidedFlow hook from Index.tsx
+**Repo:** `negotiation-buddy`
+**Category:** `dead-code`
+**Depends On:** RFB-020 Phase 1 (DONE)
+**Status:** OPEN — eigener Testplan erforderlich vor Implementation
+**Note:** handleSendRef-Bridge muss beim Extrahieren erhalten bleiben.
+Separater Plan-Pass in Lovable Plan Mode erforderlich.
+
+---
+
+### RFB-020c
+
+**Title:** Extract useProgressEngine hook from Index.tsx
+**Repo:** `negotiation-buddy`
+**Category:** `dead-code`
+**Depends On:** RFB-020b
+**Status:** OPEN — eigener Testplan erforderlich vor Implementation
+**Note:** Zwei Fetch-Calls (analyze-progress, generate-plan) + Railway extractInputs
+in einem Effect. Separater Plan-Pass in Lovable Plan Mode erforderlich.
+
 ---
 
 ### RFB-021
@@ -1203,6 +1241,15 @@ If count >= team.max_members, throw AppError(400, 'TEAM_FULL', ...)
 
 **Depends On:** RFB-003 Phase A (DONE)
 
+**Status: DONE**
+Commit: `402ee63` (negotiationcoach-backend) — 2026-04-08
+Verified: tsc --noEmit clean ✓ (both runs) | assertTeamAdmin untouched ✓
+  | DELETE/PATCH/POST-teams handlers untouched ✓
+Docs updated: docs/api-catalog.md (TEAM_FULL added) |
+  shared-context/docs/contracts/frontend-backend.md (TEAM_FULL added)
+Note: Non-atomic count-then-insert — DB-level constraint deferred (same
+  pattern as RFB-004-C).
+
 ### RFB-029
 
 **Title:** negotiation_sessions missing analysis columns — Railway analyze
@@ -1305,7 +1352,9 @@ re-verified — their production behaviour was untested before this fix.
 | RFB-017 | Deduplicate password validation — ✅ DONE `48d0edc` | P2 | frontend | duplicate-logic |
 | RFB-018 | Rename webSearch.ts to reflect actual behaviour — ✅ DONE `675cc21` | P3 | backend | contract-gap |
 | RFB-019 | Consolidate dual toast systems — ✅ DONE `056e672` | P3 | frontend | dead-code |
-| RFB-020 | Decompose Index.tsx god component | P3 | frontend | dead-code |
+| RFB-020 | Decompose Index.tsx god component — ✅ DONE Phase 1 `<hash>` | P3 | frontend | dead-code |
+| RFB-020b | Extract useGuidedFlow hook from Index.tsx | P3 | frontend | dead-code |
+| RFB-020c | Extract useProgressEngine hook from Index.tsx | P3 | frontend | dead-code |
 | RFB-021 | Wire Zod for API input validation — ✅ DONE `5eed133` | P3 | backend | dead-code |
 | RFB-022 | Fix broken test suite — align with Railway schema — ✅ DONE `ccc4460` | P3 | backend | contract-gap |
 | RFB-023 | Remove dead useChatApi export — ✅ DONE `aa703bd` | P3 | frontend | dead-code |
@@ -1313,7 +1362,7 @@ re-verified — their production behaviour was untested before this fix.
 | RFB-025 | Fix `parseChatResponse()` silent fallback — ✅ DONE `fe961ee` | P1 | backend | boundary-violation |
 | RFB-026 | Repair broken claudeClient import in Edge Function batnaDetector.ts | P2 | backend | boundary-violation |
 | RFB-027 | Repair npm test runner — install Jest or wire ts-node — ✅ DONE `0665780` | P3 | backend | contract-gap |
-| RFB-028 | Enforce max_members limit in POST /api/teams/:id/members | P2 | backend | boundary-violation |
+| RFB-028 | Enforce max_members limit in POST /api/teams/:id/members — ✅ DONE `402ee63` | P2 | backend | boundary-violation |
 | RFB-029 | negotiation_sessions missing analysis columns — Railway analyze inserts silently failing — ✅ DONE `f759c18` | P0 | backend | boundary-violation |
 | AB-001 | Railway SUPABASE_URL placeholder fixed — ✅ DONE 2026-04-08 | P0 | infrastructure | infrastructure |
 

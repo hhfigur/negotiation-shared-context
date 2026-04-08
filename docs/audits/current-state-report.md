@@ -203,10 +203,10 @@ Both Radix `useToast` and Sonner `toast` are installed and used inconsistently a
 ---
 
 #### LOW-03: Index.tsx God Component
-**Classification:** Observed
-**Affected:** `negotiation-buddy/src/pages/Index.tsx` (929 lines)
-
-The main coaching interface combines mode selection, chat UI, session sidebar, resume banner, and multiple state machine transitions in a single file. Difficult to test, maintain, or extend.
+**Classification:** Resolved (Phase 1) — 2026-04-08
+Index.tsx von 931 auf 870 Zeilen reduziert. CoachHeader, ChatProgressBar,
+buildPlanData extrahiert. Hook-Extraktion (useGuidedFlow, useProgressEngine)
+offen als RFB-020b / RFB-020c.
 
 ---
 

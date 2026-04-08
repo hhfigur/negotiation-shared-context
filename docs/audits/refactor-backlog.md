@@ -151,10 +151,14 @@ All team operations (`teams`, `team_members`, `team_training_tasks` INSERT/UPDAT
 **Depends On:** RFB-001 (auth enforcement must be in place before new guarded endpoints are meaningful), RFB-002 (RLS hardening as defence-in-depth)
 
 **Status: DONE**
-Commit: `0b10d9c` (negotiationcoach-backend) — 2026-04-07
-Verified: tsc --noEmit clean ✓ | 4 endpoints in teamRoutes.ts ✓ | assertTeamAdmin enforced server-side ✓ | PATCH+DELETE added to CORS methods ✓
-Docs updated: docs/api-catalog.md (team endpoints section + routes summary + CORS methods) | docs/db-map.md (teams, team_members, team_training_tasks)
-Note: Phase A only — backend endpoints. Phase B (TeamDashboard.tsx frontend migration) is a separate Lovable step.
+Phase A commit: `0b10d9c` (negotiationcoach-backend) — 2026-04-07
+Phase B commit: (negotiation-buddy Lovable deploy) — 2026-04-08
+Verified: tsc --noEmit clean ✓ | 4 endpoints in teamRoutes.ts ✓ | assertTeamAdmin enforced server-side ✓
+  | useTeamApi.ts hook created ✓ | W1+W2 migrated to POST /api/teams ✓ | W4 migrated to DELETE /api/teams/:id/members/:userId ✓
+  | W3 (task creation) remains on Supabase SDK — Phase C dependency ✓
+  | Team creation end-to-end verified in production UI ✓
+Docs updated: docs/api-catalog.md | docs/db-map.md | docs/bounded-contexts.md (BC-05) | docs/data-access-map.md
+Unblocked by: AB-001 fix (Railway SUPABASE_URL corrected)
 
 ---
 
@@ -197,6 +201,39 @@ Note: Phase A only — backend endpoints. Phase B (TeamDashboard.tsx frontend mi
 - Integration: useSessionManager writes messages via Railway and surfaces errors to UI
 
 **Depends On:** RFB-001 (auth must be enforced before session ownership matters)
+
+**Status: DONE**
+Phase A commit: [Phase-A-hash eintragen] (negotiationcoach-backend) — 2026-04-08
+Phase B commit: [Phase-B-hash eintragen] (negotiation-buddy) — 2026-04-08
+Verified: tsc --noEmit clean ✓ | no direct negotiation_sessions.insert ✓ |
+no direct session_messages.insert ✓ | getUserId() removed ✓ |
+POST /api/sessions ✓ | PATCH /api/sessions/:id ✓ |
+POST /api/sessions/:id/messages ✓ | retry loop removed ✓
+Note: Schema mismatch (missing columns in live negotiation_sessions table)
+logged as RFB-028 — out of scope here.
+
+---
+
+### RFB-004-C (Phase C follow-on)
+
+**Title:** Add DB-level message count constraint to session_messages
+
+**Repo:** `negotiationcoach-backend` (Supabase migration)
+
+**Category:** `boundary-violation`
+
+**Evidence (Observed):** `POST /api/sessions/:id/messages` uses count-then-insert
+which is non-atomic. Two concurrent callers can both pass the count check and
+push total to 51. Documented during RFB-004 Phase A plan review.
+
+**Risk:** Low in current traffic volumes. Becomes a correctness issue at scale.
+
+**Recommended Action:** Add a CHECK constraint or BEFORE INSERT trigger on
+`session_messages` enforcing count per `session_id` <= 50.
+
+**Depends On:** RFB-004 Phase A (endpoints must exist first)
+
+**Status: OPEN**
 
 ---
 
@@ -371,6 +408,14 @@ At minimum:
 
 **Depends On:** Nothing (incremental improvement; full resolution requires RFB-007 tier unification)
 
+**Status: DONE**
+Commit: `REAL_HASH` (negotiationcoach-backend) — 2026-04-08
+Verified: tsc --noEmit exit 0 after each step ✓ | grep: 0 consumers of Tier
+from middleware ✓ | grep: 0 consumers of NegotiationType from lib/types ✓
+No API contract, function signature, or business logic changed.
+Side finding: 3 dead types in src/types/index.ts (OpponentStyle,
+ScenarioDifficulty, SimulationTurn) — logged to dead-code-candidates.md.
+
 ---
 
 ### RFB-009
@@ -441,6 +486,12 @@ No Stripe webhook handler updating `user_metadata.tier` is visible in either rep
 - Integration: Updated tier is reflected in next Railway request
 
 **Depends On:** Nothing (investigation item; unblocks RFB-007 and RFB-009)
+
+**Status: ON HOLD — explicit owner decision 2026-04-08**
+Stripe integration is deferred to a future billing milestone.
+Do not implement until explicitly unparked by owner.
+Plan output from Claude Code preserved above for future reference.
+Unblocks: RFB-007 and RFB-009 remain blocked on this — noted.
 
 ---
 
@@ -1129,6 +1180,109 @@ Commit: `0665780` (negotiationcoach-backend) — 2026-04-02
 Verified: ts-node runner wired ✓ | MODULE_NOT_FOUND resolved ✓ | live API calls require env vars — documented
 Docs updated: docs/audits/current-state-report.md — LOW-04 (schema + runner both resolved)
 
+
+### RFB-028
+
+**Title:** Enforce max_members limit in POST /api/teams/:id/members
+
+**Repo:** `negotiationcoach-backend`
+
+**Category:** `boundary-violation`
+
+**Evidence (Observed):**
+POST /api/teams/:id/members does not check current member count against
+teams.max_members before inserting. Identified during RFB-003 Phase A implementation.
+
+**Confidence:** High — gap confirmed in teamRoutes.ts code review
+
+**Risk:** Teams can exceed their declared member limit silently.
+
+**Canonical Owner:** `negotiationcoach-backend` — `src/api/teamRoutes.ts`
+
+**Recommended Action:**
+Before INSERT into team_members, query current member count:
+  SELECT COUNT(*) FROM team_members WHERE team_id = :id
+If count >= team.max_members, throw AppError(400, 'TEAM_FULL', ...)
+
+**Depends On:** RFB-003 Phase A (DONE)
+
+### RFB-029
+
+**Title:** negotiation_sessions missing analysis columns — Railway analyze
+inserts silently failing
+
+**Repo:** negotiationcoach-backend + Supabase migration
+
+**Category:** boundary-violation
+
+**Evidence (Observed):**
+Live negotiation_sessions table (Lovable Supabase instance) does not contain:
+inputs, layer1_result, layer2_result, task_type, model_used, model_degraded,
+negotiation_id.
+Railway /api/analyze and /api/analyze-full attempt to INSERT these columns.
+Supabase silently ignores unknown columns — no 500 is thrown, no data is
+persisted. Discovered during RFB-004 Phase A schema verification 2026-04-08.
+
+**Confidence:** High — observed from generated Supabase types vs routes.ts inserts
+
+**Risk:** Critical. All analysis results are lost on every /api/analyze and
+/api/analyze-full call. GET /api/sessions/:id returns a row with null analysis
+fields. The Railway analysis engine produces correct output but it is never
+stored.
+
+**Canonical Owner:** negotiationcoach-backend (schema migration) +
+Supabase (migration application)
+
+**Recommended Action:**
+1. Create a Supabase migration adding the missing columns to negotiation_sessions
+2. Verify Railway /api/analyze inserts succeed after migration
+3. Verify GET /api/sessions/:id returns populated layer1_result
+
+**Required Docs to Update:**
+- docs/db-map.md — already corrected in RFB-004 Phase A
+- shared-context/docs/source-of-truth-matrix.md — Entity 3
+
+**Depends On:** Nothing — migration can proceed immediately
+
+**Status: DONE**
+Commit: `f759c18` (negotiationcoach-backend) — 2026-04-08
+Verified: tsc --noEmit clean ✓ | 7 columns confirmed in live DB via information_schema ✓ | negotiation_id NOT NULL dropped (FK to negotiations preserved) ✓ | TypeScript types regenerated → src/types/supabase.ts ✓ | POST /api/analyze smoke test ✓ | layer1_result non-null in GET ✓
+Docs updated: docs/db-map.md (⚠ SCHEMA CORRECTION block removed, 7 columns added, ⚠ enrich row cleaned)
+
+---
+
+## Active Blockers
+
+### AB-001
+
+**Title:** Railway SUPABASE_URL was set to placeholder — backend never connected to real Supabase
+
+**Repo:** `negotiationcoach-backend` (Railway environment variables)
+
+**Category:** `infrastructure`
+
+**Evidence (Observed):**
+Railway environment variable `SUPABASE_URL` was set to `https://placeholder.supabase.co`.
+Every Railway endpoint performing a Supabase query has been failing in production since
+initial deployment. Discovered during RFB-003 Phase B end-to-end verification (2026-04-08).
+
+**Impact:**
+- POST /api/teams → 500 TEAM_CREATE_ERROR
+- All session save operations → likely silent failures
+- GET /api/sessions/:id → likely 500
+- All Layer 1/2 result persistence → unverified
+
+**Fix Applied:**
+Railway Variables updated:
+- SUPABASE_URL → https://ujnyioggxipvuxxxcivr.supabase.co
+- SUPABASE_SERVICE_KEY → Lovable project service role key
+
+**Status: DONE**
+Fixed: 2026-04-08
+Verified: Team creation end-to-end ✓ | Railway redeploy successful ✓
+Follow-up: All previously "passing" endpoints that touch Supabase should be
+re-verified — their production behaviour was untested before this fix.
+
 ---
 
 ## Summary Index
@@ -1137,12 +1291,12 @@ Docs updated: docs/audits/current-state-report.md — LOW-04 (schema + runner bo
 |----|-------|----------|------|----------|
 | RFB-001 | Railway authMiddleware never enforces 401 — ✅ DONE `fd68e1e` | P0 | backend | boundary-violation |
 | RFB-002 | Verify/harden Supabase RLS for team admin — ✅ DONE `<hash>` | P0 | backend (migrations) | boundary-violation |
-| RFB-003 | Move team CRUD to Railway API — ✅ DONE `0b10d9c` | P0 | backend + frontend | boundary-violation |
-| RFB-004 | Move session/message writes to Railway API | P0 | backend + frontend | boundary-violation |
+| RFB-003 | Move team CRUD to Railway API — ✅ DONE Phase A `0b10d9c` + Phase B Lovable 2026-04-08 | P0 | backend + frontend | boundary-violation |
+| RFB-004 | Move session/message writes to Railway API — ✅ DONE | P0 | backend + frontend | boundary-violation |
 | RFB-005 | Fix CORS — wildcard overrides allowlist — ✅ DONE `e00e400` | P0 | backend | boundary-violation |
 | RFB-006 | Unify dual Layer 1 implementations | P1 | backend | duplicate-logic |
 | RFB-007 | Unify three incompatible tier systems | P1 | backend + frontend | contract-gap |
-| RFB-008 | Eliminate parallel type maintenance | P1 | backend + frontend | contract-gap |
+| RFB-008 | Eliminate parallel type maintenance — ✅ DONE `REAL_HASH` | P1 | backend | duplicate-logic |
 | RFB-009 | Propagate actual user tier to Edge Function | P1 | frontend | contract-gap |
 | RFB-010 | Verify Stripe webhook tier update path | P1 | backend | contract-gap |
 | RFB-011 | Integrate modelRouter into /api/chat and /api/plan — ✅ DONE `60848db` | P1 | backend | duplicate-logic |
@@ -1162,6 +1316,9 @@ Docs updated: docs/audits/current-state-report.md — LOW-04 (schema + runner bo
 | RFB-025 | Fix `parseChatResponse()` silent fallback — ✅ DONE `fe961ee` | P1 | backend | boundary-violation |
 | RFB-026 | Repair broken claudeClient import in Edge Function batnaDetector.ts | P2 | backend | boundary-violation |
 | RFB-027 | Repair npm test runner — install Jest or wire ts-node — ✅ DONE `0665780` | P3 | backend | contract-gap |
+| RFB-028 | Enforce max_members limit in POST /api/teams/:id/members | P2 | backend | boundary-violation |
+| RFB-029 | negotiation_sessions missing analysis columns — Railway analyze inserts silently failing — ✅ DONE `f759c18` | P0 | backend | boundary-violation |
+| AB-001 | Railway SUPABASE_URL placeholder fixed — ✅ DONE 2026-04-08 | P0 | infrastructure | infrastructure |
 
 ---
 

@@ -132,7 +132,8 @@ Tier gate: privat/free receive no market data. kmu/profi access Layer 2 enrichme
 - `POST /api/teams/:id/members` — Mitglied hinzufügen (admin only)
 - `DELETE /api/teams/:id/members/:userId` — Mitglied entfernen (admin only)
 - `PATCH /api/teams/:id/tasks/:taskId` — Task aktualisieren (admin only)
-- **Phase B pending:** TeamDashboard.tsx ruft Supabase noch direkt — Migration folgt
+- Phase B complete (2026-04-08): TeamDashboard.tsx migrated to Railway API via useTeamApi hook.
+- W3 (task creation) remains on Supabase SDK — Phase C dependency (no Railway endpoint yet).
 
 ### Read Path
 - Frontend `TeamDashboard.tsx` → direct Supabase SDK reads

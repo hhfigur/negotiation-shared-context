@@ -62,20 +62,23 @@ No central `getToken()` accessor exists in `useAuth.tsx`.
 ## 3. Railway Backend: Auth Middleware
 
 **File:** `src/api/middleware.ts`
+**Status:** AUTH-01 RESOLVED — fd68e1e — 2026-04-03
 
 ```
 Request received
+  → If AUTH_REQUIRED=false env flag: dev bypass → next() with id='dev-anonymous'
+  → If no Supabase client (placeholder creds): dev bypass → next()
   → Extract Bearer token from Authorization header
-  → If no token OR validation fails:
-       → fallback: req.user = { id: 'anonymous', tier: 'privat' }  ← NEVER REJECTS
+  → If no token: → 401 AUTH_ERROR ('Nicht authentifiziert')
+  → Call supabase.auth.getUser(token)
+  → If validation fails: → 401 AUTH_ERROR ('Ungültiger oder abgelaufener Token')
   → If valid token:
-       → req.user = { id: user.id, tier: from JWT metadata || 'privat' }
+       → req.user = { id: user.id, tier: from JWT metadata || 'free' }
   → next()
+  → Unexpected error: → 401 AUTH_ERROR ('Authentifizierungsfehler')
 ```
 
-**CRITICAL (Observed):** `authMiddleware` **never returns 401**. Any request — with or without a valid token — proceeds. The anonymous user gets `tier: 'privat'`, which grants access to Layer 1 analysis. This is documented as intentional dev-mode behavior pending production hardening.
-
-**Consequence:** The Railway API has no auth enforcement in its current state. Tier gating is the only access control that functions.
+**RESOLVED (fd68e1e, 2026-04-03):** `authMiddleware` now enforces 401 for missing or invalid tokens. `AUTH_REQUIRED=false` provides an explicit dev bypass. Default when absent: enforced. `/api/health` remains ungated (no authMiddleware applied).
 
 ---
 
@@ -128,9 +131,9 @@ free (0) < privat (1) < kmu (2) < profi (3)
 |-------|----------------|-----------------|---------|
 | `negotiation_sessions` | INSERT, UPDATE | Inferred (`owns_session()`) | No |
 | `session_messages` | INSERT | Inferred | No |
-| `teams` | INSERT, SELECT | Inferred — CRITICAL: admin check frontend-only | No |
-| `team_members` | INSERT, SELECT, DELETE | Inferred — CRITICAL: admin check frontend-only | No |
-| `team_training_tasks` | INSERT, SELECT, UPDATE | Inferred | No |
+| `teams` | INSERT, SELECT, UPDATE, DELETE | Verified — 5 snake_case policies (migration `20260403120000`) | Yes |
+| `team_members` | INSERT, SELECT, DELETE | Verified — 3 snake_case policies (migration `20260403120000`) | Yes |
+| `team_training_tasks` | INSERT, SELECT, UPDATE, DELETE | Verified — 4 snake_case policies; SELECT covers all team members (migration `20260403120000`) | Yes |
 | `user_profiles` | SELECT, UPDATE | Inferred (user-scoped) | No |
 
 **All RLS enforcement is inferred, not verified in this audit.** See VG-01 and VG-02 in source-of-truth-matrix.md.
@@ -141,14 +144,14 @@ free (0) < privat (1) < kmu (2) < profi (3)
 
 | ID | Violation | Severity | Classification |
 |----|-----------|----------|----------------|
-| AUTH-01 | Railway authMiddleware never rejects — no 401 enforced | Critical | Observed |
+| AUTH-01 | Railway authMiddleware never rejects — no 401 enforced | Critical | **Resolved** — fd68e1e 2026-04-03 |
 | AUTH-02 | Team admin check is React UI code only — no server-side enforcement verified | Critical | Observed |
 | AUTH-03 | Frontend direct DB writes to teams/team_members bypass all API auth layers | High | Observed |
 | AUTH-04 | Token fetching duplicated in 6 frontend files — no centralized accessor | Medium | Observed |
 | AUTH-05 | modelRouter bypassed in /api/chat and /api/plan | Medium | Resolved — fixed in feat(rfb-011) 60848db; selectModel() wired into both handlers
 | AUTH-06 | subscription_tier hardcoded as "free" in Edge Function chat persona | Medium | Observed |
 | AUTH-07 | CORS wildcard header overrides allowlist in Railway backend | Medium | Resolved — fixed in `fix(rfb-005)`: wildcard middleware removed, `ngrok-skip-browser-warning` moved to `cors()` `allowedHeaders` |
-| AUTH-08 | Railway anon fallback assigns 'privat' tier — free-tier users get privat access without a token | Low | Observed |
+| AUTH-08 | Railway anon fallback assigns 'privat' tier — free-tier users get privat access without a token | Low | **Resolved** — fd68e1e 2026-04-03. Default tier for valid tokens with no metadata changed to 'free'. Pre-flight: both production users had tier set in user_metadata before deploy. |
 
 ---
 

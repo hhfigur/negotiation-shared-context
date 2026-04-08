@@ -165,7 +165,7 @@ This matrix identifies the canonical owner and access rules for every core entit
 
 | Gap ID | What Needs Verification | Risk |
 |--------|--------------------------|------|
-| VG-01 | Supabase RLS policies on `teams` and `team_members` — do they enforce `admin_user_id = auth.uid()`? | Critical |
+| VG-01 | ~~Supabase RLS policies on `teams` and `team_members` — do they enforce `admin_user_id = auth.uid()`?~~ **RESOLVED** — 10 snake_case policies applied via migration `20260403120000` (negotiation-buddy). Admin enforcement verified at DB level. | ~~Critical~~ |
 | VG-02 | Supabase RLS on `negotiation_sessions` — is there overlap with Railway's code-enforced user_id check? | High |
 | VG-03 | Stripe webhook handler — how is `user_metadata.tier` updated on subscription change? | High |
 | VG-04 | Profile creation on sign-up — what creates the initial `user_profiles` row? | Medium |

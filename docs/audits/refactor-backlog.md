@@ -878,19 +878,20 @@ State machine transitions should be moved to a `useCoachingFlow` hook.
 
 **Depends On:** Nothing (pure refactor, no logic changes)
 
-**Status: DONE (Phase 1)**
-**Commit:** <hash einfügen> (negotiation-buddy)
-**Verified:** tsc --noEmit clean ✓ | Index.tsx 931 → 870 Zeilen (−61) ✓
-Guided Flow, Strategie-Modus, Plan-Generierung strukturell unverändert ✓
-Kein State verschoben ✓
+**Status: DONE (Phase 1 — all phases complete)**
+**Commit:** <Phase-1-hash> (negotiation-buddy)
+**Verified:** tsc --noEmit clean ✓ | Index.tsx 931 → 870 lines (−61) ✓
+Guided Flow, Strategie-Modus, Plan-Generierung structurally unchanged ✓
+No state moved ✓
 
 Extracted in Phase 1:
-- src/components/CoachHeader.tsx (neu)
-- src/components/ChatProgressBar.tsx (neu)
-- src/utils/buildPlanData.ts (neu)
+- src/components/CoachHeader.tsx (new)
+- src/components/ChatProgressBar.tsx (new)
+- src/utils/buildPlanData.ts (new)
 
-Phase 2 (useGuidedFlow) → RFB-020b (offen, eigener Testplan erforderlich)
-Phase 3 (useProgressEngine) → RFB-020c (offen, eigener Testplan erforderlich)
+Phase 2 → RFB-020b: DONE `64b7432`
+Phase 3 → RFB-020c: DONE `[RFB-020c commit hash]`
+Cumulative Index.tsx reduction: 931 → 635 (−296) across all three phases.
 
 ---
 
@@ -904,6 +905,14 @@ Phase 3 (useProgressEngine) → RFB-020c (offen, eigener Testplan erforderlich)
 **Note:** handleSendRef-Bridge muss beim Extrahieren erhalten bleiben.
 Separater Plan-Pass in Lovable Plan Mode erforderlich.
 
+**Status: DONE**
+Commit: `64b7432` (negotiation-buddy)
+Verified: tsc --noEmit clean ✅ | useGuidedFlow.ts exists (183 lines) ✅ |
+Index.tsx 870 → 732 lines (−138) ✅ | handleSendRef: 2 occurrences in
+Index.tsx (assignment + hook passthrough, no declaration) ✅ |
+handleToneCardSelect stays in Index.tsx (calls handleSend directly) ✅ |
+guidedFlowUI moved into hook (no Index.tsx-local closures) ✅
+
 ---
 
 ### RFB-020c
@@ -915,6 +924,17 @@ Separater Plan-Pass in Lovable Plan Mode erforderlich.
 **Status:** OPEN — eigener Testplan erforderlich vor Implementation
 **Note:** Zwei Fetch-Calls (analyze-progress, generate-plan) + Railway extractInputs
 in einem Effect. Separater Plan-Pass in Lovable Plan Mode erforderlich.
+
+**Status: DONE**
+Commit: `[RFB-020c commit hash]` (negotiation-buddy) — 2026-04-08
+Verified: tsc --noEmit clean ✅ | useProgressEngine.ts created (162 lines) ✅ |
+Index.tsx 732 → 635 lines (−97) ✅ | planGeneratedRef + prevLoadingRef removed
+from Index.tsx ✅ | resetProgress() wired in handleUseCaseStart +
+handleNewSession ✅
+Note: handleSelectSession exposes individual setters (setProgressStatus,
+setNegotiationPlan, setPlanGenerated) for selective session-switch resets —
+acceptable, no bypass of effect logic.
+Cumulative: Index.tsx 931 → 635 (−296) across Phase 1 + RFB-020b + RFB-020c.
 
 ---
 
@@ -1353,8 +1373,8 @@ re-verified — their production behaviour was untested before this fix.
 | RFB-018 | Rename webSearch.ts to reflect actual behaviour — ✅ DONE `675cc21` | P3 | backend | contract-gap |
 | RFB-019 | Consolidate dual toast systems — ✅ DONE `056e672` | P3 | frontend | dead-code |
 | RFB-020 | Decompose Index.tsx god component — ✅ DONE Phase 1 `<hash>` | P3 | frontend | dead-code |
-| RFB-020b | Extract useGuidedFlow hook from Index.tsx | P3 | frontend | dead-code |
-| RFB-020c | Extract useProgressEngine hook from Index.tsx | P3 | frontend | dead-code |
+| RFB-020b | Extract useGuidedFlow hook from Index.tsx — ✅ DONE `64b7432` | P3 | frontend | dead-code |
+| RFB-020c | Extract useProgressEngine hook from Index.tsx — ✅ DONE `[RFB-020c hash]` | P3 | frontend | dead-code |
 | RFB-021 | Wire Zod for API input validation — ✅ DONE `5eed133` | P3 | backend | dead-code |
 | RFB-022 | Fix broken test suite — align with Railway schema — ✅ DONE `ccc4460` | P3 | backend | contract-gap |
 | RFB-023 | Remove dead useChatApi export — ✅ DONE `aa703bd` | P3 | frontend | dead-code |

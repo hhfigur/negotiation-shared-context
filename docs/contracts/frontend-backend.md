@@ -266,7 +266,7 @@ migrate Edge Function call to Railway.
 ```
 
 **Auth:** Bearer JWT — Aufrufer muss `admin_user_id` des Teams sein.
-**Errors:** 400 `VALIDATION_ERROR` | `INVALID_UUID`, 401, 403 `FORBIDDEN`, 404 `TEAM_NOT_FOUND`, 500 `MEMBER_ADD_ERROR`
+**Errors:** 400 `VALIDATION_ERROR` | `INVALID_UUID` | `TEAM_FULL`, 401, 403 `FORBIDDEN`, 404 `TEAM_NOT_FOUND`, 500 `MEMBER_ADD_ERROR`
 
 ---
 

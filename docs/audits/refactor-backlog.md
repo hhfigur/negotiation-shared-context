@@ -409,12 +409,9 @@ At minimum:
 **Depends On:** Nothing (incremental improvement; full resolution requires RFB-007 tier unification)
 
 **Status: DONE**
-Commit: `REAL_HASH` (negotiationcoach-backend) — 2026-04-08
-Verified: tsc --noEmit exit 0 after each step ✓ | grep: 0 consumers of Tier
-from middleware ✓ | grep: 0 consumers of NegotiationType from lib/types ✓
-No API contract, function signature, or business logic changed.
-Side finding: 3 dead types in src/types/index.ts (OpponentStyle,
-ScenarioDifficulty, SimulationTurn) — logged to dead-code-candidates.md.
+Commit: `9c51a43` (negotiationcoach-backend) — 2026-04-08
+Verified: tsc --noEmit exit 0 after each step ✓ | grep: 0 consumers of Tier from middleware ✓ | grep: 0 consumers of NegotiationType from lib/types ✓
+Docs updated: none (no API or schema changes)
 
 ---
 
@@ -1296,7 +1293,7 @@ re-verified — their production behaviour was untested before this fix.
 | RFB-005 | Fix CORS — wildcard overrides allowlist — ✅ DONE `e00e400` | P0 | backend | boundary-violation |
 | RFB-006 | Unify dual Layer 1 implementations | P1 | backend | duplicate-logic |
 | RFB-007 | Unify three incompatible tier systems | P1 | backend + frontend | contract-gap |
-| RFB-008 | Eliminate parallel type maintenance — ✅ DONE `REAL_HASH` | P1 | backend | duplicate-logic |
+| RFB-008 | Eliminate parallel type maintenance — ✅ DONE `9c51a43` | P1 | backend | duplicate-logic |
 | RFB-009 | Propagate actual user tier to Edge Function | P1 | frontend | contract-gap |
 | RFB-010 | Verify Stripe webhook tier update path | P1 | backend | contract-gap |
 | RFB-011 | Integrate modelRouter into /api/chat and /api/plan — ✅ DONE `60848db` | P1 | backend | duplicate-logic |

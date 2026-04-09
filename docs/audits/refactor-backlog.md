@@ -211,8 +211,8 @@ E2E verified 2026-04-09: POST /api/sessions ✓ | POST /api/sessions/:id/message
 (AB-001 SUPABASE_URL blocker resolved 2026-04-08)
 Parallel tasks registered: RLS migration for session tables (RFB-030),
 session_messages retroactive migration traceability (open, low priority).
-Phase B (useSessionManager.ts migration) blocked on: RLS migration (RFB-030) +
-contracts/frontend-backend.md completion (resolved 2026-04-09).
+Phase A fully closed 2026-04-09 (E2E verified post AB-001 fix).
+Phase B (useSessionManager.ts → Railway migration) blocked on: RFB-030 (RLS for session tables).
 
 ---
 

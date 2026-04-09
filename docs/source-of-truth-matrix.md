@@ -45,14 +45,18 @@ This matrix identifies the canonical owner and access rules for every core entit
 |----------|-------|
 | Canonical Owner | Railway backend |
 | Primary Datastore | `negotiation_sessions` table (Supabase PostgreSQL) |
-| Write Path (create) | Railway `POST /api/analyze` → `supabase.from('negotiation_sessions').insert()` with SERVICE_ROLE_KEY |
-| Write Path (update) | Railway `POST /api/enrich` → `.update({layer2_result})` with SERVICE_ROLE_KEY |
-| Write Path (frontend) | `useSessionManager.ts` → direct SDK insert/update — **VIOLATION** |
+| Write Path (create) | Railway `POST /api/sessions` → `negotiation_sessions` INSERT with SERVICE_ROLE_KEY — **Phase A DONE (RFB-004)** |
+| Write Path (analyze) | Railway `POST /api/analyze` / `POST /api/analyze-full` → `negotiation_sessions` INSERT (analysis columns) |
+| Write Path (update) | Railway `PATCH /api/sessions/:id` → `.update()` with SERVICE_ROLE_KEY — **Phase A DONE** |
+| Write Path (enrich) | Railway `POST /api/enrich` → `.update({layer2_result})` with SERVICE_ROLE_KEY |
+| Write Path (frontend) | `useSessionManager.ts` → direct SDK insert/update — **VIOLATION — Phase B migration pending (blocked on RFB-030)** |
 | Read Path | Railway `GET /api/sessions/:id` (owner-scoped) or `useSessionManager.ts` direct select |
-| Sync Rule | AnalysisContext (localStorage) mirrors in-session result. DB is written asynchronously (fire-and-forget in session manager). |
-| Business Logic Owner | Railway Layer 1/2 (analysis); Frontend useSessionManager (session metadata, title, mode) |
-| Auth Owner | Railway: `.eq('user_id', req.user.id)` code-enforced (SERVICE_ROLE_KEY bypasses RLS) |
-| Violations | Frontend bypasses API and writes directly to `negotiation_sessions`. Session title truncation (40 chars) and message load limit (50) are business rules enforced only in frontend. |
+| Sync Rule | AnalysisContext (localStorage) mirrors in-session result. DB is written asynchronously (fire-and-forget in session manager until Phase B). |
+| Business Logic Owner | Railway `sessionRoutes.ts` — title truncation (40 chars), session ownership, status management |
+| Auth Owner | Railway: `assertSessionOwner()` + `.eq('user_id', req.user.id)` code-enforced (SERVICE_ROLE_KEY bypasses RLS — RLS migration pending RFB-030) |
+| Violations | Frontend still bypasses API and writes directly to `negotiation_sessions` (Phase B not yet migrated). |
+
+> **Phase B note:** Phase A fully closed 2026-04-09 (E2E verified post AB-001 fix). Phase B blocked on: RFB-030 (RLS for session tables).
 
 ---
 
@@ -60,14 +64,17 @@ This matrix identifies the canonical owner and access rules for every core entit
 
 | Property | Value |
 |----------|-------|
-| Canonical Owner | **Ambiguous** — Supabase DB schema owns the record, frontend writes it |
+| Canonical Owner | Railway API (`src/api/sessionRoutes.ts`) — **Phase A DONE (RFB-004)** |
 | Primary Datastore | `session_messages` table |
-| Write Path | `useSessionManager.ts` → direct `supabase.from('session_messages').insert()` — fire-and-forget, 2 retries |
+| Write Path | Railway `POST /api/sessions/:id/messages` → INSERT with SERVICE_ROLE_KEY — **Phase A DONE** |
+| Write Path (frontend) | `useSessionManager.ts` → direct `supabase.from('session_messages').insert()` — **VIOLATION — Phase B migration pending (blocked on RFB-030)** |
 | Read Path | `useSessionManager.ts` → direct select, last 50 messages |
-| Sync Rule | In-session: `AnalysisContext.messages[]`; Persisted: `session_messages` table. Sync is eventually consistent (fire-and-forget). |
-| Business Logic Owner | Frontend — message save retry logic, message count limit (50), truncation |
-| Auth Owner | Supabase RLS (inferred via `owns_session()` function) |
-| Violations | No Railway API mediates these writes. Message persistence business rules live in browser JavaScript. Silent failure on message save does not surface to user. |
+| Sync Rule | In-session: `AnalysisContext.messages[]`; Persisted: `session_messages` table. Sync is eventually consistent (fire-and-forget until Phase B). |
+| Business Logic Owner | Railway `sessionRoutes.ts` — 50-message limit enforced server-side via count-before-insert (non-atomic — DB constraint pending RFB-004-C) |
+| Auth Owner | Railway: `assertSessionOwner()` — transitive ownership check via `negotiation_sessions.user_id`. RLS migration pending RFB-030. |
+| Violations | Frontend still bypasses API for message writes (Phase B not yet migrated). `session_messages` table origin untracked — no CREATE TABLE migration file in repo. |
+
+> **Phase B note:** Phase A fully closed 2026-04-09 (E2E verified post AB-001 fix). Phase B blocked on: RFB-030 (RLS for session tables).
 
 ---
 

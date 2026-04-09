@@ -90,7 +90,7 @@ Railway `authMiddleware` + `requireTier('kmu')` gate on `/api/enrich`
 Supabase anon key (for Edge Function call), Supabase RLS (inferred via `owns_session()` function in DB schema)
 
 ### Violations / Ambiguities
-- **HIGH:** `session_messages.insert()` is called fire-and-forget from the browser. PARTIAL: toast surfaced on failure (2026-04-03). Write path ownership moves to Railway in RFB-004. (Observed)
+- **PHASE A COMPLETE (RFB-004-C) — Railway endpoints live. Phase B pending: useSessionManager.ts migration.** Railway endpoints `POST /api/sessions`, `PATCH /api/sessions/:id`, `POST /api/sessions/:id/messages` are implemented in `src/api/sessionRoutes.ts` with `assertSessionOwner()`, title truncation, and 50-message limit enforced server-side. Phase A fully closed 2026-04-09 (E2E verified post AB-001 fix). Phase B (migrating `useSessionManager.ts` to Railway API calls) blocked on: RFB-030 (RLS for session tables).
 - **Observed:** Railway also has a `/api/chat` endpoint (non-streaming fallback) using a hardcoded `claude-haiku` model, not `modelRouter`. The relationship between this fallback and the Edge Function primary path is undocumented.
 - **Inferred:** The Railway `/api/chat` is the original implementation; the Edge Function `/chat` is a later addition. The fallback may be dead code.
 

@@ -468,6 +468,9 @@ Phase B migrates `useSessionManager.ts` (negotiation-buddy) from direct Supabase
 - No JWT validation — function accepts any request (VG-05-A, severity High)
 - Consequence: sending the correct tier value (RFB-009) has zero functional effect until the Edge Function enforces tier server-side
 
+**VG-07 Decision (2026-04-09 — ADR-004):**
+The Edge Function `/functions/v1/chat` is confirmed as the canonical chat path for **ALL** tiers. Railway `/api/chat` is NOT a frontend chat endpoint. Tier enforcement will be added inside the Edge Function (JWT read + Gemini model switching). See ADR-004 for full rationale.
+
 ---
 
 ## 4. Type Drift Register

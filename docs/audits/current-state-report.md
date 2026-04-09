@@ -251,6 +251,7 @@ These patterns appear to be artifacts of a Lovable-generated frontend that was b
 | VG-05 | ~~Does the Edge Function `/chat` actually enforce tier via JWT or receive only the hardcoded "free"?~~ **RESOLVED 2026-04-09** — `subscription_tier` IS read from request body (`index.ts:82`) and injected into system prompt as plain text only. No model selection, no feature gating, no branching. Model hardcoded to `google/gemini-3-flash-preview` for all tiers. No JWT auth at all. Tier is decorative metadata. RFB-009 scope must expand to include Edge Function enforcement. | ~~Medium~~ Closed |
 | VG-05-A | Edge Function `/chat` has no authentication — no JWT validation, no `supabase.auth.getUser()`, any caller with `LOVABLE_API_KEY` can invoke it | High | Observed 2026-04-09 |
 | VG-06 | Is Edge Function `generate-plan` active, or has Railway `/api/plan` replaced it? | Low |
+| VG-07 | **RESOLVED 2026-04-09 — see ADR-004.** Chat path decision: Option A accepted. Edge Function canonical for all tiers. Tier enforcement via JWT inside EF. |
 
 ---
 

@@ -96,3 +96,4 @@ Full details: `docs/audits/current-state-report.md`
 | VG-03 | Where does Stripe webhook update `user_metadata.tier`? Is it active in production? | High |
 | VG-04 | What creates the initial `user_profiles` row on signup? | Medium |
 | VG-05 | **RESOLVED 2026-04-09** — tier is decorative prompt metadata only; no enforcement, no model switching, no JWT auth (VG-05-A logged, severity High) | ~~Medium~~ |
+| VG-07 | Which chat path should tier-paying users use? **RESOLVED 2026-04-09 — ADR-004:** Edge Function for all tiers, tier enforcement via JWT inside EF. |

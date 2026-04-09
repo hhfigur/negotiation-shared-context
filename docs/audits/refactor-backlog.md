@@ -452,10 +452,16 @@ Docs updated: none (no API or schema changes)
 
 **Canonical Owner:** `negotiation-buddy` — `src/hooks/useChat.ts`
 
-**Recommended Action:**
-1. Read the user's tier from `useAuth().user.user_metadata.tier` (or equivalent)
-2. Map it through the `persona_type` → `Tier` translation added in RFB-007
-3. Pass the resolved tier value as `subscription_tier`
+**Recommended Action (revised post VG-07 — 2026-04-09):**
+ADR-004 confirmed: Edge Function is canonical chat path for all tiers.
+Tier enforcement must be added INSIDE `supabase/functions/chat/index.ts`:
+1. Replace anon-key auth with `supabase.auth.getUser()` — resolve user tier from JWT server-side
+2. Map resolved tier to Gemini model via Lovable AI Gateway `model` parameter (prerequisite: verify LovableGW model switching)
+3. Add tier-based system prompt branching (response depth, market data inclusion flags)
+4. Update `useChat.ts` to send user JWT instead of anon key (required for server-side JWT read to work)
+
+Target: `negotiation-buddy/supabase/functions/chat/index.ts` (primary)
+        `negotiation-buddy/src/hooks/useChat.ts` (auth header only)
 
 **Required Docs/Contracts to Update:**
 - `docs/contracts/frontend-backend.md` — Section 3 (Edge Function request shape), CON-01
@@ -1595,6 +1601,10 @@ VG-05 RESOLVED 2026-04-09 — tier read but not enforced; no JWT auth (VG-05-A)
   RFB-007 Step B and RFB-009 scope must expand to include Edge Function enforcement logic
   └─ RFB-007 (tier unification)
        └─ RFB-009 (propagate tier to Edge Function + add EF enforcement)
+
+VG-07 RESOLVED 2026-04-09 — ADR-004 accepted (Option A).
+  EF = canonical chat path all tiers. Unblocks RFB-009 revised scope.
+  └─ RFB-009 (revised: target index.ts JWT read + model switching)
 
 RFB-007 (tier enum unification — BLOCKS billing)
   └─ RFB-032 (Stripe webhook handler — DEFERRED until Stripe live)

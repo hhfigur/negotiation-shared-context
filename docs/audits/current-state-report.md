@@ -85,7 +85,7 @@ The following tables are written directly from browser JavaScript via the Supaba
 | Table | Operation | File | Business Logic in Frontend |
 |-------|-----------|------|---------------------------|
 | `negotiation_sessions` | INSERT, UPDATE | `useSessionManager.ts` | Title truncation (40 chars), mode selection |
-| `session_messages` | INSERT | `useSessionManager.ts` | Retry logic (2x, 1500ms), count limit (50) |
+| `session_history` | INSERT | `useSessionManager.ts` | Retry logic (2x, 1500ms), count limit (50) |
 | `teams` | INSERT | `TeamDashboard.tsx` | Admin assignment |
 | `team_members` | INSERT, DELETE | `TeamDashboard.tsx` | Membership logic |
 | `team_training_tasks` | INSERT, UPDATE | `TeamDashboard.tsx` | Task assignment |
@@ -233,7 +233,7 @@ These patterns appear to be artifacts of a Lovable-generated frontend that was b
 | Pattern | Location | Recommended Retirement |
 |---------|----------|----------------------|
 | Direct `negotiation_sessions` writes from `useSessionManager.ts` | Frontend hook | Move to Railway `POST /api/sessions` endpoint |
-| Direct `session_messages` writes from `useSessionManager.ts` | Frontend hook | Move to Railway `POST /api/sessions/:id/messages` endpoint |
+| Direct `session_history` writes from `useSessionManager.ts` | Frontend hook | Move to Railway `POST /api/sessions/:id/messages` endpoint |
 | Team CRUD via direct Supabase SDK | `TeamDashboard.tsx` | Move to Railway team management endpoints |
 | Business rules (title truncation, message limit, retry logic) in frontend hooks | `useSessionManager.ts` | Move to server |
 | persona_type enum separate from tier system | DB schema + frontend | Unify under single tier contract |
@@ -248,7 +248,8 @@ These patterns appear to be artifacts of a Lovable-generated frontend that was b
 | VG-02 | Does Supabase RLS on `negotiation_sessions` prevent cross-user access when anon_key is used? | High |
 | VG-03 | Where does the Stripe webhook update `user_metadata.tier`? Is this active? | High |
 | VG-04 | What creates the initial `user_profiles` row on signup (trigger, function, or frontend)? | Medium |
-| VG-05 | Does the Edge Function `/chat` actually enforce tier via JWT or receive only the hardcoded "free"? | Medium |
+| VG-05 | ~~Does the Edge Function `/chat` actually enforce tier via JWT or receive only the hardcoded "free"?~~ **RESOLVED 2026-04-09** — `subscription_tier` IS read from request body (`index.ts:82`) and injected into system prompt as plain text only. No model selection, no feature gating, no branching. Model hardcoded to `google/gemini-3-flash-preview` for all tiers. No JWT auth at all. Tier is decorative metadata. RFB-009 scope must expand to include Edge Function enforcement. | ~~Medium~~ Closed |
+| VG-05-A | Edge Function `/chat` has no authentication — no JWT validation, no `supabase.auth.getUser()`, any caller with `LOVABLE_API_KEY` can invoke it | High | Observed 2026-04-09 |
 | VG-06 | Is Edge Function `generate-plan` active, or has Railway `/api/plan` replaced it? | Low |
 
 ---

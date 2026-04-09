@@ -461,6 +461,13 @@ Phase B migrates `useSessionManager.ts` (negotiation-buddy) from direct Supabase
 - Railway backend uses different tier values (`free | privat | kmu | profi`)
 - Edge Function cannot enforce tier-based features without the correct tier value
 
+**VG-05 Finding (2026-04-09):**
+- `subscription_tier` IS read at `chat/index.ts:82` — passed to `buildSystemPrompt()` and injected as plain text (`Abo-Stufe: ${value}`)
+- No conditional logic, no model switching, no feature gating on tier value
+- Model is hardcoded: `google/gemini-3-flash-preview` for all tiers
+- No JWT validation — function accepts any request (VG-05-A, severity High)
+- Consequence: sending the correct tier value (RFB-009) has zero functional effect until the Edge Function enforces tier server-side
+
 ---
 
 ## 4. Type Drift Register

@@ -95,4 +95,4 @@ Full details: `docs/audits/current-state-report.md`
 | VG-02 | Does Supabase RLS on `negotiation_sessions` prevent cross-user reads with anon_key? | High |
 | VG-03 | Where does Stripe webhook update `user_metadata.tier`? Is it active in production? | High |
 | VG-04 | What creates the initial `user_profiles` row on signup? | Medium |
-| VG-05 | Does Edge Function `/chat` read actual user tier from JWT or use the hardcoded "free"? | Medium |
+| VG-05 | **RESOLVED 2026-04-09** — tier is decorative prompt metadata only; no enforcement, no model switching, no JWT auth (VG-05-A logged, severity High) | ~~Medium~~ |

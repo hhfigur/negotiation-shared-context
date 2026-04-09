@@ -377,6 +377,22 @@ Remaining: mapping between `persona_type` and `Tier` is not yet wired at call si
 
 **Depends On:** VG-05 (verify Edge Function tier enforcement); RFB-006 (tier must be consistent across analysis paths)
 
+**Step A — DONE**
+Commit: `1c68185` (negotiationcoach-backend) + `7528447` (shared-context) — 2026-04-09
+Verified: tsc --noEmit clean ✓ | src/utils/tierUtils.ts created (18 lines) ✓ | no existing files modified ✓
+Added: personaTypeToTier(personaType: string | null | undefined): Tier
+Mapping: 'pro' → 'profi' | 'kmu' → 'kmu' | 'private' → 'privat' | default → 'free'
+Docs: shared-context/docs/contracts/frontend-backend.md — Type Drift Register, CON-02, Section 4.1 updated
+
+**Step B — UNBLOCKED**
+VG-05 resolved 2026-04-09 — Edge Function reads `subscription_tier` but does not enforce it.
+Scope expanded: wire `personaTypeToTier()` into call sites + add Edge Function server-side tier
+enforcement (JWT read + model/feature branching). Requires Lovable planning pass.
+
+**Step C — BLOCKED**
+Blocker: VG-06 unresolved — negotiate Edge Function active/inactive status unknown.
+Planned scope: propagate correct tier to Edge Function (RFB-009 dependency).
+
 ---
 
 ### RFB-008
@@ -450,6 +466,13 @@ Docs updated: none (no API or schema changes)
 - Unit: `useChat.ts` sends `"free"` for a user with no tier metadata
 
 **Depends On:** RFB-007 (tier unification), VG-05 (verify Edge Function reads the tier)
+
+**Scope update — 2026-04-09:**
+VG-05 resolution confirms that fixing `useChat.ts` alone (original scope) is insufficient.
+The Edge Function reads `subscription_tier` but applies no conditional logic — it is
+decorative prompt metadata only. RFB-009 must be expanded to include Edge Function
+enforcement: server-side JWT read via `supabase.auth.getUser()` + model/feature branching
+on resolved tier. Updated scope requires Lovable planning pass before implementation.
 
 ---
 
@@ -1515,7 +1538,7 @@ re-verified — their production behaviour was untested before this fix.
 | RFB-004 | Move session/message writes to Railway API — ✅ DONE | P0 | backend + frontend | boundary-violation |
 | RFB-005 | Fix CORS — wildcard overrides allowlist — ✅ DONE `e00e400` | P0 | backend | boundary-violation |
 | RFB-006 | Unify dual Layer 1 implementations | P1 | backend | duplicate-logic |
-| RFB-007 | Unify three incompatible tier systems — ⚙ Step A DONE `1c68185` (tierUtils.ts); Steps B/C pending VG-05/VG-06 | P1 | backend + frontend | contract-gap |
+| RFB-007 | Unify three incompatible tier systems — Step A ✅ `1c68185` / Steps B+C blocked (VG-05, VG-06) | P1 | backend + frontend | contract-gap |
 | RFB-008 | Eliminate parallel type maintenance — ✅ DONE `9c51a43` | P1 | backend | duplicate-logic |
 | RFB-009 | Propagate actual user tier to Edge Function | P1 | frontend | contract-gap |
 | RFB-010 | Verify Stripe webhook tier update path — ✅ INVESTIGATED 2026-04-09 (handler absent; spawned RFB-032) | P1 | backend | contract-gap |
@@ -1568,9 +1591,10 @@ VG-06 resolve
   └─ RFB-006 (retire or unify Edge Function engine)
        └─ RFB-022 (fix tests — only one schema to target)
 
-VG-05 resolve
+VG-05 RESOLVED 2026-04-09 — tier read but not enforced; no JWT auth (VG-05-A)
+  RFB-007 Step B and RFB-009 scope must expand to include Edge Function enforcement logic
   └─ RFB-007 (tier unification)
-       └─ RFB-009 (propagate tier to Edge Function)
+       └─ RFB-009 (propagate tier to Edge Function + add EF enforcement)
 
 RFB-007 (tier enum unification — BLOCKS billing)
   └─ RFB-032 (Stripe webhook handler — DEFERRED until Stripe live)

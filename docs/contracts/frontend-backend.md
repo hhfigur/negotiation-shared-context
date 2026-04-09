@@ -416,8 +416,7 @@ title.length > 40 ? title.slice(0, 37) + '...' : title
 
 Phase B migrates `useSessionManager.ts` (negotiation-buddy) from direct Supabase SDK writes to Railway API calls for session and message persistence. Phase A (Railway endpoints) is complete.
 
-**Phase B blockers:**
-1. RFB-031 — fix `session_history` table name in `sessionRoutes.ts` (currently referencing non-existent `session_messages`) — must be fixed before Phase B migration
+**Phase B blockers:** None — RFB-030 (RLS) and RFB-031 (table name fix `2c51cb4`) both closed. Phase B ready to proceed.
 
 **When Phase B is complete:**
 - `useSessionManager.ts` writes via `POST /api/sessions`, `PATCH /api/sessions/:id`, `POST /api/sessions/:id/messages`

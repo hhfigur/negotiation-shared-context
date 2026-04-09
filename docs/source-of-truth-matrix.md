@@ -62,21 +62,21 @@ This matrix identifies the canonical owner and access rules for every core entit
 
 ### 4. Session History (Messages)
 
-> **⚠ TABLE NAME CORRECTION (RFB-030, 2026-04-09):** Previously documented as `session_messages`. Live DB confirms actual table name is `session_history`. TypeScript call sites in `sessionRoutes.ts` reference the wrong name — tracked as RFB-031 (silent data loss).
+> **TABLE NAME CORRECTION (RFB-030, 2026-04-09):** Previously documented as `session_messages`. Live DB confirms actual table name is `session_history`. TypeScript call sites fixed in RFB-031 (`2c51cb4`, 2026-04-09).
 
 | Property | Value |
 |----------|-------|
-| Canonical Owner | Railway API (`src/api/sessionRoutes.ts`) — **Phase A DONE (RFB-004)** — ⚠ inserts silently failing (RFB-031) |
+| Canonical Owner | Railway API (`src/api/sessionRoutes.ts`) — **Phase A DONE (RFB-004)** — RFB-031 closed `2c51cb4` |
 | Primary Datastore | `session_history` table |
-| Write Path | Railway `POST /api/sessions/:id/messages` → INSERT with SERVICE_ROLE_KEY — **⚠ targeting wrong table `session_messages` — RFB-031** |
+| Write Path | Railway `POST /api/sessions/:id/messages` → INSERT into `session_history` with SERVICE_ROLE_KEY — **Phase A DONE (RFB-031 closed `2c51cb4`)** |
 | Write Path (frontend) | `useSessionManager.ts` → direct `supabase.from('session_history').insert()` — **VIOLATION — Phase B migration pending** |
 | Read Path | `useSessionManager.ts` → direct select, last 50 messages |
 | Sync Rule | In-session: `AnalysisContext.messages[]`; Persisted: `session_history` table. Sync is eventually consistent (fire-and-forget until Phase B). |
 | Business Logic Owner | Railway `sessionRoutes.ts` — 50-message limit enforced server-side via count-before-insert (non-atomic — DB constraint pending RFB-004-C) |
 | Auth Owner | Supabase RLS: `user_sees_own_session_history` policy (FOR ALL, transitive ownership via `negotiation_sessions.user_id`). Verified pre-existing 2026-04-09. |
-| Violations | Railway inserts targeting non-existent `session_messages` table — silently failing (RFB-031). Frontend bypasses API for message writes (Phase B pending, now unblocked). `session_history` table origin untracked — no CREATE TABLE migration file in repo. |
+| Violations | Frontend bypasses API for message writes (Phase B pending — now unblocked). `session_history` table origin untracked — no CREATE TABLE migration file in repo. |
 
-> **Phase B note:** Phase A fully closed 2026-04-09. Phase B unblocked (RLS confirmed via RFB-030). Blocked on RFB-031 resolution (table name fix must precede Phase B migration).
+> **Phase B note:** Phase A fully closed 2026-04-09. RFB-030 (RLS) closed. RFB-031 (table name fix) closed `2c51cb4`. Phase B fully unblocked — ready to proceed.
 
 ---
 

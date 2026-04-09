@@ -12,7 +12,7 @@ Canonical reference for which service reads and writes each Supabase table, what
 | Table | Reader(s) | Writer(s) | Key Used (write) | RLS Active | Canonical Owner |
 |-------|-----------|-----------|-----------------|------------|-----------------|
 | `negotiation_sessions` | Railway (`GET /api/sessions/:id`), Frontend SDK (reads) | Railway (`POST /api/sessions`, `PATCH /api/sessions/:id`, `POST /api/analyze`, `POST /api/enrich`) + Frontend SDK (violation — Phase B pending) | SERVICE_ROLE_KEY (Railway); anon key (frontend violation) | Yes — `user_sees_own_sessions` (pre-existing, verified 2026-04-09) | Railway backend |
-| `session_history` | Frontend SDK (`useSessionManager.ts` — direct select, last 50) | Railway (`POST /api/sessions/:id/messages` — ⚠ wrong table name, see RFB-031) + Frontend SDK (violation — Phase B pending) | SERVICE_ROLE_KEY (Railway); anon key (frontend violation) | Yes — `user_sees_own_session_history` (pre-existing, verified 2026-04-09) | Railway API (`sessionRoutes.ts`) |
+| `session_history` | Frontend SDK (`useSessionManager.ts` — direct select, last 50) | Railway (`POST /api/sessions/:id/messages` — RFB-031 fixed `2c51cb4`) + Frontend SDK (violation — Phase B pending) | SERVICE_ROLE_KEY (Railway); anon key (frontend violation) | Yes — `user_sees_own_session_history` (pre-existing, verified 2026-04-09) | Railway API (`sessionRoutes.ts`) |
 | `teams` | Frontend SDK (`TeamDashboard.tsx`) | Railway (`POST /api/teams`, Phase A DONE commit `0b10d9c`) | SERVICE_ROLE_KEY (Railway); anon key removed (Phase B complete) | Yes — migration `20260403120000` (snake_case policies) | Railway backend |
 | `team_members` | Frontend SDK (`TeamDashboard.tsx`) | Railway (`POST /api/teams/:id/members`, `DELETE /api/teams/:id/members/:userId`) | SERVICE_ROLE_KEY (Railway) | Yes — migration `20260403120000` | Railway backend |
 | `team_training_tasks` | Frontend SDK (`TeamDashboard.tsx`) | Frontend SDK (`supabase.from('team_training_tasks').update()`) — Phase C write migration pending | anon key (frontend) | Yes — migration `20260403120000` | Supabase DB (interim) → Railway (Phase C) |
@@ -54,7 +54,7 @@ Canonical reference for which service reads and writes each Supabase table, what
 
 **RLS Status:** Pre-existing policy `user_sees_own_session_history` (FOR ALL, transitive ownership via `negotiation_sessions.user_id`) confirmed 2026-04-09 (RFB-030). No migration needed.
 
-**⚠ RFB-031:** Railway `sessionRoutes.ts` currently INSERTs into `session_messages` (non-existent). All Railway message writes are silently failing until fixed.
+**RFB-031 CLOSED `2c51cb4` (2026-04-09):** Both `.from('session_messages')` calls renamed to `.from('session_history')`. `turn_number: (count ?? 0) + 1` added to INSERT. Railway message writes now functional.
 
 **Note:** `session_history` origin is untracked — no `CREATE TABLE` migration exists in either repo. Confirmed schema (live DB, 2026-04-09): `id`, `session_id`, `turn_number`, `role`, `content`, `metadata`, `created_at`.
 

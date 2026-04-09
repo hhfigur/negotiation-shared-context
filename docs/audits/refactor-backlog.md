@@ -212,7 +212,7 @@ E2E verified 2026-04-09: POST /api/sessions ✓ | POST /api/sessions/:id/message
 Parallel tasks: RFB-030 closed 2026-04-09 (RLS pre-existing, no migration needed);
 session_history retroactive migration traceability (open, low priority).
 Phase A fully closed 2026-04-09 (E2E verified post AB-001 fix).
-Phase B (useSessionManager.ts → Railway migration) blocked on: RFB-031 (session_history table name fix in sessionRoutes.ts).
+Phase B (useSessionManager.ts → Railway migration) unblocked — RFB-031 closed `2c51cb4`.
 
 ---
 
@@ -1417,7 +1417,11 @@ Live DB table is `session_history`. All docs, contracts, and TypeScript code ref
 
 **Blocks:** RFB-004 Phase B (session persistence must work before frontend migration)
 
-**Status: OPEN**
+**Status: DONE**
+Commit: `2c51cb4` (negotiationcoach-backend) — 2026-04-09
+Fixed: both `.from('session_messages')` calls → `.from('session_history')` in `sessionRoutes.ts`
+Added: `turn_number: (count ?? 0) + 1` to INSERT (required NOT NULL column)
+Unblocks: RFB-004 Phase B — session persistence confirmed working.
 
 ---
 
@@ -1491,7 +1495,7 @@ re-verified — their production behaviour was untested before this fix.
 | RFB-028 | Enforce max_members limit in POST /api/teams/:id/members — ✅ DONE `402ee63` | P2 | backend | boundary-violation |
 | RFB-029 | negotiation_sessions missing analysis columns — Railway analyze inserts silently failing — ✅ DONE `f759c18` | P0 | backend | boundary-violation |
 | RFB-030 | Add RLS policies for negotiation_sessions and session_history — ✅ DONE 2026-04-09 (re-scoped) | P1 | backend (migrations) | boundary-violation |
-| RFB-031 | Fix session_history table name in sessionRoutes.ts and all TypeScript call sites — ⬜ OPEN | P0 | backend | boundary-violation |
+| RFB-031 | Fix session_history table name in sessionRoutes.ts — ✅ DONE `2c51cb4` | P0 | backend | boundary-violation |
 | AB-001 | Railway SUPABASE_URL placeholder fixed — ✅ DONE 2026-04-08 | P0 | infrastructure | infrastructure |
 
 ---
@@ -1507,8 +1511,8 @@ RFB-001 (auth enforcement)
 RFB-030 (RLS for session tables — DONE, pre-existing)
   └─ RFB-004 Phase B (useSessionManager.ts migration to Railway API)
 
-RFB-031 (fix session_history table name — P0)
-  └─ RFB-004 Phase B (session persistence must work before frontend migration)
+RFB-031 (fix session_history table name — DONE `2c51cb4`)
+  └─ RFB-004 Phase B (unblocked)
 
 RFB-002 (RLS verification)
   └─ RFB-003 (defence-in-depth after API layer added)

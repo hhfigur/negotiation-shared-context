@@ -473,8 +473,26 @@ Phase B migrates `useSessionManager.ts` (negotiation-buddy) from direct Supabase
 | `ChatMessage` | `src/lib/types.ts` | `src/lib/types.ts` | Maintained in parallel |
 | `NegotiationType` | `src/lib/types.ts` | `src/types/index.ts` | Consistent enum values |
 | `Tier` | Not defined in frontend | `'free' \| 'privat' \| 'kmu' \| 'profi'` | **Drift** — frontend uses persona_type instead |
-| `persona_type` DB enum | `'pro' \| 'kmu' \| 'private'` | Not defined | **Drift** — no backend mapping |
+| `persona_type` DB enum | `'pro' \| 'kmu' \| 'private'` | Mapped via `personaTypeToTier()` in `src/utils/tierUtils.ts` | **Partial resolution (RFB-007 Step A)** — mapping function added; call sites not yet wired |
 | Edge Function inputs | `user_goal / user_walkaway` | `own_target / own_minimum` | **CRITICAL DRIFT** — incompatible schemas |
+
+---
+
+### 4.1 Canonical Tier Mapping Function
+
+**File:** `src/utils/tierUtils.ts` — added RFB-007 Step A (2026-04-09)
+
+| DB `persona_type` | Railway `Tier` |
+|---|---|
+| `'pro'` | `'profi'` |
+| `'kmu'` | `'kmu'` |
+| `'private'` | `'privat'` |
+| `null` / `undefined` / unknown | `'free'` |
+
+**Function:** `personaTypeToTier(personaType: string | null | undefined): Tier`
+**Import:** `import { personaTypeToTier } from '../utils/tierUtils';`
+**Purpose:** Pure mapping — no side effects, no DB calls, no external dependencies.
+**Status:** Function exists. Call sites not yet wired — pending RFB-007 Steps B/C.
 
 ---
 
@@ -525,7 +543,7 @@ Routes covered: `/api/analyze`, `/api/chat`, `/api/plan`, `/api/enrich`, `/api/a
 | ID | Violation | Impact |
 |----|-----------|--------|
 | CON-01 | `subscription_tier` always "free" in Edge Function chat request | Edge Function cannot apply tier-based behavior |
-| CON-02 | persona_type enum (pro/kmu/private) has no mapping to Railway tier (free/privat/kmu/profi) | Feature gating inconsistent between chat and analysis paths |
+| CON-02 | persona_type enum (pro/kmu/private) mapped via `personaTypeToTier()` (`src/utils/tierUtils.ts`) — **PARTIAL RESOLVED RFB-007 Step A** | Mapping function exists; call sites not yet wired (Steps B/C pending VG-05 and VG-06) |
 | CON-03 | Edge Function `negotiate` has completely different NegotiationInputs schema than Railway `/api/analyze` | Parallel analysis paths produce incomparable results |
 | CON-04 | Types maintained in parallel (no shared package) — frontend and backend can silently drift | Runtime errors on schema mismatch |
 | CON-05 | Railway URL hardcoded in apiClient.ts as production URL | `VITE_API_URL` env var ignored if not set — dev vs prod confusion |

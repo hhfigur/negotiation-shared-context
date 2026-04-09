@@ -349,7 +349,9 @@ Tests in `tests/layer1/` reference the Edge Function schema and are currently br
 | Supabase DB `persona_type` enum | `pro \| kmu \| private` | User UI mode |
 | Edge Function chat persona | `"free"` (hardcoded in `useChat.ts`) | Tier signal to Edge Function |
 
-No mapping between `persona_type` and `Tier` exists in either repo. The Edge Function always receives `"free"` regardless of actual subscription.
+**Step A DONE — `1c68185` (2026-04-09):** `src/utils/tierUtils.ts` added with `personaTypeToTier(personaType): Tier` — canonical mapping function. Additive only, no existing logic modified.
+
+Remaining: mapping between `persona_type` and `Tier` is not yet wired at call sites. The Edge Function always receives `"free"` regardless of actual subscription. Steps B/C pending VG-05 and VG-06.
 
 **Confidence:** High — three separate observations in source
 
@@ -1513,7 +1515,7 @@ re-verified — their production behaviour was untested before this fix.
 | RFB-004 | Move session/message writes to Railway API — ✅ DONE | P0 | backend + frontend | boundary-violation |
 | RFB-005 | Fix CORS — wildcard overrides allowlist — ✅ DONE `e00e400` | P0 | backend | boundary-violation |
 | RFB-006 | Unify dual Layer 1 implementations | P1 | backend | duplicate-logic |
-| RFB-007 | Unify three incompatible tier systems | P1 | backend + frontend | contract-gap |
+| RFB-007 | Unify three incompatible tier systems — ⚙ Step A DONE `1c68185` (tierUtils.ts); Steps B/C pending VG-05/VG-06 | P1 | backend + frontend | contract-gap |
 | RFB-008 | Eliminate parallel type maintenance — ✅ DONE `9c51a43` | P1 | backend | duplicate-logic |
 | RFB-009 | Propagate actual user tier to Edge Function | P1 | frontend | contract-gap |
 | RFB-010 | Verify Stripe webhook tier update path — ✅ INVESTIGATED 2026-04-09 (handler absent; spawned RFB-032) | P1 | backend | contract-gap |

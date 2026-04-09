@@ -30,8 +30,8 @@ This matrix identifies the canonical owner and access rules for every core entit
 |----------|-------|
 | Canonical Owner | Supabase JWT metadata — **Inferred** |
 | Primary Datastore | `user_metadata.tier` or `app_metadata.tier` on Supabase JWT |
-| Write Path | **Missing** — Stripe webhook → Supabase user update (mechanism not visible in either repo) |
-| Read Path | Railway: `user.user_metadata.tier \|\| user.app_metadata.tier` in `authMiddleware.ts`; defaults to `'privat'` |
+| Write Path | **CONFIRMED ABSENT** — No Stripe webhook handler exists in either repo. `stripe` npm package not installed. `app_metadata.tier` is never written post-signup. Tier is immutable after account creation. Implementation registered as RFB-032 (DEFERRED — pre-billing). |
+| Read Path | Railway: `user.user_metadata.tier \|\| user.app_metadata.tier` in `authMiddleware.ts`; defaults to `'free'` (changed from `'privat'` — AUTH-08, 2026-04-03) |
 | Sync Rule | Read fresh from JWT on each Railway request. No caching. |
 | Business Logic Owner | Railway `authMiddleware` + `modelRouter.ts` |
 | Auth Owner | Stripe (billing) → Supabase (stored) |
@@ -176,7 +176,7 @@ This matrix identifies the canonical owner and access rules for every core entit
 |--------|--------------------------|------|
 | VG-01 | ~~Supabase RLS policies on `teams` and `team_members` — do they enforce `admin_user_id = auth.uid()`?~~ **RESOLVED** — 10 snake_case policies applied via migration `20260403120000` (negotiation-buddy). Admin enforcement verified at DB level. | ~~Critical~~ |
 | ~~VG-02~~ | ~~Supabase RLS on `negotiation_sessions`~~ **RESOLVED 2026-04-09** — `user_sees_own_sessions` policy confirmed pre-existing. No conflict: SERVICE_ROLE_KEY bypasses RLS for Railway writes; `assertSessionOwner()` is defence-in-depth. | ~~High~~ |
-| VG-03 | Stripe webhook handler — how is `user_metadata.tier` updated on subscription change? | High |
+| VG-03 | ~~Stripe webhook handler — how is `user_metadata.tier` updated on subscription change?~~ — **RESOLVED 2026-04-09:** Confirmed absent. No handler, no stripe package. RFB-032 registered (DEFERRED). | ~~High~~ Closed |
 | VG-04 | Profile creation on sign-up — what creates the initial `user_profiles` row? | Medium |
 | VG-05 | Edge Function `/chat` actual tier enforcement — does it read subscription_tier from JWT or use the hardcoded "free"? | Medium |
 | VG-06 | Edge Function `generate-plan` — is this actively used, or has Railway `/api/plan` superseded it? | Low |

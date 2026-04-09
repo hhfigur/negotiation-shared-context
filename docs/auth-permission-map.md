@@ -37,6 +37,9 @@ Browser
 - Sends as `Authorization: Bearer <token>` header to Railway API
 - Railway validates token via `supabase.auth.getUser(token)` in `authMiddleware.ts`
 
+**JWT Tier Immutability (Confirmed 2026-04-09 — RFB-010):**
+`app_metadata.tier` and `user_metadata.tier` are **never written after signup**. No Stripe webhook handler exists in either repo; `stripe` npm package is not installed. The tier embedded in the JWT at login time never changes regardless of subscription changes. Consequence: Stripe upgrades/downgrades have no effect on Railway tier enforcement. Implementation deferred as RFB-032 (blocked on RFB-007).
+
 **Duplication (Observed):** Token fetching via `supabase.auth.getSession()` is repeated in at least 6 files:
 - `useSessionManager.ts`
 - `NegotiationCanvas.tsx`
@@ -130,7 +133,7 @@ free (0) < privat (1) < kmu (2) < profi (3)
 | Table | Frontend Writes | RLS Enforcement | Verified |
 |-------|----------------|-----------------|---------|
 | `negotiation_sessions` | INSERT, UPDATE | Inferred (`owns_session()`) | No |
-| `session_messages` | INSERT | Inferred | No |
+| `session_history` | INSERT | Inferred | No |
 | `teams` | INSERT, SELECT, UPDATE, DELETE | Verified — 5 snake_case policies (migration `20260403120000`) | Yes |
 | `team_members` | INSERT, SELECT, DELETE | Verified — 3 snake_case policies (migration `20260403120000`) | Yes |
 | `team_training_tasks` | INSERT, SELECT, UPDATE, DELETE | Verified — 4 snake_case policies; SELECT covers all team members (migration `20260403120000`) | Yes |

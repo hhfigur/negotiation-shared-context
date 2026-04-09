@@ -455,42 +455,42 @@ Docs updated: none (no API or schema changes)
 
 **Title:** Verify Stripe webhook tier update path — resolve VG-03
 
-**Repo:** `negotiationcoach-backend` (or Supabase webhook handler — location unknown)
+**Repo:** `negotiationcoach-backend`
 
 **Category:** `contract-gap`
 
-**Evidence (Missing):**
-No Stripe webhook handler updating `user_metadata.tier` is visible in either repo. The tier write path from Stripe → Supabase JWT is entirely unverified. If this path is broken, a user who upgrades their subscription never receives tier-gated features.
+**Evidence (Confirmed — Investigation 2026-04-09):**
+No Stripe webhook handler exists in either repo. Confirmed via exhaustive grep for `webhook` and `stripe` across all `.ts` source files in `negotiationcoach-backend/` and `negotiation-buddy/` — zero matches in source code. The `stripe` npm package is not installed in either repo. CLAUDE.md lists Stripe in the stack declaration but no implementation exists.
 
-**Confidence:** Low — the mechanism is assumed to exist but was not found in source
+**Confidence:** High — absence confirmed by grep, package.json inspection, and full edge function inventory.
 
-**Risk:** Subscription upgrades do not take effect in the product. Stripe charges without delivering feature access.
+**Risk:** P0 (launch blocker for billing). Stripe charges without delivering feature access. `POST /api/enrich` returns 403 forever after upgrade. `modelRouter` selects wrong model for paying users. Over-entitlement on cancellation (tier never downgraded). Frontend may show correct tier (reads `user_profiles.subscription_tier` from DB) while Railway API still blocks — silent UI/API split.
 
-**Canonical Owner:** TBD — must be located before action can be taken
+**Additional Finding — Tier Enum Mismatch (RFB-007 dependency):**
+Frontend `subscription_tier` enum: `"free" | "starter" | "professional" | "expert" | "team"`
+Backend `Tier` enum: `"free" | "privat" | "kmu" | "profi"`
+These are incompatible. Any webhook writing a frontend-sourced tier value to `app_metadata` would not be recognised by `authMiddleware`. RFB-007 must be resolved before or alongside RFB-032.
 
-**Recommended Action:**
-1. Search both repos and Supabase dashboard for a Stripe webhook handler
-2. Verify that on `customer.subscription.updated`, `user_metadata.tier` is updated on the Supabase user
-3. If the handler exists but is inactive: activate and test
-4. If the handler is missing: implement in Railway (`POST /api/webhooks/stripe`) with Stripe signature verification
-5. Resolve VG-03 in `source-of-truth-matrix.md`
+**How authMiddleware reads tier (`src/api/middleware.ts:108–114`):**
+- Reads `user_metadata.tier` first, falls back to `app_metadata.tier`
+- Accepted values: `'profi'`, `'kmu'`, `'privat'`, `'free'`
+- Fallback on absent/unrecognised value: `'free'`
+
+**Canonical Owner:** `negotiationcoach-backend` — Railway is the correct host (holds `SUPABASE_SERVICE_KEY` needed for Admin API calls)
+
+**Implementation spawned as:** RFB-032 — see below
 
 **Required Docs/Contracts to Update:**
-- `docs/source-of-truth-matrix.md` — Entity 2, VG-03
-- `docs/bounded-contexts.md` — BC-01 Write Path (tier metadata)
-- `docs/auth-permission-map.md` — Section 2.1 (token flow sync rule)
+- `docs/source-of-truth-matrix.md` — Entity 2, VG-03 (write path confirmed missing)
+- `docs/bounded-contexts.md` — BC-01 Write Path (Stripe → JWT tier path is broken)
+- `docs/auth-permission-map.md` — Section 2.1 (`app_metadata.tier` is never written post-signup)
 
-**Required Tests to Run:**
-- Integration: Simulated Stripe webhook updates user tier in Supabase
-- Integration: Updated tier is reflected in next Railway request
+**Depends On:** Nothing (investigation complete — implementation spawned to RFB-032)
 
-**Depends On:** Nothing (investigation item; unblocks RFB-007 and RFB-009)
-
-**Status: ON HOLD — explicit owner decision 2026-04-08**
-Stripe integration is deferred to a future billing milestone.
-Do not implement until explicitly unparked by owner.
-Plan output from Claude Code preserved above for future reference.
-Unblocks: RFB-007 and RFB-009 remain blocked on this — noted.
+**Status: INVESTIGATED — 2026-04-09**
+Investigation confirmed: no handler exists, no stripe package installed, write path is entirely absent.
+Implementation deferred — registered as RFB-032 (DEFERRED: activate when Stripe payment goes live).
+RFB-007 must be resolved before RFB-032 can be safely implemented.
 
 ---
 
@@ -1425,6 +1425,50 @@ Unblocks: RFB-004 Phase B — session persistence confirmed working.
 
 ---
 
+### RFB-032
+
+**Title:** Implement Stripe webhook handler — POST /api/webhooks/stripe
+
+**Repo:** `negotiationcoach-backend`
+
+**Category:** `contract-gap`
+
+**Priority:** P0 — launch blocker for billing (must complete before Stripe activation)
+
+**Evidence:**
+Spawned from RFB-010 investigation (2026-04-09). No Stripe webhook handler exists. No `stripe` npm package installed. Tier write path from Stripe → Supabase JWT `app_metadata.tier` is entirely absent. See RFB-010 for full investigation findings.
+
+**Scope (minimum viable — no code until Stripe goes live):**
+1. Add `stripe` npm package to `negotiationcoach-backend`
+2. New file `src/api/stripeWebhookRoute.ts` — single `POST /api/webhooks/stripe` route
+3. Apply `express.raw({ type: 'application/json' })` to webhook route **before** `express.json()` (raw body required for signature verification)
+4. Stripe signature verification: `stripe.webhooks.constructEvent(rawBody, sig, STRIPE_WEBHOOK_SECRET)`
+5. Env-var-driven Stripe price ID → `Tier` mapping (`STRIPE_PRICE_PRIVAT`, `STRIPE_PRICE_KMU`, `STRIPE_PRICE_PROFI`)
+6. Handle three events: `checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted`
+7. Tier write: `supabaseAdmin.auth.admin.updateUserById(userId, { app_metadata: { tier } })`
+8. Resolve Stripe `customer.id` → Supabase `user.id` (requires lookup table or Stripe metadata set at checkout)
+9. Wire into `routes.ts` — register before `app.use(express.json())`
+
+**Blocked By:**
+- RFB-007 (tier enum unification) — backend `Tier` enum and frontend `subscription_tier` enum are incompatible; must be resolved first so the webhook writes a value `authMiddleware` recognises
+
+**Required Docs/Contracts to Update:**
+- `docs/api-catalog.md` — add `POST /api/webhooks/stripe` entry
+- `docs/source-of-truth-matrix.md` — close VG-03
+- `docs/bounded-contexts.md` — update BC-01 write path
+- `docs/auth-permission-map.md` — Section 2.1
+
+**Required Tests:**
+- Integration: Simulated Stripe webhook with valid signature updates `app_metadata.tier`
+- Integration: Updated tier reflected in next authenticated Railway request
+- Unit: Invalid signature → 400 rejected
+
+**Status: DEFERRED — activate when Stripe payment goes live**
+Do not implement until billing milestone is unparked by owner.
+RFB-007 must be resolved first.
+
+---
+
 ## Active Blockers
 
 ### AB-001
@@ -1472,7 +1516,7 @@ re-verified — their production behaviour was untested before this fix.
 | RFB-007 | Unify three incompatible tier systems | P1 | backend + frontend | contract-gap |
 | RFB-008 | Eliminate parallel type maintenance — ✅ DONE `9c51a43` | P1 | backend | duplicate-logic |
 | RFB-009 | Propagate actual user tier to Edge Function | P1 | frontend | contract-gap |
-| RFB-010 | Verify Stripe webhook tier update path | P1 | backend | contract-gap |
+| RFB-010 | Verify Stripe webhook tier update path — ✅ INVESTIGATED 2026-04-09 (handler absent; spawned RFB-032) | P1 | backend | contract-gap |
 | RFB-011 | Integrate modelRouter into /api/chat and /api/plan — ✅ DONE `60848db` | P1 | backend | duplicate-logic |
 | RFB-012 | Resolve missing user_profiles creation on signup — ✅ DONE 2026-04-03 | P1 | backend (Lovable Supabase) | contract-gap |
 | RFB-013 | Centralize token accessor in useAuth.tsx — ✅ DONE `c507353` | P2 | frontend | dead-code |
@@ -1496,6 +1540,7 @@ re-verified — their production behaviour was untested before this fix.
 | RFB-029 | negotiation_sessions missing analysis columns — Railway analyze inserts silently failing — ✅ DONE `f759c18` | P0 | backend | boundary-violation |
 | RFB-030 | Add RLS policies for negotiation_sessions and session_history — ✅ DONE 2026-04-09 (re-scoped) | P1 | backend (migrations) | boundary-violation |
 | RFB-031 | Fix session_history table name in sessionRoutes.ts — ✅ DONE `2c51cb4` | P0 | backend | boundary-violation |
+| RFB-032 | Implement Stripe webhook handler — POST /api/webhooks/stripe — ⏸ DEFERRED (Stripe not live; blocked on RFB-007) | P0 | backend | contract-gap |
 | AB-001 | Railway SUPABASE_URL placeholder fixed — ✅ DONE 2026-04-08 | P0 | infrastructure | infrastructure |
 
 ---
@@ -1525,8 +1570,11 @@ VG-05 resolve
   └─ RFB-007 (tier unification)
        └─ RFB-009 (propagate tier to Edge Function)
 
-RFB-010 (Stripe webhook)
-  └─ RFB-007 (tier in JWT must be correct before unification matters)
+RFB-007 (tier enum unification — BLOCKS billing)
+  └─ RFB-032 (Stripe webhook handler — DEFERRED until Stripe live)
+
+RFB-010 (Stripe webhook investigation — DONE 2026-04-09)
+  └─ spawned RFB-032
 
 RFB-005, RFB-012, RFB-013, RFB-014, RFB-015, RFB-016,
 RFB-017, RFB-018, RFB-019, RFB-020, RFB-021 — no dependencies

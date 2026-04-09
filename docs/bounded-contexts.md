@@ -20,7 +20,7 @@ The system contains six meaningful bounded contexts. Each context has a canonica
 ### Write Path
 - Sign-up / sign-in / password reset → `supabase.auth.*` calls from frontend `useAuth.tsx`
 - Session token stored in browser `localStorage` automatically by Supabase JS
-- Tier metadata written to `user_metadata` / `app_metadata` on JWT — **Inferred** written by Stripe webhooks
+- Tier metadata written to `user_metadata` / `app_metadata` on JWT — **CONFIRMED ABSENT (2026-04-09):** No Stripe webhook handler exists in either repo. `stripe` npm package not installed. Tier in JWT is set only at signup and is immutable post-signup. Write path registered as RFB-032 (DEFERRED).
 
 ### Read Path
 - Frontend: `useAuth().user` from `onAuthStateChange` listener
@@ -35,7 +35,7 @@ Supabase Auth (issuance) + Railway `authMiddleware` (validation)
 
 ### Violations / Ambiguities
 - **RESOLVED 2026-04-03 — fd68e1e:** 401 enforced for missing/invalid tokens. `AUTH_REQUIRED=false` provides explicit dev bypass. Default tier for tokens with no metadata: `'free'`.
-- **Missing:** Stripe webhook → `user_metadata.tier` update path is not visible in either repo. Mechanism assumed but unverified.
+- **CONFIRMED ABSENT (2026-04-09, RFB-010):** Stripe webhook → `app_metadata.tier` update path does not exist in either repo. No handler, no `stripe` npm package. Paying users never receive tier-gated features. Over-entitlement persists on cancellation. Implementation deferred as RFB-032 (blocked on RFB-007 tier enum unification).
 - **Observed:** Frontend calls `supabase.auth.getSession()` in 6 different files to extract Bearer token rather than using a centralized accessor.
 
 ---
@@ -72,19 +72,19 @@ Railway `authMiddleware` + `requireTier('kmu')` gate on `/api/enrich`
 ## BC-03 · Chat & Input Extraction
 
 **Canonical Owner:** Supabase Edge Function `/chat`
-**Primary Datastore:** `session_messages` table
+**Primary Datastore:** `session_history` table
 **Business Logic Owner:** Shared — Edge Function (streaming, tag extraction) + `chatHelpers.ts` in Railway (fallback, non-streaming)
 
 ### Write Path
 - Frontend `useChat.ts` → SSE POST to `supabase/functions/v1/chat` → streams tokens back
-- Frontend `useSessionManager.ts` → `supabase.from('session_messages').insert()` directly (no API intermediary)
+- Frontend `useSessionManager.ts` → `supabase.from('session_history').insert()` directly (no API intermediary)
 
 ### Read Path
-- Resume: `useSessionManager.ts` → `supabase.from('session_messages').select()` last 50 messages
+- Resume: `useSessionManager.ts` → `supabase.from('session_history').select()` last 50 messages
 - Real-time: streamed directly from Edge Function
 
 ### Sync / Projection Rule
-`AnalysisContext.messages[]` holds in-session chat history. `session_messages` table holds persisted history. Frontend syncs both on save (fire-and-forget with 2 retries).
+`AnalysisContext.messages[]` holds in-session chat history. `session_history` table holds persisted history. Frontend syncs both on save (fire-and-forget with 2 retries).
 
 ### Auth / Permission Owner
 Supabase anon key (for Edge Function call), Supabase RLS (inferred via `owns_session()` function in DB schema)

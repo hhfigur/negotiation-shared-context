@@ -202,15 +202,17 @@ Unblocked by: AB-001 fix (Railway SUPABASE_URL corrected)
 
 **Depends On:** RFB-001 (auth must be enforced before session ownership matters)
 
-**Status: DONE**
-Phase A commit: [Phase-A-hash eintragen] (negotiationcoach-backend) — 2026-04-08
-Phase B commit: [Phase-B-hash eintragen] (negotiation-buddy) — 2026-04-08
-Verified: tsc --noEmit clean ✓ | no direct negotiation_sessions.insert ✓ |
-no direct session_messages.insert ✓ | getUserId() removed ✓ |
-POST /api/sessions ✓ | PATCH /api/sessions/:id ✓ |
-POST /api/sessions/:id/messages ✓ | retry loop removed ✓
-Note: Schema mismatch (missing columns in live negotiation_sessions table)
-logged as RFB-028 — out of scope here.
+**Status: PHASE A DONE**
+Phase A — sessionRoutes.ts complete and registered (negotiationcoach-backend) — 2026-04-09
+Verified: tsc --noEmit clean ✓ | 3 endpoints live ✓ | assertSessionOwner() ✓ |
+Zod schemas wired (CreateSessionSchema, PatchSessionSchema, CreateMessageSchema) ✓ |
+registered in routes.ts via app.use('/api', sessionRouter) ✓
+E2E verified 2026-04-09: POST /api/sessions ✓ | POST /api/sessions/:id/messages ✓
+(AB-001 SUPABASE_URL blocker resolved 2026-04-08)
+Parallel tasks registered: RLS migration for session tables (RFB-030),
+session_messages retroactive migration traceability (open, low priority).
+Phase B (useSessionManager.ts migration) blocked on: RLS migration (RFB-030) +
+contracts/frontend-backend.md completion (resolved 2026-04-09).
 
 ---
 
@@ -1315,6 +1317,59 @@ Docs updated: docs/db-map.md (⚠ SCHEMA CORRECTION block removed, 7 columns add
 
 ---
 
+### RFB-030
+
+**Title:** Add RLS policies for negotiation_sessions and session_messages
+
+**Repo:** `negotiationcoach-backend` (supabase/migrations/)
+
+**Category:** `boundary-violation`
+
+**Evidence (Observed):**
+Railway API uses SERVICE_ROLE_KEY which bypasses RLS entirely. Ownership for `negotiation_sessions` is enforced at application level via `assertSessionOwner()` and `.eq('user_id', req.user.id)`. No RLS policies exist on either `negotiation_sessions` or `session_messages`. If the Supabase anon key is ever used directly (Phase B frontend migration, or SDK calls not yet migrated), there is no DB-level ownership enforcement for session data. Identified during RFB-004 Phase A plan review (2026-04-09).
+
+**Confidence:** High — confirmed from db-map.md access pattern summary and absence of migration files for these tables
+
+**Risk:** P1. Phase B migration (`useSessionManager.ts` → Railway API) requires removing direct SDK writes from the frontend. Until RLS exists, removing those writes without a Railway API fallback leaves a gap. Direct SDK access (e.g., Lovable-generated code, stale frontend paths) would bypass all ownership checks.
+
+**Canonical Owner:** `negotiationcoach-backend` — `supabase/migrations/`
+
+**Recommended Action:**
+Create `supabase/migrations/YYYYMMDDHHMMSS_add_session_rls_policies.sql` with:
+
+```sql
+-- negotiation_sessions: authenticated user can read/write own rows
+ALTER TABLE public.negotiation_sessions ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can access own sessions"
+  ON public.negotiation_sessions FOR ALL
+  USING (auth.uid() = user_id);
+
+-- session_messages: authenticated user can read/insert where session belongs to them
+ALTER TABLE public.session_messages ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can access messages for own sessions"
+  ON public.session_messages FOR ALL
+  USING (
+    session_id IN (
+      SELECT id FROM public.negotiation_sessions WHERE user_id = auth.uid()
+    )
+  );
+```
+
+After applying:
+- Run `generate_typescript_types` MCP tool → regenerate `src/types/supabase.ts`
+- Update `docs/db-map.md` access pattern summary (set RLS enforced = Yes for both tables)
+- Update `shared-context/docs/source-of-truth-matrix.md` Entity 3 + Entity 4 Auth Owner lines
+
+**Depends On:** Nothing — migration can proceed immediately
+
+**Blocks:** RFB-004 Phase B (useSessionManager.ts migration to Railway API)
+
+**Status: OPEN**
+
+---
+
 ## Active Blockers
 
 ### AB-001
@@ -1384,6 +1439,7 @@ re-verified — their production behaviour was untested before this fix.
 | RFB-027 | Repair npm test runner — install Jest or wire ts-node — ✅ DONE `0665780` | P3 | backend | contract-gap |
 | RFB-028 | Enforce max_members limit in POST /api/teams/:id/members — ✅ DONE `402ee63` | P2 | backend | boundary-violation |
 | RFB-029 | negotiation_sessions missing analysis columns — Railway analyze inserts silently failing — ✅ DONE `f759c18` | P0 | backend | boundary-violation |
+| RFB-030 | Add RLS policies for negotiation_sessions and session_messages — ⬜ OPEN | P1 | backend (migrations) | boundary-violation |
 | AB-001 | Railway SUPABASE_URL placeholder fixed — ✅ DONE 2026-04-08 | P0 | infrastructure | infrastructure |
 
 ---
@@ -1393,8 +1449,11 @@ re-verified — their production behaviour was untested before this fix.
 ```
 RFB-001 (auth enforcement)
   └─ RFB-003 (team API)
-  └─ RFB-004 (session/message API)
+  └─ RFB-004 Phase A (session/message API — Railway endpoints — DONE)
   └─ RFB-011 (modelRouter — req.user.tier must be reliable)
+
+RFB-030 (RLS for session tables)
+  └─ RFB-004 Phase B (useSessionManager.ts migration to Railway API)
 
 RFB-002 (RLS verification)
   └─ RFB-003 (defence-in-depth after API layer added)

@@ -306,6 +306,127 @@ migrate Edge Function call to Railway.
 
 ---
 
+### `POST /api/sessions`
+
+> Status: Implemented — RFB-004 Phase A | E2E verified 2026-04-09 ✓ | File: `src/api/sessionRoutes.ts`
+
+**Purpose:** Neue Verhandlungs-Session erstellen. `user_id` wird immer aus `req.user.id` gesetzt. Titel wird server-seitig auf 40 Zeichen gekürzt.
+
+**Request:**
+```typescript
+{
+  title:         string;                                                   // min 1, max 200 raw; required
+  persona_type?: 'pro' | 'kmu' | 'private';                              // DB enum — default 'pro'
+  mode?:         'analyse' | 'strategie' | 'sparring' | 'quick' | null;  // DB enum, nullable
+}
+```
+
+**Title truncation rule (exact — matches useSessionManager.ts:58):**
+```typescript
+title.length > 40 ? title.slice(0, 37) + '...' : title
+```
+
+**Response 201:**
+```typescript
+{ session: negotiation_sessions_row }  // full DB row
+```
+
+**Auth:** `Authorization: Bearer <JWT>` required. Returns 401 `AUTH_ERROR` if missing or invalid.
+**Errors:** 400 `VALIDATION_ERROR` (schema failure), 401 `AUTH_ERROR`, 500 `SESSION_CREATE_ERROR`
+
+---
+
+### `PATCH /api/sessions/:id`
+
+> Status: Implemented — RFB-004 Phase A | File: `src/api/sessionRoutes.ts`
+
+**Purpose:** Session-Metadaten aktualisieren. Alle Felder optional — nur übergebene Felder werden geschrieben. Gibt 404 für nicht-eigene Sessions zurück (verbirgt Ressourcen-Existenz gegenüber Nicht-Eigentümern).
+
+**Path params:** `:id` — session UUID
+
+**Request (mindestens ein Feld erforderlich / at least one field required):**
+```typescript
+{
+  title?:  string;                                                   // min 1, max 200; truncated to 40 server-side
+  mode?:   'analyse' | 'strategie' | 'sparring' | 'quick' | null;  // DB enum
+  status?: 'active' | 'archived';                                   // DB enum
+}
+```
+
+**Empty-body rejection:** Zod `.refine()` rejects a body where all fields are undefined — returns 400 `VALIDATION_ERROR` with message `"Mindestens ein Feld erforderlich"`.
+
+**Response 200:**
+```typescript
+{ session: negotiation_sessions_row }  // full DB row, post-update
+```
+
+**Auth:** `Authorization: Bearer <JWT>` required. Ownership enforced via `assertSessionOwner()` — returns 404 `SESSION_NOT_FOUND` for both not-found and wrong-owner (does not reveal resource existence).
+**Errors:** 400 `VALIDATION_ERROR` | `INVALID_UUID`, 401 `AUTH_ERROR`, 404 `SESSION_NOT_FOUND`, 500 `SESSION_UPDATE_ERROR`
+
+---
+
+### `POST /api/sessions/:id/messages`
+
+> Status: Implemented — RFB-004 Phase A | E2E verified 2026-04-09 ✓ | File: `src/api/sessionRoutes.ts`
+
+**Purpose:** Chat-Nachricht einer Session persistieren. Erzwingt 50-Nachrichten-Limit per Session (count-before-insert — nicht-atomar, siehe RFB-004-C für DB-Constraint Follow-up).
+
+**Path params:** `:id` — session UUID
+
+**Request:**
+```typescript
+{
+  role:    'user' | 'assistant';  // DB enum message_role
+  content: string;                // min 1 char
+}
+```
+
+**Response 201:**
+```typescript
+{ data: session_messages_row }  // Note: envelope is 'data', not 'session' — intentional
+```
+
+**Message limit enforcement:** Before insert, executes `SELECT COUNT(*) ... WHERE session_id = :id`. If count >= 50, returns 400 `MESSAGE_LIMIT_REACHED`. Non-atomic — concurrent callers can exceed 50 by 1+ in race conditions. DB-level constraint pending (RFB-004-C).
+
+**Auth:** `Authorization: Bearer <JWT>` required. Ownership enforced via `assertSessionOwner()` — returns 404 for non-owner.
+**Errors:** 400 `VALIDATION_ERROR` | `INVALID_UUID` | `MESSAGE_LIMIT_REACHED`, 401 `AUTH_ERROR`, 404 `SESSION_NOT_FOUND`, 500 `MESSAGE_SAVE_ERROR`
+
+---
+
+### Session Endpoint Error Code Reference
+
+| HTTP | Code | Surface Point |
+|------|------|---------------|
+| 400 | `INVALID_UUID` | malformed `:id` path param |
+| 400 | `VALIDATION_ERROR` | Zod schema failure on request body |
+| 400 | `MESSAGE_LIMIT_REACHED` | session already has 50 messages |
+| 401 | `AUTH_ERROR` | missing or invalid Bearer JWT |
+| 404 | `SESSION_NOT_FOUND` | session not found OR caller does not own it |
+| 500 | `SESSION_CREATE_ERROR` | Supabase insert failure on POST /sessions |
+| 500 | `SESSION_UPDATE_ERROR` | Supabase update failure on PATCH /sessions/:id |
+| 500 | `MESSAGE_SAVE_ERROR` | Supabase count or insert failure on POST /sessions/:id/messages |
+
+> **Security note:** `SESSION_NOT_FOUND` is returned for both "not found" and "wrong owner" — this is intentional. Returning 403 for wrong-owner would reveal that the session ID is valid. Differs from team endpoints where `FORBIDDEN` (403) is explicit because admin identity is distinct from resource ownership.
+
+---
+
+### Phase B — Pending (useSessionManager.ts migration)
+
+> Status: BLOCKED — see RFB-004 Phase B
+
+Phase B migrates `useSessionManager.ts` (negotiation-buddy) from direct Supabase SDK writes to Railway API calls for session and message persistence. Phase A (Railway endpoints) is complete.
+
+**Phase B blockers:**
+1. RLS migration for `negotiation_sessions` and `session_messages` (RFB-030) — must exist before removing direct SDK writes
+2. This contract document completion (resolved in RFB-004-C Phase A docs)
+
+**When Phase B is complete:**
+- `useSessionManager.ts` writes via `POST /api/sessions`, `PATCH /api/sessions/:id`, `POST /api/sessions/:id/messages`
+- Direct `supabase.from('session_messages').insert()` and `supabase.from('negotiation_sessions').insert()` removed from frontend
+- Business rules (truncation, message limit) enforced server-side only
+
+---
+
 ## 3. Supabase Edge Function Contract
 
 ### `POST /functions/v1/chat` (SSE)
@@ -391,6 +512,13 @@ Routes covered: `/api/analyze`, `/api/chat`, `/api/plan`, `/api/enrich`, `/api/a
 **Tier gate error (403):** `requireTier('kmu')` returns 403 with `TierError` for `/api/enrich` when tier insufficient. Frontend does not handle this with a dedicated upgrade prompt — generic error toast shown (Inferred).
 
 **`POST /api/chat` parse error (500):** `CHAT_PARSE_ERROR` — returned when `parseChatResponse()` cannot extract a valid JSON block from the Claude API response. The frontend `sendChatMessage()` call site (`Index.tsx:398`) catches this silently — `extractedInputs` remains at its previous value. Fixed in REF-BE-02, commit `fe961ee`.
+
+**Session endpoint errors (RFB-004 Phase A):**
+- `SESSION_NOT_FOUND` (404) — session does not exist or caller does not own it. Returned by `assertSessionOwner()` for both cases — does not reveal resource existence.
+- `MESSAGE_LIMIT_REACHED` (400) — session already has 50 messages. Returned by `POST /api/sessions/:id/messages` before insert.
+- `SESSION_CREATE_ERROR` (500) — Supabase insert failure on `POST /api/sessions`.
+- `SESSION_UPDATE_ERROR` (500) — Supabase update failure on `PATCH /api/sessions/:id`.
+- `MESSAGE_SAVE_ERROR` (500) — Supabase count or insert failure on `POST /api/sessions/:id/messages`.
 
 ---
 

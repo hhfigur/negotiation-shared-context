@@ -53,28 +53,30 @@ This matrix identifies the canonical owner and access rules for every core entit
 | Read Path | Railway `GET /api/sessions/:id` (owner-scoped) or `useSessionManager.ts` direct select |
 | Sync Rule | AnalysisContext (localStorage) mirrors in-session result. DB is written asynchronously (fire-and-forget in session manager until Phase B). |
 | Business Logic Owner | Railway `sessionRoutes.ts` — title truncation (40 chars), session ownership, status management |
-| Auth Owner | Railway: `assertSessionOwner()` + `.eq('user_id', req.user.id)` code-enforced (SERVICE_ROLE_KEY bypasses RLS — RLS migration pending RFB-030) |
+| Auth Owner | Railway: `assertSessionOwner()` + `.eq('user_id', req.user.id)` code-enforced. RLS pre-existing: `user_sees_own_sessions` policy (FOR ALL, USING auth.uid() = user_id). Verified 2026-04-09. |
 | Violations | Frontend still bypasses API and writes directly to `negotiation_sessions` (Phase B not yet migrated). |
 
-> **Phase B note:** Phase A fully closed 2026-04-09 (E2E verified post AB-001 fix). Phase B blocked on: RFB-030 (RLS for session tables).
+> **Phase B note:** Phase A fully closed 2026-04-09 (E2E verified post AB-001 fix). Phase B unblocked: RLS confirmed in place on both tables (RFB-030 closed).
 
 ---
 
-### 4. Session Messages
+### 4. Session History (Messages)
+
+> **⚠ TABLE NAME CORRECTION (RFB-030, 2026-04-09):** Previously documented as `session_messages`. Live DB confirms actual table name is `session_history`. TypeScript call sites in `sessionRoutes.ts` reference the wrong name — tracked as RFB-031 (silent data loss).
 
 | Property | Value |
 |----------|-------|
-| Canonical Owner | Railway API (`src/api/sessionRoutes.ts`) — **Phase A DONE (RFB-004)** |
-| Primary Datastore | `session_messages` table |
-| Write Path | Railway `POST /api/sessions/:id/messages` → INSERT with SERVICE_ROLE_KEY — **Phase A DONE** |
-| Write Path (frontend) | `useSessionManager.ts` → direct `supabase.from('session_messages').insert()` — **VIOLATION — Phase B migration pending (blocked on RFB-030)** |
+| Canonical Owner | Railway API (`src/api/sessionRoutes.ts`) — **Phase A DONE (RFB-004)** — ⚠ inserts silently failing (RFB-031) |
+| Primary Datastore | `session_history` table |
+| Write Path | Railway `POST /api/sessions/:id/messages` → INSERT with SERVICE_ROLE_KEY — **⚠ targeting wrong table `session_messages` — RFB-031** |
+| Write Path (frontend) | `useSessionManager.ts` → direct `supabase.from('session_history').insert()` — **VIOLATION — Phase B migration pending** |
 | Read Path | `useSessionManager.ts` → direct select, last 50 messages |
-| Sync Rule | In-session: `AnalysisContext.messages[]`; Persisted: `session_messages` table. Sync is eventually consistent (fire-and-forget until Phase B). |
+| Sync Rule | In-session: `AnalysisContext.messages[]`; Persisted: `session_history` table. Sync is eventually consistent (fire-and-forget until Phase B). |
 | Business Logic Owner | Railway `sessionRoutes.ts` — 50-message limit enforced server-side via count-before-insert (non-atomic — DB constraint pending RFB-004-C) |
-| Auth Owner | Railway: `assertSessionOwner()` — transitive ownership check via `negotiation_sessions.user_id`. RLS migration pending RFB-030. |
-| Violations | Frontend still bypasses API for message writes (Phase B not yet migrated). `session_messages` table origin untracked — no CREATE TABLE migration file in repo. |
+| Auth Owner | Supabase RLS: `user_sees_own_session_history` policy (FOR ALL, transitive ownership via `negotiation_sessions.user_id`). Verified pre-existing 2026-04-09. |
+| Violations | Railway inserts targeting non-existent `session_messages` table — silently failing (RFB-031). Frontend bypasses API for message writes (Phase B pending, now unblocked). `session_history` table origin untracked — no CREATE TABLE migration file in repo. |
 
-> **Phase B note:** Phase A fully closed 2026-04-09 (E2E verified post AB-001 fix). Phase B blocked on: RFB-030 (RLS for session tables).
+> **Phase B note:** Phase A fully closed 2026-04-09. Phase B unblocked (RLS confirmed via RFB-030). Blocked on RFB-031 resolution (table name fix must precede Phase B migration).
 
 ---
 
@@ -173,7 +175,7 @@ This matrix identifies the canonical owner and access rules for every core entit
 | Gap ID | What Needs Verification | Risk |
 |--------|--------------------------|------|
 | VG-01 | ~~Supabase RLS policies on `teams` and `team_members` — do they enforce `admin_user_id = auth.uid()`?~~ **RESOLVED** — 10 snake_case policies applied via migration `20260403120000` (negotiation-buddy). Admin enforcement verified at DB level. | ~~Critical~~ |
-| VG-02 | Supabase RLS on `negotiation_sessions` — is there overlap with Railway's code-enforced user_id check? | High |
+| ~~VG-02~~ | ~~Supabase RLS on `negotiation_sessions`~~ **RESOLVED 2026-04-09** — `user_sees_own_sessions` policy confirmed pre-existing. No conflict: SERVICE_ROLE_KEY bypasses RLS for Railway writes; `assertSessionOwner()` is defence-in-depth. | ~~High~~ |
 | VG-03 | Stripe webhook handler — how is `user_metadata.tier` updated on subscription change? | High |
 | VG-04 | Profile creation on sign-up — what creates the initial `user_profiles` row? | Medium |
 | VG-05 | Edge Function `/chat` actual tier enforcement — does it read subscription_tier from JWT or use the hardcoded "free"? | Medium |

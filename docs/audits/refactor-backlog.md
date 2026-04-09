@@ -171,7 +171,7 @@ Unblocked by: AB-001 fix (Railway SUPABASE_URL corrected)
 **Category:** `boundary-violation`
 
 **Evidence (Observed):**
-`useSessionManager.ts` writes directly to `negotiation_sessions` (INSERT, UPDATE) and `session_messages` (INSERT) via the Supabase anon key without passing through the Railway API. Business rules encoded in browser JavaScript:
+`useSessionManager.ts` writes directly to `negotiation_sessions` (INSERT, UPDATE) and `session_history` (INSERT) via the Supabase anon key without passing through the Railway API. Business rules encoded in browser JavaScript:
 - Session title truncated to 40 characters
 - Message count limit: 50
 - Message save retry: 2 attempts, 1500ms delay
@@ -209,16 +209,16 @@ Zod schemas wired (CreateSessionSchema, PatchSessionSchema, CreateMessageSchema)
 registered in routes.ts via app.use('/api', sessionRouter) ✓
 E2E verified 2026-04-09: POST /api/sessions ✓ | POST /api/sessions/:id/messages ✓
 (AB-001 SUPABASE_URL blocker resolved 2026-04-08)
-Parallel tasks registered: RLS migration for session tables (RFB-030),
-session_messages retroactive migration traceability (open, low priority).
+Parallel tasks: RFB-030 closed 2026-04-09 (RLS pre-existing, no migration needed);
+session_history retroactive migration traceability (open, low priority).
 Phase A fully closed 2026-04-09 (E2E verified post AB-001 fix).
-Phase B (useSessionManager.ts → Railway migration) blocked on: RFB-030 (RLS for session tables).
+Phase B (useSessionManager.ts → Railway migration) blocked on: RFB-031 (session_history table name fix in sessionRoutes.ts).
 
 ---
 
 ### RFB-004-C (Phase C follow-on)
 
-**Title:** Add DB-level message count constraint to session_messages
+**Title:** Add DB-level message count constraint to session_history
 
 **Repo:** `negotiationcoach-backend` (Supabase migration)
 
@@ -231,7 +231,7 @@ push total to 51. Documented during RFB-004 Phase A plan review.
 **Risk:** Low in current traffic volumes. Becomes a correctness issue at scale.
 
 **Recommended Action:** Add a CHECK constraint or BEFORE INSERT trigger on
-`session_messages` enforcing count per `session_id` <= 50.
+`session_history` enforcing count per `session_id` <= 50.
 
 **Depends On:** RFB-004 Phase A (endpoints must exist first)
 
@@ -1366,6 +1366,57 @@ After applying:
 
 **Blocks:** RFB-004 Phase B (useSessionManager.ts migration to Railway API)
 
+**Status: DONE — re-scoped on execution**
+Verified: 2026-04-09
+Finding A: RLS already enabled on `negotiation_sessions` and `session_history`
+  (pre-existing policies: `user_sees_own_sessions`, `user_sees_own_session_history`).
+  Both use FOR ALL + USING — functionally equivalent to planned 6-policy set.
+  No migration needed.
+Finding B: `session_messages` does not exist — real table is `session_history`.
+  Columns `turn_number` (integer) and `metadata` (jsonb) are present in live DB
+  but were absent from all docs.
+Docs corrected: docs/db-map.md | source-of-truth-matrix.md |
+  contracts/frontend-backend.md
+  (session_messages → session_history throughout;
+   turn_number + metadata added to db-map.md)
+Migration: Not applied — pre-existing RLS confirmed sufficient.
+Unblocks: RFB-004 Phase B — RLS confirmed in place on both tables.
+New item: RFB-031 registered — fix session_messages table name
+  reference in sessionRoutes.ts (silent data loss risk).
+
+---
+
+### RFB-031
+
+**Title:** Fix session_history table name in sessionRoutes.ts and all TypeScript call sites
+
+**Repo:** `negotiationcoach-backend`
+
+**Category:** `boundary-violation`
+
+**Evidence (Observed):**
+Live DB table is `session_history`. All docs, contracts, and TypeScript code reference `session_messages` (non-existent table). `sessionRoutes.ts` inserts into `session_messages` — these inserts are silently failing against a non-existent table. Discovered during RFB-030 execution (2026-04-09).
+
+**Confidence:** High — table name confirmed from live DB schema query. TypeScript call sites not yet verified (pending RFB-031 plan).
+
+**Risk:** P0. Silent data loss. Session messages are not being persisted. Users resume sessions with missing history.
+
+**Canonical Owner:** `negotiationcoach-backend` — `src/api/sessionRoutes.ts` and any other call sites referencing `session_messages`.
+
+**Recommended Action:**
+1. Verify all TypeScript files referencing `session_messages`
+2. Replace `session_messages` with `session_history` in all call sites
+3. Verify `turn_number` and `metadata` columns are handled correctly (currently undocumented — may require schema alignment)
+4. Confirm via live DB that `session_history` rows are inserted after fix
+
+**Required Docs/Contracts to Update:**
+- `docs/api-catalog.md` — session endpoint descriptions
+- `docs/db-map.md` — call site references (already corrected in RFB-030)
+
+**Depends On:** Nothing — can proceed immediately
+
+**Blocks:** RFB-004 Phase B (session persistence must work before frontend migration)
+
 **Status: OPEN**
 
 ---
@@ -1439,7 +1490,8 @@ re-verified — their production behaviour was untested before this fix.
 | RFB-027 | Repair npm test runner — install Jest or wire ts-node — ✅ DONE `0665780` | P3 | backend | contract-gap |
 | RFB-028 | Enforce max_members limit in POST /api/teams/:id/members — ✅ DONE `402ee63` | P2 | backend | boundary-violation |
 | RFB-029 | negotiation_sessions missing analysis columns — Railway analyze inserts silently failing — ✅ DONE `f759c18` | P0 | backend | boundary-violation |
-| RFB-030 | Add RLS policies for negotiation_sessions and session_messages — ⬜ OPEN | P1 | backend (migrations) | boundary-violation |
+| RFB-030 | Add RLS policies for negotiation_sessions and session_history — ✅ DONE 2026-04-09 (re-scoped) | P1 | backend (migrations) | boundary-violation |
+| RFB-031 | Fix session_history table name in sessionRoutes.ts and all TypeScript call sites — ⬜ OPEN | P0 | backend | boundary-violation |
 | AB-001 | Railway SUPABASE_URL placeholder fixed — ✅ DONE 2026-04-08 | P0 | infrastructure | infrastructure |
 
 ---
@@ -1452,8 +1504,11 @@ RFB-001 (auth enforcement)
   └─ RFB-004 Phase A (session/message API — Railway endpoints — DONE)
   └─ RFB-011 (modelRouter — req.user.tier must be reliable)
 
-RFB-030 (RLS for session tables)
+RFB-030 (RLS for session tables — DONE, pre-existing)
   └─ RFB-004 Phase B (useSessionManager.ts migration to Railway API)
+
+RFB-031 (fix session_history table name — P0)
+  └─ RFB-004 Phase B (session persistence must work before frontend migration)
 
 RFB-002 (RLS verification)
   └─ RFB-003 (defence-in-depth after API layer added)

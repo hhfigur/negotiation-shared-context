@@ -383,7 +383,7 @@ title.length > 40 ? title.slice(0, 37) + '...' : title
 
 **Response 201:**
 ```typescript
-{ data: session_messages_row }  // Note: envelope is 'data', not 'session' — intentional
+{ data: session_history_row }  // Note: envelope is 'data', not 'session' — intentional
 ```
 
 **Message limit enforcement:** Before insert, executes `SELECT COUNT(*) ... WHERE session_id = :id`. If count >= 50, returns 400 `MESSAGE_LIMIT_REACHED`. Non-atomic — concurrent callers can exceed 50 by 1+ in race conditions. DB-level constraint pending (RFB-004-C).
@@ -417,12 +417,11 @@ title.length > 40 ? title.slice(0, 37) + '...' : title
 Phase B migrates `useSessionManager.ts` (negotiation-buddy) from direct Supabase SDK writes to Railway API calls for session and message persistence. Phase A (Railway endpoints) is complete.
 
 **Phase B blockers:**
-1. RLS migration for `negotiation_sessions` and `session_messages` (RFB-030) — must exist before removing direct SDK writes
-2. This contract document completion (resolved in RFB-004-C Phase A docs)
+1. RFB-031 — fix `session_history` table name in `sessionRoutes.ts` (currently referencing non-existent `session_messages`) — must be fixed before Phase B migration
 
 **When Phase B is complete:**
 - `useSessionManager.ts` writes via `POST /api/sessions`, `PATCH /api/sessions/:id`, `POST /api/sessions/:id/messages`
-- Direct `supabase.from('session_messages').insert()` and `supabase.from('negotiation_sessions').insert()` removed from frontend
+- Direct `supabase.from('session_history').insert()` and `supabase.from('negotiation_sessions').insert()` removed from frontend
 - Business rules (truncation, message limit) enforced server-side only
 
 ---

@@ -306,6 +306,30 @@ migrate Edge Function call to Railway.
 
 ---
 
+### `POST /api/teams/:id/tasks`
+
+**Purpose:** Training-Task für ein Team erstellen (nur Team-Admin) — RFB-004-C
+
+**Request:**
+```typescript
+{
+  title:        string;           // required, min 1 char
+  description?: string | null;
+  due_date?:    string | null;    // YYYY-MM-DD
+  assigned_to?: string | null;    // uuid
+  status?:      string;           // default 'pending'
+}
+```
+
+**Response 201:** `{ data: TeamTrainingTask }`
+
+**Auth:** Bearer JWT — Aufrufer muss `admin_user_id` des Teams sein.
+**Errors:** 400 `VALIDATION_ERROR` | `INVALID_UUID` · 401 · 403 `FORBIDDEN` · 404 `TEAM_NOT_FOUND` · 500 `TASK_CREATE_ERROR`
+
+**Migration path:** Replaces `supabase.from("team_training_tasks").insert(...)` in `TeamDashboard.tsx:120`. `team_id` sourced from URL param — not accepted in body.
+
+---
+
 ### Session & Message Endpoints (active — RFB-004-B `2415f72`, 2026-04-08)
 
 | Endpoint | Body | Auth | Returns | Business Rules |

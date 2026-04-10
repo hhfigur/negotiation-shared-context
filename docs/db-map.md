@@ -15,7 +15,7 @@ Canonical reference for which service reads and writes each Supabase table, what
 | `session_history` | Frontend SDK (`useSessionManager.ts` — direct select, last 50) | Railway (`POST /api/sessions/:id/messages` — RFB-031 fixed `2c51cb4`) + Frontend SDK (violation — Phase B pending) | SERVICE_ROLE_KEY (Railway); anon key (frontend violation) | Yes — `user_sees_own_session_history` (pre-existing, verified 2026-04-09) | Railway API (`sessionRoutes.ts`) |
 | `teams` | Frontend SDK (`TeamDashboard.tsx`) | Railway (`POST /api/teams`, Phase A DONE commit `0b10d9c`) | SERVICE_ROLE_KEY (Railway); anon key removed (Phase B complete) | Yes — migration `20260403120000` (snake_case policies) | Railway backend |
 | `team_members` | Frontend SDK (`TeamDashboard.tsx`) | Railway (`POST /api/teams/:id/members`, `DELETE /api/teams/:id/members/:userId`) | SERVICE_ROLE_KEY (Railway) | Yes — migration `20260403120000` | Railway backend |
-| `team_training_tasks` | Frontend SDK (`TeamDashboard.tsx`) | Frontend SDK (`supabase.from('team_training_tasks').update()`) — Phase C write migration pending | anon key (frontend) | Yes — migration `20260403120000` | Supabase DB (interim) → Railway (Phase C) |
+| `team_training_tasks` | Frontend SDK (`TeamDashboard.tsx`) | Railway (`POST /api/teams/:id/tasks` — RFB-004-C backend `6021665`) + Frontend SDK (INSERT violation — Lovable call-site migration pending) | SERVICE_ROLE_KEY (Railway); anon key (frontend INSERT — pending) | Yes — migration `20260403120000` | Railway backend |
 | `knowledge_graph` | Railway Layer 2 (cache hit check) | Railway Layer 2 (`knowledge_graph` INSERT on cache miss) | SERVICE_ROLE_KEY | Inferred — no confirmation | Railway backend (Layer 2) |
 | `user_profiles` | Frontend (`Profile.tsx`) | Frontend (`Profile.tsx` → `.update()`) | anon key + RLS | Inferred — no confirmation | Supabase DB |
 
@@ -65,6 +65,9 @@ Canonical reference for which service reads and writes each Supabase table, what
 **RLS Status:** Active — migration `20260403120000` (negotiation-buddy) applied 10 snake_case policies. Admin enforcement (`admin_user_id = auth.uid()`) verified at DB level (RFB-002 resolution).
 
 See `docs/bounded-contexts.md § BC-05` for write path details.
+
+**RFB-004-C backend DONE `6021665` (2026-04-10):** POST /api/teams/:id/tasks added to teamRoutes.ts.
+Frontend INSERT call-site migration (TeamDashboard.tsx:120) pending — Lovable Phase C.
 
 ---
 

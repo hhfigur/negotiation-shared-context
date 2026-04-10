@@ -155,10 +155,13 @@ Phase A commit: `0b10d9c` (negotiationcoach-backend) — 2026-04-07
 Phase B commit: (negotiation-buddy Lovable deploy) — 2026-04-08
 Verified: tsc --noEmit clean ✓ | 4 endpoints in teamRoutes.ts ✓ | assertTeamAdmin enforced server-side ✓
   | useTeamApi.ts hook created ✓ | W1+W2 migrated to POST /api/teams ✓ | W4 migrated to DELETE /api/teams/:id/members/:userId ✓
-  | W3 (task creation) remains on Supabase SDK — Phase C dependency ✓
   | Team creation end-to-end verified in production UI ✓
 Docs updated: docs/api-catalog.md | docs/db-map.md | docs/bounded-contexts.md (BC-05) | docs/data-access-map.md
 Unblocked by: AB-001 fix (Railway SUPABASE_URL corrected)
+
+**Phase C — backend DONE `6021665` (2026-04-10):**
+`POST /api/teams/:id/tasks` added to `teamRoutes.ts`. Admin-only, Zod-validated.
+Frontend call-site migration (TeamDashboard.tsx:120 — Supabase SDK INSERT) pending — Lovable Phase C.
 
 ---
 
@@ -1563,8 +1566,8 @@ re-verified — their production behaviour was untested before this fix.
 |----|-------|----------|------|----------|
 | RFB-001 | Railway authMiddleware never enforces 401 — ✅ DONE `fd68e1e` | P0 | backend | boundary-violation |
 | RFB-002 | Verify/harden Supabase RLS for team admin — ✅ DONE `<hash>` | P0 | backend (migrations) | boundary-violation |
-| RFB-003 | Move team CRUD to Railway API — ✅ DONE Phase A `0b10d9c` + Phase B Lovable 2026-04-08 | P0 | backend + frontend | boundary-violation |
-| RFB-004 | Move session/message writes to Railway API — Phase A ✅ `2c51cb4` / Phase B ✅ `2415f72` / Phase C OPEN | P0 | backend + frontend | boundary-violation |
+| RFB-003 | Move team CRUD to Railway API — Phase A ✅ `0b10d9c` / Phase B ✅ Lovable 2026-04-08 / Phase C backend ✅ `6021665` / Phase C Lovable ⏳ OPEN | P0 | backend + frontend | boundary-violation |
+| RFB-004 | Move session/message writes to Railway API — Phase A ✅ `2c51cb4` / Phase B ✅ `2415f72` / Phase C ✅ backend `6021665` / Phase C Lovable ⏳ OPEN |
 | RFB-005 | Fix CORS — wildcard overrides allowlist — ✅ DONE `e00e400` | P0 | backend | boundary-violation |
 | RFB-006 | Unify dual Layer 1 implementations | P1 | backend | duplicate-logic |
 | RFB-007 | Unify three incompatible tier systems — Step A ✅ `1c68185` / Step B ✅ `6ba5710` / Step C blocked (VG-06) | P1 | backend + frontend | contract-gap |

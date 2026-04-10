@@ -440,7 +440,7 @@ Phase B migrates `useSessionManager.ts` (negotiation-buddy) from direct Supabase
     type: 'pro' | 'kmu' | 'private';   // persona_type enum
     mode: 'analyse' | 'strategie' | 'sparring' | 'quick';
     experience_level: number;           // 1-5
-    subscription_tier: string;          // hardcoded "free" in useChat.ts — VIOLATION
+    subscription_tier: string;          // IGNORED by EF — removed from trust boundary (RFB-009)
     preferred_frameworks: string[];
     negotiation_tone: string;
   };
@@ -453,23 +453,29 @@ Phase B migrates `useSessionManager.ts` (negotiation-buddy) from direct Supabase
 - `[KNOWLEDGE_CANDIDATE] <content>` — extracted negotiation knowledge; written to localStorage
 - `[SYSTEM: <note>]` — internal system notes; logged to console, stripped from display
 
-**Auth:** `Authorization: Bearer ${VITE_SUPABASE_PUBLISHABLE_KEY}` (anon key, not user JWT)
+**Auth (updated — RFB-009 `d90d5c0` 2026-04-10):**
+`Authorization: Bearer <session.access_token>` (user JWT via `supabase.auth.getSession()`)
+Fallback: anon key accepted — EF resolves to free tier when no valid JWT present.
 
-**Type Violation (Observed):**
-- `persona.type` uses `persona_type` enum values (`pro | kmu | private`)
-- `persona.subscription_tier` is always `"free"` regardless of actual user subscription
-- Railway backend uses different tier values (`free | privat | kmu | profi`)
-- Edge Function cannot enforce tier-based features without the correct tier value
+**Tier Resolution (server-side — RFB-009):**
+EF calls `supabase.auth.getUser(token)` → queries `user_profiles.persona_type` → maps via inlined `personaTypeToTier()`:
+`pro→profi`, `kmu→kmu`, `private→privat`, default→`free`.
+`subscription_tier` in request body is now **ignored** — no longer read from request.
 
-**VG-05 Finding (2026-04-09):**
-- `subscription_tier` IS read at `chat/index.ts:82` — passed to `buildSystemPrompt()` and injected as plain text (`Abo-Stufe: ${value}`)
-- No conditional logic, no model switching, no feature gating on tier value
-- Model is hardcoded: `google/gemini-3-flash-preview` for all tiers
-- No JWT validation — function accepts any request (VG-05-A, severity High)
-- Consequence: sending the correct tier value (RFB-009) has zero functional effect until the Edge Function enforces tier server-side
+**Model Selection (tier-dependent — RFB-009):**
+- `kmu` / `profi` → `google/gemini-2.5-pro`
+- `free` / `privat` → `google/gemini-2.5-flash`
+
+**System Prompt Depth (tier-dependent — RFB-009):**
+M-10 premium-depth block appended for `kmu`/`profi` tiers: proactive escalation paths,
+power analysis, ZOPA estimation, Black Swan identification, alternative strategy variant.
+
+**VG-05 Finding (2026-04-09) — RESOLVED:**
+Previously: no JWT validation, model hardcoded, tier decorative only.
+Now: server-side JWT read, tier-dependent model, M-10 depth gate. RFB-009 `d90d5c0`.
 
 **VG-07 Decision (2026-04-09 — ADR-004):**
-The Edge Function `/functions/v1/chat` is confirmed as the canonical chat path for **ALL** tiers. Railway `/api/chat` is NOT a frontend chat endpoint. Tier enforcement will be added inside the Edge Function (JWT read + Gemini model switching). See ADR-004 for full rationale.
+The Edge Function `/functions/v1/chat` is confirmed as the canonical chat path for **ALL** tiers. Railway `/api/chat` is NOT a frontend chat endpoint.
 
 ---
 
@@ -552,7 +558,7 @@ Routes covered: `/api/analyze`, `/api/chat`, `/api/plan`, `/api/enrich`, `/api/a
 
 | ID | Violation | Impact |
 |----|-----------|--------|
-| CON-01 | `subscription_tier` always "free" in Edge Function chat request | Edge Function cannot apply tier-based behavior |
+| CON-01 | ~~`subscription_tier` always "free" in Edge Function chat request~~ **RESOLVED RFB-009 `d90d5c0`** — tier now resolved server-side via JWT; `subscription_tier` in body ignored | — |
 | CON-02 | persona_type enum (pro/kmu/private) mapped via `personaTypeToTier()` (`src/utils/tierUtils.ts`) — **PARTIAL RESOLVED RFB-007 Step A** | Mapping function exists; call sites not yet wired (Steps B/C pending VG-05 and VG-06) |
 | CON-03 | Edge Function `negotiate` has completely different NegotiationInputs schema than Railway `/api/analyze` | Parallel analysis paths produce incomparable results |
 | CON-04 | Types maintained in parallel (no shared package) — frontend and backend can silently drift | Runtime errors on schema mismatch |

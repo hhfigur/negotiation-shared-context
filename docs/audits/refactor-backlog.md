@@ -480,6 +480,12 @@ decorative prompt metadata only. RFB-009 must be expanded to include Edge Functi
 enforcement: server-side JWT read via `supabase.auth.getUser()` + model/feature branching
 on resolved tier. Updated scope requires Lovable planning pass before implementation.
 
+**Status: ✅ DONE**
+Commit: `d90d5c0` (negotiation-buddy) — 2026-04-10
+Verified: tsc clean | `subscriptionTier` removed | `resolvedTier` wired |
+M-10 system prompt block added | model switching active (gemini-2.5-pro kmu/profi,
+gemini-2.5-flash free/privat) | `getToken()` sends live JWT via `supabase.auth.getSession()`
+
 ---
 
 ### RFB-010
@@ -1546,7 +1552,7 @@ re-verified — their production behaviour was untested before this fix.
 | RFB-006 | Unify dual Layer 1 implementations | P1 | backend | duplicate-logic |
 | RFB-007 | Unify three incompatible tier systems — Step A ✅ `1c68185` / Steps B+C blocked (VG-05, VG-06) | P1 | backend + frontend | contract-gap |
 | RFB-008 | Eliminate parallel type maintenance — ✅ DONE `9c51a43` | P1 | backend | duplicate-logic |
-| RFB-009 | Propagate actual user tier to Edge Function | P1 | frontend | contract-gap |
+| RFB-009 | Propagate actual user tier to Edge Function — ✅ DONE `d90d5c0` | P1 | frontend | contract-gap |
 | RFB-010 | Verify Stripe webhook tier update path — ✅ INVESTIGATED 2026-04-09 (handler absent; spawned RFB-032) | P1 | backend | contract-gap |
 | RFB-011 | Integrate modelRouter into /api/chat and /api/plan — ✅ DONE `60848db` | P1 | backend | duplicate-logic |
 | RFB-012 | Resolve missing user_profiles creation on signup — ✅ DONE 2026-04-03 | P1 | backend (Lovable Supabase) | contract-gap |

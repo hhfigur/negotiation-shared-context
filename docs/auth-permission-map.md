@@ -152,7 +152,7 @@ free (0) < privat (1) < kmu (2) < profi (3)
 | AUTH-03 | Frontend direct DB writes to teams/team_members bypass all API auth layers | High | Observed |
 | AUTH-04 | Token fetching duplicated in 6 frontend files — no centralized accessor | Medium | Observed |
 | AUTH-05 | modelRouter bypassed in /api/chat and /api/plan | Medium | Resolved — fixed in feat(rfb-011) 60848db; selectModel() wired into both handlers
-| AUTH-06 | subscription_tier hardcoded as "free" in Edge Function chat persona | Medium | Observed |
+| AUTH-06 | ~~subscription_tier hardcoded as "free" in Edge Function chat persona~~ | Medium | **Resolved — RFB-009 `d90d5c0` 2026-04-10.** Tier now propagated via JWT; enforced server-side in Edge Function via `supabase.auth.getUser()` + `user_profiles` lookup. |
 | AUTH-07 | CORS wildcard header overrides allowlist in Railway backend | Medium | Resolved — fixed in `fix(rfb-005)`: wildcard middleware removed, `ngrok-skip-browser-warning` moved to `cors()` `allowedHeaders` |
 | AUTH-08 | Railway anon fallback assigns 'privat' tier — free-tier users get privat access without a token | Low | **Resolved** — fd68e1e 2026-04-03. Default tier for valid tokens with no metadata changed to 'free'. Pre-flight: both production users had tier set in user_metadata before deploy. |
 

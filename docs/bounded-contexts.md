@@ -174,7 +174,7 @@ Supabase RLS (inferred — user_profiles likely scoped to `auth.uid()`)
 ### Violations / Ambiguities
 - **RESOLVED 2026-04-03 — RFB-012:** `on_auth_user_created` trigger created on `auth.users`. `handle_new_user()` inserts a default `user_profiles` row (persona_type='private', subscription_tier='free', experience_level=1) on every new sign-up. Backfill not required — 4 existing rows already present.
 - **Observed:** The `persona_type` enum (`pro | kmu | private`) does not map to the Railway tier system (`free | privat | kmu | profi`). No translation layer exists in either repo.
-- **Observed:** `subscription_tier` sent in chat persona is hardcoded as `"free"` in `useChat.ts`. Actual user tier is not propagated to the Edge Function.
+- ~~**Observed:** `subscription_tier` sent in chat persona is hardcoded as `"free"` in `useChat.ts`. Actual user tier is not propagated to the Edge Function.~~ **RESOLVED — RFB-009 `d90d5c0` 2026-04-10.** `useChat.ts` now sends live JWT; Edge Function resolves tier server-side via `supabase.auth.getUser()` + `user_profiles` lookup. `subscription_tier` in request body ignored.
 
 ---
 
@@ -187,4 +187,4 @@ Supabase RLS (inferred — user_profiles likely scoped to `auth.uid()`)
 | Frontend directly writes to DB in BC-03, BC-05, BC-06 without Railway mediation | BC-03, BC-05, BC-06 | Observed |
 | ~~Team admin authorization frontend-only~~ **RLS enforced at DB layer — RFB-002** | BC-05 | Resolved |
 | Knowledge candidate pipeline broken (extracted, never submitted) | BC-03, BC-04 | Observed |
-| `subscription_tier` in chat hardcoded "free" | BC-01, BC-03 | Observed |
+| ~~`subscription_tier` in chat hardcoded "free"~~ **RESOLVED RFB-009 `d90d5c0`** | BC-01, BC-03 | Resolved |

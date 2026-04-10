@@ -107,18 +107,20 @@ full resolution deferred to RFB-004 (Railway session message API).
 ---
 
 #### HIGH-03: Incompatible Tier Systems
-**Classification:** Observed
+**Classification:** ~~Observed~~ **RESOLVED — RFB-009 `d90d5c0` 2026-04-10**
 **Affected:** System-wide
 
-Three distinct tier representations:
+Three distinct tier representations were unified under a single server-side JWT-resolved tier:
 
 | Location | Values | Purpose |
 |----------|--------|---------|
 | Railway backend (src/types/index.ts) | `free \| privat \| kmu \| profi` | Feature gating, model routing |
 | Supabase DB persona_type enum | `pro \| kmu \| private` | User UI mode |
-| Edge Function chat persona | `"free"` (hardcoded) | Tier signaling to Edge Function |
+| Edge Function chat — **fixed** | resolved from JWT via `supabase.auth.getUser()` + `user_profiles` lookup | Tier now server-side, not caller-controlled |
 
-The frontend `persona_type` (pro/kmu/private) has no defined mapping to Railway `Tier` (free/privat/kmu/profi). The Edge Function always receives `"free"` regardless of the user's actual subscription. Market data, model routing, and feature gating behave differently depending on which path the request takes.
+`personaTypeToTier()` mapping inlined in `chat/index.ts`: `pro→profi`, `kmu→kmu`, `private→privat`, default→`free`.
+`useChat.ts` now sends live user JWT (`supabase.auth.getSession().access_token`) instead of anon key.
+Edge Function selects model and system prompt depth based on resolved tier. Anon key fallback resolves to free tier.
 
 ---
 

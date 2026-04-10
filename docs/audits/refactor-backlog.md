@@ -227,6 +227,15 @@ Gaps (non-blocking, follow-up): createSession and archiveSession failures are
 console-only — no user-facing toast.
 RFB-004-C (DB-level count constraint) remains OPEN.
 
+**Phase C — DONE**
+Commit: (negotiation-buddy) — 2026-04-10
+Fixes: private `getToken()` helper removed (supabase.auth.getSession() anti-pattern).
+`useAuth()` wired at hook top; `authSession?.access_token` used on all write paths.
+Differentiated error toasts added per Railway error code:
+  MESSAGE_LIMIT_REACHED, SESSION_NOT_FOUND, AUTH_ERROR.
+loadSessions read path unchanged.
+Note: createSession / archiveSession console-only gap from Phase B not yet addressed.
+
 ---
 
 ### RFB-004-C (Phase C follow-on)
@@ -1567,7 +1576,7 @@ re-verified — their production behaviour was untested before this fix.
 | RFB-001 | Railway authMiddleware never enforces 401 — ✅ DONE `fd68e1e` | P0 | backend | boundary-violation |
 | RFB-002 | Verify/harden Supabase RLS for team admin — ✅ DONE `<hash>` | P0 | backend (migrations) | boundary-violation |
 | RFB-003 | Move team CRUD to Railway API — Phase A ✅ `0b10d9c` / Phase B ✅ Lovable 2026-04-08 / Phase C backend ✅ `6021665` / Phase C Lovable ⏳ OPEN | P0 | backend + frontend | boundary-violation |
-| RFB-004 | Move session/message writes to Railway API — Phase A ✅ `2c51cb4` / Phase B ✅ `2415f72` / Phase C ✅ backend `6021665` / Phase C Lovable ⏳ OPEN |
+| RFB-004 | Move session/message writes to Railway API — Phase A ✅ `2c51cb4` / Phase B ✅ `2415f72` / Phase C ✅ 2026-04-10 | P0 | backend + frontend | boundary-violation |
 | RFB-005 | Fix CORS — wildcard overrides allowlist — ✅ DONE `e00e400` | P0 | backend | boundary-violation |
 | RFB-006 | Unify dual Layer 1 implementations | P1 | backend | duplicate-logic |
 | RFB-007 | Unify three incompatible tier systems — Step A ✅ `1c68185` / Step B ✅ `6ba5710` / Step C blocked (VG-06) | P1 | backend + frontend | contract-gap |

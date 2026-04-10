@@ -35,7 +35,7 @@ This matrix identifies the canonical owner and access rules for every core entit
 | Sync Rule | Read fresh from JWT on each Railway request. No caching. |
 | Business Logic Owner | Railway `authMiddleware` + `modelRouter.ts` |
 | Auth Owner | Stripe (billing) → Supabase (stored) |
-| Violations | Three incompatible tier schemas: `free/privat/kmu/profi` (Railway), `pro/kmu/private` (Supabase persona_type enum), `"free"` hardcoded in Edge Function chat persona |
+| Violations | ~~Three incompatible tier schemas~~ — partial resolved: `persona_type` → `Tier` mapping applied at `POST /api/sessions` via `personaTypeToTier()` (RFB-007-B `6ba5710`); EF chat path resolved server-side via JWT (RFB-009 `d90d5c0`). Step C (EF boundary `personaTypeToTier`) pending VG-06. |
 
 ---
 

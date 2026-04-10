@@ -340,7 +340,11 @@ title.length > 40 ? title.slice(0, 37) + '...' : title
 
 **Response 201:**
 ```typescript
-{ session: negotiation_sessions_row }  // full DB row
+{
+  session: negotiation_sessions_row,  // full DB row; persona_type stored as DB enum value
+  resolvedTier: Tier                  // RFB-007-B — server-canonical Railway Tier derived
+                                      // from persona_type via personaTypeToTier()
+}
 ```
 
 **Auth:** `Authorization: Bearer <JWT>` required. Returns 401 `AUTH_ERROR` if missing or invalid.
@@ -501,7 +505,7 @@ The Edge Function `/functions/v1/chat` is confirmed as the canonical chat path f
 | `ChatMessage` | `src/lib/types.ts` | `src/lib/types.ts` | Maintained in parallel |
 | `NegotiationType` | `src/lib/types.ts` | `src/types/index.ts` | Consistent enum values |
 | `Tier` | Not defined in frontend | `'free' \| 'privat' \| 'kmu' \| 'profi'` | **Drift** — frontend uses persona_type instead |
-| `persona_type` DB enum | `'pro' \| 'kmu' \| 'private'` | Mapped via `personaTypeToTier()` in `src/utils/tierUtils.ts` | **Partial resolution (RFB-007 Step A)** — mapping function added; call sites not yet wired |
+| `persona_type` DB enum | `'pro' \| 'kmu' \| 'private'` | Mapped via `personaTypeToTier()` in `src/utils/tierUtils.ts` | **Partial resolution (RFB-007 Step B)** — wired at `POST /api/sessions`; EF boundary pending Step C (VG-06) |
 | Edge Function inputs | `user_goal / user_walkaway` | `own_target / own_minimum` | **CRITICAL DRIFT** — incompatible schemas |
 
 ---
@@ -571,7 +575,7 @@ Routes covered: `/api/analyze`, `/api/chat`, `/api/plan`, `/api/enrich`, `/api/a
 | ID | Violation | Impact |
 |----|-----------|--------|
 | CON-01 | ~~`subscription_tier` always "free" in Edge Function chat request~~ **RESOLVED RFB-009 `d90d5c0`** — tier now resolved server-side via JWT; `subscription_tier` in body ignored | — |
-| CON-02 | persona_type enum (pro/kmu/private) mapped via `personaTypeToTier()` (`src/utils/tierUtils.ts`) — **PARTIAL RESOLVED RFB-007 Step A** | Mapping function exists; call sites not yet wired (Steps B/C pending VG-05 and VG-06) |
+| CON-02 | persona_type enum (pro/kmu/private) mapped via `personaTypeToTier()` — **PARTIAL RESOLVED RFB-007 Step B `6ba5710`** | Wired at Railway `POST /api/sessions` boundary; EF boundary (Step C) pending VG-06 |
 | CON-03 | Edge Function `negotiate` has completely different NegotiationInputs schema than Railway `/api/analyze` | Parallel analysis paths produce incomparable results |
 | CON-04 | Types maintained in parallel (no shared package) — frontend and backend can silently drift | Runtime errors on schema mismatch |
 | CON-05 | Railway URL hardcoded in apiClient.ts as production URL | `VITE_API_URL` env var ignored if not set — dev vs prod confusion |

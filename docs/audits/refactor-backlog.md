@@ -361,7 +361,14 @@ Tests in `tests/layer1/` reference the Edge Function schema and are currently br
 
 **Step A DONE — `1c68185` (2026-04-09):** `src/utils/tierUtils.ts` added with `personaTypeToTier(personaType): Tier` — canonical mapping function. Additive only, no existing logic modified.
 
-Remaining: mapping between `persona_type` and `Tier` is not yet wired at call sites. The Edge Function always receives `"free"` regardless of actual subscription. Steps B/C pending VG-05 and VG-06.
+**Step B DONE — `6ba5710` (2026-04-10):**
+`personaTypeToTier()` wired at `src/api/sessionRoutes.ts` `POST /sessions` handler.
+`resolvedTier` derived after Zod validation, returned in 201 response alongside session row.
+DB insert unchanged — `persona_type` stored as raw DB enum value.
+`personaTypeToTier()` first call site confirmed. `tsc --noEmit` clean ✓
+`docs/api-catalog.md` updated — `POST /api/sessions` response documents `resolvedTier` field.
+
+Remaining: Step C — Edge Function `persona_type` mapping — blocked on VG-06.
 
 **Confidence:** High — three separate observations in source
 
@@ -1560,7 +1567,7 @@ re-verified — their production behaviour was untested before this fix.
 | RFB-004 | Move session/message writes to Railway API — Phase A ✅ `2c51cb4` / Phase B ✅ `2415f72` / Phase C OPEN | P0 | backend + frontend | boundary-violation |
 | RFB-005 | Fix CORS — wildcard overrides allowlist — ✅ DONE `e00e400` | P0 | backend | boundary-violation |
 | RFB-006 | Unify dual Layer 1 implementations | P1 | backend | duplicate-logic |
-| RFB-007 | Unify three incompatible tier systems — Step A ✅ `1c68185` / Steps B+C blocked (VG-05, VG-06) | P1 | backend + frontend | contract-gap |
+| RFB-007 | Unify three incompatible tier systems — Step A ✅ `1c68185` / Step B ✅ `6ba5710` / Step C blocked (VG-06) | P1 | backend + frontend | contract-gap |
 | RFB-008 | Eliminate parallel type maintenance — ✅ DONE `9c51a43` | P1 | backend | duplicate-logic |
 | RFB-009 | Propagate actual user tier to Edge Function — ✅ DONE `d90d5c0` | P1 | frontend | contract-gap |
 | RFB-010 | Verify Stripe webhook tier update path — ✅ INVESTIGATED 2026-04-09 (handler absent; spawned RFB-032) | P1 | backend | contract-gap |

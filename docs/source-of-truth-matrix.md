@@ -49,14 +49,14 @@ This matrix identifies the canonical owner and access rules for every core entit
 | Write Path (analyze) | Railway `POST /api/analyze` / `POST /api/analyze-full` → `negotiation_sessions` INSERT (analysis columns) |
 | Write Path (update) | Railway `PATCH /api/sessions/:id` → `.update()` with SERVICE_ROLE_KEY — **Phase A DONE** |
 | Write Path (enrich) | Railway `POST /api/enrich` → `.update({layer2_result})` with SERVICE_ROLE_KEY |
-| Write Path (frontend) | `useSessionManager.ts` → direct SDK insert/update — **VIOLATION — Phase B migration pending (blocked on RFB-030)** |
+| Write Path (frontend) | **RETIRED** — `useSessionManager.ts` now calls `POST /api/sessions` + `PATCH /api/sessions/:id` via `apiClient.ts` — since `2415f72` (2026-04-08) |
 | Read Path | Railway `GET /api/sessions/:id` (owner-scoped) or `useSessionManager.ts` direct select |
-| Sync Rule | AnalysisContext (localStorage) mirrors in-session result. DB is written asynchronously (fire-and-forget in session manager until Phase B). |
+| Sync Rule | AnalysisContext (localStorage) mirrors in-session result. DB write is synchronous via Railway API since Phase B. |
 | Business Logic Owner | Railway `sessionRoutes.ts` — title truncation (40 chars), session ownership, status management |
 | Auth Owner | Railway: `assertSessionOwner()` + `.eq('user_id', req.user.id)` code-enforced. RLS pre-existing: `user_sees_own_sessions` policy (FOR ALL, USING auth.uid() = user_id). Verified 2026-04-09. |
-| Violations | Frontend still bypasses API and writes directly to `negotiation_sessions` (Phase B not yet migrated). |
+| Violations | None — Phase B complete `2415f72`. |
 
-> **Phase B note:** Phase A fully closed 2026-04-09 (E2E verified post AB-001 fix). Phase B unblocked: RLS confirmed in place on both tables (RFB-030 closed).
+> **Phase B DONE:** `useSessionManager.ts` migrated 2026-04-08 (`2415f72`). Canonical writer: Railway `POST /api/sessions` + `PATCH /api/sessions/:id`.
 
 ---
 
@@ -69,14 +69,14 @@ This matrix identifies the canonical owner and access rules for every core entit
 | Canonical Owner | Railway API (`src/api/sessionRoutes.ts`) — **Phase A DONE (RFB-004)** — RFB-031 closed `2c51cb4` |
 | Primary Datastore | `session_history` table |
 | Write Path | Railway `POST /api/sessions/:id/messages` → INSERT into `session_history` with SERVICE_ROLE_KEY — **Phase A DONE (RFB-031 closed `2c51cb4`)** |
-| Write Path (frontend) | `useSessionManager.ts` → direct `supabase.from('session_history').insert()` — **VIOLATION — Phase B migration pending** |
+| Write Path (frontend) | **RETIRED** — `useSessionManager.ts` now calls `POST /api/sessions/:id/messages` via `apiClient.ts` — since `2415f72` (2026-04-08) |
 | Read Path | `useSessionManager.ts` → direct select, last 50 messages |
-| Sync Rule | In-session: `AnalysisContext.messages[]`; Persisted: `session_history` table. Sync is eventually consistent (fire-and-forget until Phase B). |
+| Sync Rule | In-session: `AnalysisContext.messages[]`; Persisted: `session_history` table. Write acknowledged synchronously via Railway API since Phase B. |
 | Business Logic Owner | Railway `sessionRoutes.ts` — 50-message limit enforced server-side via count-before-insert (non-atomic — DB constraint pending RFB-004-C) |
 | Auth Owner | Supabase RLS: `user_sees_own_session_history` policy (FOR ALL, transitive ownership via `negotiation_sessions.user_id`). Verified pre-existing 2026-04-09. |
-| Violations | Frontend bypasses API for message writes (Phase B pending — now unblocked). `session_history` table origin untracked — no CREATE TABLE migration file in repo. |
+| Violations | None — Phase B complete `2415f72`. `session_history` table origin untracked — no CREATE TABLE migration file in repo. |
 
-> **Phase B note:** Phase A fully closed 2026-04-09. RFB-030 (RLS) closed. RFB-031 (table name fix) closed `2c51cb4`. Phase B fully unblocked — ready to proceed.
+> **Phase B DONE:** `useSessionManager.ts` migrated 2026-04-08 (`2415f72`). Canonical writer: Railway `POST /api/sessions/:id/messages`.
 
 ---
 

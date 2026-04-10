@@ -306,6 +306,18 @@ migrate Edge Function call to Railway.
 
 ---
 
+### Session & Message Endpoints (active — RFB-004-B `2415f72`, 2026-04-08)
+
+| Endpoint | Body | Auth | Returns | Business Rules |
+|----------|------|------|---------|----------------|
+| `POST /api/sessions` | `{ title: string; persona_type: string }` | Bearer JWT | `{ id, ... }` | title truncated to 40 chars server-side |
+| `PATCH /api/sessions/:id` | `{ title?: string; status?: string }` | Bearer JWT + session ownership | 200 | ownership enforced via `assertSessionOwner()` |
+| `POST /api/sessions/:id/messages` | `{ role: string; content: string }` | Bearer JWT + session ownership | 200 / 403 / 429 | 50-message limit enforced server-side |
+
+Frontend `useSessionManager.ts` now calls these endpoints via `apiClient.ts`. Direct Supabase SDK writes retired (Phase B — `2415f72`).
+
+---
+
 ### `POST /api/sessions`
 
 > Status: Implemented — RFB-004 Phase A | E2E verified 2026-04-09 ✓ | File: `src/api/sessionRoutes.ts`

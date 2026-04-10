@@ -51,7 +51,7 @@ The Supabase anon key (VITE_SUPABASE_PUBLISHABLE_KEY) is intentionally public. A
 |----------|---------|---------|
 | **Canonical Writer** | Ambiguous (Railway + Frontend) | Railway only |
 | **Railway writes** | `layer1_result`, `layer2_result`, `task_type`, `model_used`, `model_degraded`, `user_id` | Same |
-| **Frontend writes** | `id`, `user_id`, `title`, `mode`, `persona_type` via `useSessionManager.ts` | **RETIRED** — Railway creates full session record on `/api/analyze` |
+| **Frontend writes** | `id`, `user_id`, `title`, `mode`, `persona_type` via `useSessionManager.ts` | **RETIRED** — `useSessionManager.ts` now calls Railway `POST /api/sessions` + `PATCH /api/sessions/:id` via `apiClient.ts`. Migration complete `2415f72` (2026-04-08). |
 | **Read** | Frontend direct select + Railway GET /api/sessions/:id | Both acceptable |
 | **RLS** | Inferred (owns_session() function exists) | Verify + enforce |
 | **Access Control** | Railway: code-enforced `.eq('user_id')` | Unchanged |
@@ -60,13 +60,13 @@ The Supabase anon key (VITE_SUPABASE_PUBLISHABLE_KEY) is intentionally public. A
 
 ---
 
-### `session_messages`
+### `session_history`
 
 | Property | Current | Proposed |
 |----------|---------|---------|
 | **Canonical Writer** | Frontend (`useSessionManager.ts`) | Railway |
-| **Frontend writes** | All message inserts (fire-and-forget) | **RETIRED** — New `POST /api/sessions/:id/messages` endpoint |
-| **Business rules** | Retry logic (2x, 1500ms), load limit (50) in frontend | Move to Railway |
+| **Frontend writes** | All message inserts (fire-and-forget) | **RETIRED** — `useSessionManager.ts` now calls Railway `POST /api/sessions/:id/messages` via `apiClient.ts`. Migration complete `2415f72` (2026-04-08). |
+| **Business rules** | Retry logic (2x, 1500ms), load limit (50) in frontend | **MIGRATED** — 50-message limit and ownership enforced server-side. Retry logic removed from frontend. |
 | **Read** | Frontend direct select (last 50) | `GET /api/sessions/:id/messages` with server-side pagination |
 | **RLS** | Inferred | Verify + enforce |
 
@@ -196,7 +196,7 @@ Is the write a new table with no existing pattern?
 ## Consequences of These Rules
 
 ### Short-term (accepted inconsistencies during migration)
-- Frontend direct writes to negotiation_sessions, session_messages, teams remain until Railway CRUD endpoints are built
+- Frontend direct writes to negotiation_sessions, session_history, teams remain until Railway CRUD endpoints are built
 - persona_type and tier remain separate systems until a migration is planned
 
 ### Medium-term (target state)

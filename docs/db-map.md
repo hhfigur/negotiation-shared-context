@@ -34,8 +34,8 @@ Canonical reference for which service reads and writes each Supabase table, what
 | UPDATE (analysis) | Railway `POST /api/analyze` / `POST /api/analyze-full` | `.update({ layer1_result })` | SERVICE_ROLE_KEY | Ownership verified via route authMiddleware |
 | UPDATE (enrichment) | Railway `POST /api/enrich` | `.update({ layer2_result })` | SERVICE_ROLE_KEY | Tier gate: kmu/profi only |
 | READ (single) | Railway `GET /api/sessions/:id` | `.select().eq('id').eq('user_id')` | SERVICE_ROLE_KEY | User ownership scoped in query |
-| CREATE (violation) | Frontend `useSessionManager.ts` | `supabase.from('negotiation_sessions').insert()` | anon key | No server-side title enforcement — **Phase B pending** |
-| UPDATE (violation) | Frontend `useSessionManager.ts` | `.update({ status: 'archived' })` | anon key | Direct SDK — bypasses Railway — **Phase B pending** |
+| ~~CREATE (violation)~~ | ~~Frontend `useSessionManager.ts`~~ | ~~direct SDK insert~~ | ~~anon key~~ | **MIGRATED** → `POST /api/sessions` via `apiClient.ts` — `2415f72` (2026-04-08) |
+| ~~UPDATE (violation)~~ | ~~Frontend `useSessionManager.ts`~~ | ~~`.update({ status: 'archived' })`~~ | ~~anon key~~ | **MIGRATED** → `PATCH /api/sessions/:id` via `apiClient.ts` — `2415f72` (2026-04-08) |
 | READ | Frontend `useSessionManager.ts` | `.select()` | anon key | User-scoped via Supabase auth context |
 
 **RLS Status:** Pre-existing policy `user_sees_own_sessions` (FOR ALL, USING `auth.uid() = user_id`) confirmed 2026-04-09 (RFB-030). SERVICE_ROLE_KEY bypasses RLS for Railway writes — no conflict. Code-level guard (`assertSessionOwner()`) provides defence-in-depth.
@@ -50,7 +50,7 @@ Canonical reference for which service reads and writes each Supabase table, what
 |-----------|--------|--------|------|---------------|
 | INSERT | Railway `POST /api/sessions/:id/messages` | `supabase.from('session_history').insert()` | SERVICE_ROLE_KEY | Count-before-insert enforces 50-message limit (non-atomic — DB constraint pending RFB-004-C) |
 | SELECT | Frontend `useSessionManager.ts` | `.select().eq('session_id').order('created_at').limit(50)` | anon key | Last 50 messages, user-scoped via session ownership |
-| INSERT (violation) | Frontend `useSessionManager.ts` | `supabase.from('session_history').insert()` | anon key | Fire-and-forget with retry — no 50-message limit enforced client-side — **Phase B pending** |
+| ~~INSERT (violation)~~ | ~~Frontend `useSessionManager.ts`~~ | ~~direct SDK insert~~ | ~~anon key~~ | **MIGRATED** → `POST /api/sessions/:id/messages` via `apiClient.ts` — `2415f72` (2026-04-08) |
 
 **RLS Status:** Pre-existing policy `user_sees_own_session_history` (FOR ALL, transitive ownership via `negotiation_sessions.user_id`) confirmed 2026-04-09 (RFB-030). No migration needed.
 

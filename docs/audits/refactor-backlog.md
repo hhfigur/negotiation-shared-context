@@ -214,6 +214,16 @@ session_history retroactive migration traceability (open, low priority).
 Phase A fully closed 2026-04-09 (E2E verified post AB-001 fix).
 Phase B (useSessionManager.ts → Railway migration) unblocked — RFB-031 closed `2c51cb4`.
 
+**Phase B — DONE (out-of-band)**
+Commit: `2415f72` (negotiation-buddy) + `70e705c` (apiClient methods) — 2026-04-08, Lovable bot
+Verified 2026-04-09 by Control Tower planning pass:
+tsc --noEmit clean ✓ | createSessionApi wired ✓ | updateSessionApi wired ✓ |
+saveMessageApi wired ✓ | title truncation removed ✓ | retry logic removed ✓ |
+toast surfaced on saveMessage failure ✓
+Gaps (non-blocking, follow-up): createSession and archiveSession failures are
+console-only — no user-facing toast.
+RFB-004-C (DB-level count constraint) remains OPEN.
+
 ---
 
 ### RFB-004-C (Phase C follow-on)
@@ -1547,7 +1557,7 @@ re-verified — their production behaviour was untested before this fix.
 | RFB-001 | Railway authMiddleware never enforces 401 — ✅ DONE `fd68e1e` | P0 | backend | boundary-violation |
 | RFB-002 | Verify/harden Supabase RLS for team admin — ✅ DONE `<hash>` | P0 | backend (migrations) | boundary-violation |
 | RFB-003 | Move team CRUD to Railway API — ✅ DONE Phase A `0b10d9c` + Phase B Lovable 2026-04-08 | P0 | backend + frontend | boundary-violation |
-| RFB-004 | Move session/message writes to Railway API — ✅ DONE | P0 | backend + frontend | boundary-violation |
+| RFB-004 | Move session/message writes to Railway API — Phase A ✅ `2c51cb4` / Phase B ✅ `2415f72` / Phase C OPEN | P0 | backend + frontend | boundary-violation |
 | RFB-005 | Fix CORS — wildcard overrides allowlist — ✅ DONE `e00e400` | P0 | backend | boundary-violation |
 | RFB-006 | Unify dual Layer 1 implementations | P1 | backend | duplicate-logic |
 | RFB-007 | Unify three incompatible tier systems — Step A ✅ `1c68185` / Steps B+C blocked (VG-05, VG-06) | P1 | backend + frontend | contract-gap |

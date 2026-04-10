@@ -77,7 +77,9 @@ Railway `authMiddleware` + `requireTier('kmu')` gate on `/api/enrich`
 
 ### Write Path
 - Frontend `useChat.ts` → SSE POST to `supabase/functions/v1/chat` → streams tokens back
-- Frontend `useSessionManager.ts` → `supabase.from('session_history').insert()` directly (no API intermediary)
+- `negotiation_sessions` INSERT → `POST /api/sessions` (Railway) — MIGRATED RFB-004-B `2415f72`
+- `negotiation_sessions` UPDATE → `PATCH /api/sessions/:id` (Railway) — MIGRATED RFB-004-B `2415f72`
+- `session_history` INSERT → `POST /api/sessions/:id/messages` (Railway) — MIGRATED RFB-004-B `2415f72`
 
 ### Read Path
 - Resume: `useSessionManager.ts` → `supabase.from('session_history').select()` last 50 messages
@@ -90,7 +92,7 @@ Railway `authMiddleware` + `requireTier('kmu')` gate on `/api/enrich`
 Supabase anon key (for Edge Function call), Supabase RLS (inferred via `owns_session()` function in DB schema)
 
 ### Violations / Ambiguities
-- **PHASE A COMPLETE (RFB-004-C) — Railway endpoints live. Phase B pending: useSessionManager.ts migration.** Railway endpoints `POST /api/sessions`, `PATCH /api/sessions/:id`, `POST /api/sessions/:id/messages` are implemented in `src/api/sessionRoutes.ts` with `assertSessionOwner()`, title truncation, and 50-message limit enforced server-side. Phase A fully closed 2026-04-09 (E2E verified post AB-001 fix). Phase B (migrating `useSessionManager.ts` to Railway API calls) blocked on: RFB-030 (RLS for session tables).
+- **PHASE A + B COMPLETE (RFB-004)** — Railway endpoints live (`2c51cb4`). `useSessionManager.ts` migrated to Railway API calls (`2415f72`, 2026-04-08). Direct Supabase SDK writes retired. Business rules (title truncation, 50-message limit, ownership) enforced server-side only. RFB-004-C (DB count constraint) remains OPEN.
 - **Observed:** Railway also has a `/api/chat` endpoint (non-streaming fallback) using a hardcoded `claude-haiku` model, not `modelRouter`. The relationship between this fallback and the Edge Function primary path is undocumented.
 - **Inferred:** The Railway `/api/chat` is the original implementation; the Edge Function `/chat` is a later addition. The fallback may be dead code.
 

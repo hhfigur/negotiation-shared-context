@@ -57,6 +57,7 @@ This matrix identifies the canonical owner and access rules for every core entit
 | Violations | None — Phase B complete `2415f72`. |
 
 > **Phase B DONE:** `useSessionManager.ts` migrated 2026-04-08 (`2415f72`). Canonical writer: Railway `POST /api/sessions` + `PATCH /api/sessions/:id`.
+> **Phase C DONE 2026-04-10:** Token retrieval anti-pattern removed. `useAuth()` is now sole token source for all write paths. Structured error handling per Railway error code added. RFB-004 fully closed.
 
 ---
 
@@ -179,5 +180,5 @@ This matrix identifies the canonical owner and access rules for every core entit
 | VG-03 | ~~Stripe webhook handler — how is `user_metadata.tier` updated on subscription change?~~ — **RESOLVED 2026-04-09:** Confirmed absent. No handler, no stripe package. RFB-032 registered (DEFERRED). | ~~High~~ Closed |
 | VG-04 | Profile creation on sign-up — what creates the initial `user_profiles` row? | Medium |
 | VG-05 | Edge Function `/chat` tier enforcement — **RESOLVED 2026-04-09** — `subscription_tier` IS read from request body (`index.ts:82`) and injected into system prompt as plain text only (`Abo-Stufe: ${value}`). No model selection, no feature gating, no branching on tier value. No JWT auth at all — function accepts any request. Tier is decorative metadata. Consequence: RFB-009 (fix `useChat.ts`) alone has no functional effect — Edge Function logic must also enforce tier server-side. New finding: VG-05-A (no JWT auth, severity High). | ~~Medium~~ Closed |
-| VG-06 | Edge Function `generate-plan` — is this actively used, or has Railway `/api/plan` superseded it? | Low |
+| VG-06 | Is Edge Function `generate-plan` active, or has Railway `/api/plan` replaced it? | ✅ RESOLVED 2026-04-11 — ACTIVE. `generate-plan` is the sole plan path (`Index.tsx:341`). Railway `generatePlan()` is dead code. See VG-06-A for auth gap. |
 | VG-07 | **RESOLVED 2026-04-09 — ADR-004 accepted:** Edge Function `/functions/v1/chat` remains canonical chat path for all tiers. Tier enforcement added inside EF via JWT read (`supabase.auth.getUser()`). Railway `/api/chat` retained for structured extraction only. |

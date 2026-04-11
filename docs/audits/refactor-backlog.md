@@ -155,13 +155,10 @@ Phase A commit: `0b10d9c` (negotiationcoach-backend) — 2026-04-07
 Phase B commit: (negotiation-buddy Lovable deploy) — 2026-04-08
 Verified: tsc --noEmit clean ✓ | 4 endpoints in teamRoutes.ts ✓ | assertTeamAdmin enforced server-side ✓
   | useTeamApi.ts hook created ✓ | W1+W2 migrated to POST /api/teams ✓ | W4 migrated to DELETE /api/teams/:id/members/:userId ✓
+  | W3 (task creation) remains on Supabase SDK — Phase C dependency ✓
   | Team creation end-to-end verified in production UI ✓
 Docs updated: docs/api-catalog.md | docs/db-map.md | docs/bounded-contexts.md (BC-05) | docs/data-access-map.md
 Unblocked by: AB-001 fix (Railway SUPABASE_URL corrected)
-
-**Phase C — backend DONE `6021665` (2026-04-10):**
-`POST /api/teams/:id/tasks` added to `teamRoutes.ts`. Admin-only, Zod-validated.
-Frontend call-site migration (TeamDashboard.tsx:120 — Supabase SDK INSERT) pending — Lovable Phase C.
 
 ---
 
@@ -227,14 +224,20 @@ Gaps (non-blocking, follow-up): createSession and archiveSession failures are
 console-only — no user-facing toast.
 RFB-004-C (DB-level count constraint) remains OPEN.
 
-**Phase C — DONE**
-Commit: (negotiation-buddy) — 2026-04-10
-Fixes: private `getToken()` helper removed (supabase.auth.getSession() anti-pattern).
-`useAuth()` wired at hook top; `authSession?.access_token` used on all write paths.
-Differentiated error toasts added per Railway error code:
-  MESSAGE_LIMIT_REACHED, SESSION_NOT_FOUND, AUTH_ERROR.
-loadSessions read path unchanged.
-Note: createSession / archiveSession console-only gap from Phase B not yet addressed.
+**Phase C backend: DONE** 
+Commit 6021665 (negotiationcoach-backend) 2026-04-10
+  POST /api/teams/:id/tasks added to teamRoutes.ts ✓ | CreateTaskSchema in validation.ts ✓
+  assertTeamAdmin enforced ✓ | tsc --noEmit EXIT:0 ✓
+  Docs: api-catalog.md ✓ | shared-context/contracts/frontend-backend.md ✓ (commit d1e1f33)
+Phase C Lovable: OPEN — TeamDashboard.tsx:120 still calls Supabase SDK directly; endpoint ready for migration
+
+**Phase C Lovable (token + error handling): DONE 2026-04-10**
+Scope: useSessionManager.ts token retrieval anti-pattern fix + structured error toasts
+Change: getToken() helper removed (lines 25–29); useAuth() added at hook top;
+authSession?.access_token wired to createSession, archiveSession, saveMessage write paths;
+structured error toasts per Railway error code (MESSAGE_LIMIT_REACHED, SESSION_NOT_FOUND, AUTH_ERROR).
+loadSessions read path unchanged. tsc --noEmit clean. Single file change.
+Note: RFB-004-C (non-atomic count constraint) remains OPEN as separate sub-item.
 
 ---
 
@@ -351,7 +354,7 @@ Tests in `tests/layer1/` reference the Edge Function schema and are currently br
 - Regression: ZOPA output matches known-good values for reference inputs
 - Regression: Nash Bargaining, Monte Carlo outputs match reference
 
-**Depends On:** Resolve VG-06 first (determine whether Edge Function `negotiate` is active)
+**Depends On:** VG-06 RESOLVED 2026-04-11 — `generate-plan` has no Layer 1 dependency. RFB-006 scope is the `/chat` Edge Function `_shared/engine/` only. Unblocked.
 
 ---
 
@@ -418,9 +421,10 @@ VG-05 resolved 2026-04-09 — Edge Function reads `subscription_tier` but does n
 Scope expanded: wire `personaTypeToTier()` into call sites + add Edge Function server-side tier
 enforcement (JWT read + model/feature branching). Requires Lovable planning pass.
 
-**Step C — BLOCKED**
-Blocker: VG-06 unresolved — negotiate Edge Function active/inactive status unknown.
-Planned scope: propagate correct tier to Edge Function (RFB-009 dependency).
+**Step C — UNBLOCKED**
+VG-06 RESOLVED 2026-04-11 — `generate-plan` has no tier gate and no `persona_type` dependency.
+Step C blocker is DB enum migration only, not plan path complexity.
+Planned scope: propagate correct tier to `generate-plan` EF boundary.
 
 ---
 
@@ -1535,6 +1539,60 @@ RFB-007 must be resolved first.
 
 ---
 
+### RFB-033
+
+**Title:** Add JWT auth and tier gate to generate-plan Edge Function
+
+**Repo:** `negotiation-buddy` (Supabase Edge Function `generate-plan`)
+
+**Category:** `boundary-violation`
+
+**Evidence (Observed):**
+`generate-plan/index.ts` accepts all callers via anon key with no JWT validation and no tier check. Any unauthenticated caller can trigger a Gemini plan generation and write results to `negotiation_sessions`. Discovered in VG-06 investigation 2026-04-11.
+
+**Risk:** Tier bypass — free-tier users can call plan generation without restriction. Unauthenticated callers can trigger DB writes via `SUPABASE_SERVICE_ROLE_KEY` side effect.
+
+**Canonical Owner:** `generate-plan` Edge Function
+
+**Recommended Action:**
+1. Add JWT verification at Edge Function entry (validate Bearer token from Authorization header against Supabase JWT secret)
+2. Extract tier from verified JWT claims
+3. Gate plan generation behind minimum tier (privat or above)
+4. Return 401 for missing/invalid token, 403 for insufficient tier
+
+**Depends On:** Nothing
+
+**Status: OPEN**
+
+---
+
+### RFB-034
+
+**Title:** Remove dead Railway generatePlan() wrapper and /api/plan endpoint
+
+**Repo:** `negotiationcoach-backend`
+
+**Category:** `dead-code`
+
+**Evidence (Observed):**
+`apiClient.ts:generatePlan()` (line 92) wraps `POST /api/plan` but has zero call sites in the frontend. The Railway `/api/plan` endpoint exists but is never reached. `generate-plan` Edge Function is the active path. Confirmed in VG-06 investigation 2026-04-11.
+
+**Risk:** Low — removal is safe. No caller exists.
+
+**Canonical Owner:** `negotiationcoach-backend` — `src/api/routes.ts` + `negotiation-buddy` — `src/lib/apiClient.ts`
+
+**Recommended Action:**
+1. Remove `generatePlan()` from `apiClient.ts`
+2. Remove `/api/plan` route registration from `routes.ts`
+3. Remove `planHelpers.ts` if it has no other callers
+4. Update `api-catalog.md` to mark `/api/plan` as removed
+
+**Depends On:** Nothing
+
+**Status: OPEN**
+
+---
+
 ## Active Blockers
 
 ### AB-001
@@ -1575,11 +1633,11 @@ re-verified — their production behaviour was untested before this fix.
 |----|-------|----------|------|----------|
 | RFB-001 | Railway authMiddleware never enforces 401 — ✅ DONE `fd68e1e` | P0 | backend | boundary-violation |
 | RFB-002 | Verify/harden Supabase RLS for team admin — ✅ DONE `<hash>` | P0 | backend (migrations) | boundary-violation |
-| RFB-003 | Move team CRUD to Railway API — Phase A ✅ `0b10d9c` / Phase B ✅ Lovable 2026-04-08 / Phase C backend ✅ `6021665` / Phase C Lovable ⏳ OPEN | P0 | backend + frontend | boundary-violation |
-| RFB-004 | Move session/message writes to Railway API — Phase A ✅ `2c51cb4` / Phase B ✅ `2415f72` / Phase C ✅ 2026-04-10 | P0 | backend + frontend | boundary-violation |
+| RFB-003 | Move team CRUD to Railway API — ✅ DONE Phase A `0b10d9c` + Phase B Lovable 2026-04-08 | P0 | backend + frontend | boundary-violation |
+| RFB-004 | Move session/message writes to Railway API — Phase A ✅ `2c51cb4` / Phase B ✅ `2415f72` / Phase C backend ✅ `6021665` / Phase C Lovable ✅ 2026-04-10 — RFB-004-C (count constraint) ⏸ OPEN |
 | RFB-005 | Fix CORS — wildcard overrides allowlist — ✅ DONE `e00e400` | P0 | backend | boundary-violation |
 | RFB-006 | Unify dual Layer 1 implementations | P1 | backend | duplicate-logic |
-| RFB-007 | Unify three incompatible tier systems — Step A ✅ `1c68185` / Step B ✅ `6ba5710` / Step C blocked (VG-06) | P1 | backend + frontend | contract-gap |
+| RFB-007 | Unify three incompatible tier systems — Step A ✅ `1c68185` / Step B ✅ `6ba5710` / Step C ⬜ OPEN (unblocked — VG-06 resolved) | P1 | backend + frontend | contract-gap |
 | RFB-008 | Eliminate parallel type maintenance — ✅ DONE `9c51a43` | P1 | backend | duplicate-logic |
 | RFB-009 | Propagate actual user tier to Edge Function — ✅ DONE `d90d5c0` | P1 | frontend | contract-gap |
 | RFB-010 | Verify Stripe webhook tier update path — ✅ INVESTIGATED 2026-04-09 (handler absent; spawned RFB-032) | P1 | backend | contract-gap |
@@ -1607,6 +1665,8 @@ re-verified — their production behaviour was untested before this fix.
 | RFB-030 | Add RLS policies for negotiation_sessions and session_history — ✅ DONE 2026-04-09 (re-scoped) | P1 | backend (migrations) | boundary-violation |
 | RFB-031 | Fix session_history table name in sessionRoutes.ts — ✅ DONE `2c51cb4` | P0 | backend | boundary-violation |
 | RFB-032 | Implement Stripe webhook handler — POST /api/webhooks/stripe — ⏸ DEFERRED (Stripe not live; blocked on RFB-007) | P0 | backend | contract-gap |
+| RFB-033 | Add JWT auth + tier gate to generate-plan Edge Function (VG-06-A) | P2 | frontend (Supabase EF) | boundary-violation |
+| RFB-034 | Remove dead Railway generatePlan() + /api/plan endpoint (DCC-BE-02) | P3 | backend | dead-code |
 | AB-001 | Railway SUPABASE_URL placeholder fixed — ✅ DONE 2026-04-08 | P0 | infrastructure | infrastructure |
 
 ---

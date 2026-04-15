@@ -963,7 +963,7 @@ State machine transitions should be moved to a `useCoachingFlow` hook.
 **Depends On:** Nothing (pure refactor, no logic changes)
 
 **Status: DONE (Phase 1 — all phases complete)**
-**Commit:** <Phase-1-hash> (negotiation-buddy)
+**Commit:** `0cd7a01` (negotiation-buddy)
 **Verified:** tsc --noEmit clean ✓ | Index.tsx 931 → 870 lines (−61) ✓
 Guided Flow, Strategie-Modus, Plan-Generierung structurally unchanged ✓
 No state moved ✓
@@ -1699,7 +1699,7 @@ Index.tsx line 565 calls an Edge Function (believed to be `summarize-session`) u
 **Depends On:** RFB-033 (pattern proven — reuse directly)
 
 **Status: DONE**
-Commit: `<hash>` (negotiation-buddy) — 2026-04-11
+Commit: `ffe0274` (negotiation-buddy) — 2026-04-11
 Verified: tsc --noEmit clean ✓ | auth.getUser() at line 29 ✓ |
 ownership pre-flight SELECT on negotiation_sessions (lines 50–55) ✓ |
 .eq("user_id") on UPDATE (line 151) ✓ |
@@ -1842,7 +1842,7 @@ re-verified — their production behaviour was untested before this fix.
 | RFB-017 | Deduplicate password validation — ✅ DONE `48d0edc` | P2 | frontend | duplicate-logic |
 | RFB-018 | Rename webSearch.ts to reflect actual behaviour — ✅ DONE `675cc21` | P3 | backend | contract-gap |
 | RFB-019 | Consolidate dual toast systems — ✅ DONE `056e672` | P3 | frontend | dead-code |
-| RFB-020 | Decompose Index.tsx god component — ✅ DONE Phase 1 `<hash>` | P3 | frontend | dead-code |
+| RFB-020 | Decompose Index.tsx god component — ✅ DONE Phase 1 `0cd7a01` | P3 | frontend | dead-code |
 | RFB-020b | Extract useGuidedFlow hook from Index.tsx — ✅ DONE `64b7432` | P3 | frontend | dead-code |
 | RFB-020c | Extract useProgressEngine hook from Index.tsx — ✅ DONE `[RFB-020c hash]` | P3 | frontend | dead-code |
 | RFB-021 | Wire Zod for API input validation — ✅ DONE `5eed133` | P3 | backend | dead-code |
@@ -1860,7 +1860,7 @@ re-verified — their production behaviour was untested before this fix.
 | RFB-033 | Add JWT auth and tier gate to generate-plan Edge Function — ✅ DONE `<hash>` | P1 | frontend | boundary-violation |
 | RFB-034 | Annotate Railway /api/plan + generatePlan() as ADR-005 migration targets — ✅ DONE `f5e8190` / `deebb5a` | P3 | backend + frontend | dead-code |
 | RFB-035 | Replace anon key with user JWT for remaining EF calls in Index.tsx — ✅ DONE via RFB-035A + RFB-035B | P1 | frontend | boundary-violation |
-| RFB-035A | summarize-session auth guard + ownership fix + Index.tsx Change C — ✅ DONE `<hash>` | P1 | frontend | boundary-violation |
+| RFB-035A | summarize-session auth guard + ownership fix + Index.tsx Change C — ✅ DONE `ffe0274` | P1 | frontend | boundary-violation |
 | RFB-035B | analyze-progress + analyze-document auth guards + Index.tsx Changes A+B — ✅ DONE `<hash>` | P2 | frontend | boundary-violation |
 | RFB-036 | Migrate subscription_tier DB enum to Railway Tier values (ADR-006) | P1 | frontend | contract-gap |
 | AB-001 | Railway SUPABASE_URL placeholder fixed — ✅ DONE 2026-04-08 | P0 | infrastructure | infrastructure |

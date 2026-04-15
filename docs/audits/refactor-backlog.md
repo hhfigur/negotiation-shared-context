@@ -1857,7 +1857,7 @@ re-verified — their production behaviour was untested before this fix.
 | RFB-030 | Add RLS policies for negotiation_sessions and session_history — ✅ DONE 2026-04-09 (re-scoped) | P1 | backend (migrations) | boundary-violation |
 | RFB-031 | Fix session_history table name in sessionRoutes.ts — ✅ DONE `2c51cb4` | P0 | backend | boundary-violation |
 | RFB-032 | Implement Stripe webhook handler — POST /api/webhooks/stripe — ⏸ DEFERRED (Stripe not live; blocked on RFB-036; write target confirmed ADR-006) | P0 | backend | contract-gap |
-| RFB-033 | Add JWT auth and tier gate to generate-plan Edge Function — ✅ DONE `<hash>` | P1 | frontend | boundary-violation |
+| RFB-033 | Add JWT auth and tier gate to generate-plan Edge Function — ✅ DONE `477df3d` | P1 | frontend | boundary-violation |
 | RFB-034 | Annotate Railway /api/plan + generatePlan() as ADR-005 migration targets — ✅ DONE `f5e8190` / `deebb5a` | P3 | backend + frontend | dead-code |
 | RFB-035 | Replace anon key with user JWT for remaining EF calls in Index.tsx — ✅ DONE via RFB-035A + RFB-035B | P1 | frontend | boundary-violation |
 | RFB-035A | summarize-session auth guard + ownership fix + Index.tsx Change C — ✅ DONE `ffe0274` | P1 | frontend | boundary-violation |

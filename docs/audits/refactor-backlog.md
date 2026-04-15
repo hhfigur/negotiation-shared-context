@@ -239,6 +239,9 @@ structured error toasts per Railway error code (MESSAGE_LIMIT_REACHED, SESSION_N
 loadSessions read path unchanged. tsc --noEmit clean. Single file change.
 Note: RFB-004-C (non-atomic count constraint) remains OPEN as separate sub-item.
 
+**Overall Status: DONE — Phases A/B/C complete.**
+RFB-004-C (max session count constraint) remains OPEN — no explicit blocker documented.
+
 ---
 
 ### RFB-004-C (Phase C follow-on)
@@ -421,10 +424,19 @@ VG-05 resolved 2026-04-09 — Edge Function reads `subscription_tier` but does n
 Scope expanded: wire `personaTypeToTier()` into call sites + add Edge Function server-side tier
 enforcement (JWT read + model/feature branching). Requires Lovable planning pass.
 
-**Step C — UNBLOCKED**
-VG-06 RESOLVED 2026-04-11 — `generate-plan` has no tier gate and no `persona_type` dependency.
-Step C blocker is DB enum migration only, not plan path complexity.
-Planned scope: propagate correct tier to `generate-plan` EF boundary.
+**Step C — CLOSED (re-scoped) 2026-04-13**
+generate-plan EF boundary already covered by RFB-033 — inline
+personaTypeToTier() switch resolves tier from user_profiles.persona_type.
+Tier gate in generate-plan/index.ts: present as commented stub — Option B
+decision (2026-04-13): leave inactive. All authenticated users may generate
+plans regardless of tier.
+Remaining DB enum migration (pro→profi, private→privat in persona_type)
+registered as RFB-036 — separate item due to schema blast radius.
+RFB-036 subsequently CANCELLED (2026-04-13) — schema inspection confirmed
+persona_type is UI persona (not billing); no enum migration warranted.
+RFB-007 fully closed.
+
+**Status: DONE — Steps A/B/C complete. Step C re-scoped to RFB-036 (DB enum migration).**
 
 ---
 
@@ -1520,7 +1532,8 @@ Spawned from RFB-010 investigation (2026-04-09). No Stripe webhook handler exist
 9. Wire into `routes.ts` — register before `app.use(express.json())`
 
 **Blocked By:**
-- RFB-007 (tier enum unification) — backend `Tier` enum and frontend `subscription_tier` enum are incompatible; must be resolved first so the webhook writes a value `authMiddleware` recognises
+- Stripe not yet live in production
+- RFB-036 (subscription_tier enum migration per ADR-006) — `subscription_tier` must use Railway Tier values (`free | privat | kmu | profi`) before webhook can write correct values; ~~RFB-007~~ closed
 
 **Required Docs/Contracts to Update:**
 - `docs/api-catalog.md` — add `POST /api/webhooks/stripe` entry
@@ -1533,9 +1546,15 @@ Spawned from RFB-010 investigation (2026-04-09). No Stripe webhook handler exist
 - Integration: Updated tier reflected in next authenticated Railway request
 - Unit: Invalid signature → 400 rejected
 
-**Status: DEFERRED — activate when Stripe payment goes live**
-Do not implement until billing milestone is unparked by owner.
-RFB-007 must be resolved first.
+**Status: ⏸ DEFERRED — updated 2026-04-13**
+Blockers remaining:
+1. Stripe not yet live in production
+2. RFB-036 must complete first (subscription_tier must use Railway values
+   before webhook can write correct tier)
+Write target confirmed (ADR-006): webhook writes to
+user_profiles.subscription_tier using Railway Tier values
+(free | privat | kmu | profi).
+JWT field target: confirm via grep on middleware.ts before planning.
 
 ---
 
@@ -1562,32 +1581,205 @@ RFB-007 must be resolved first.
 
 **Depends On:** Nothing
 
-**Status: OPEN**
+**Status: DONE**
+Commit: `<hash>` (negotiation-buddy) — 2026-04-11
+Verified: tsc --noEmit clean ✓ | auth.getUser() at line 31 ✓ |
+user_id ownership filter: tier lookup (line 43) + SELECT (line 180) +
+UPDATE (line 195) on negotiation_sessions ✓ |
+tier resolved via user_profiles.persona_type ✓ |
+Index.tsx: live JWT with anon-key null fallback at line 348 ✓ |
+unchanged EF calls: Index.tsx lines 287, 431, 565 (content unmodified) ✓
+Tier gate: present as commented stub — not active. Product decision required.
+Note: implementation was complete before verification prompt ran (correct-repo
+run confirmed all checks passing).
+Follow-up: register RFB-034 for remaining anon-key EF calls (Index.tsx lines
+287, 431, 565).
 
 ---
 
 ### RFB-034
 
-**Title:** Remove dead Railway generatePlan() wrapper and /api/plan endpoint
+**Title:** Annotate Railway /api/plan + generatePlan() as migration targets
+(DCC-BE-02)
 
-**Repo:** `negotiationcoach-backend`
+**Repo:** `negotiationcoach-backend` + `negotiation-buddy`
 
 **Category:** `dead-code`
 
-**Evidence (Observed):**
-`apiClient.ts:generatePlan()` (line 92) wraps `POST /api/plan` but has zero call sites in the frontend. The Railway `/api/plan` endpoint exists but is never reached. `generate-plan` Edge Function is the active path. Confirmed in VG-06 investigation 2026-04-11.
-
-**Risk:** Low — removal is safe. No caller exists.
-
-**Canonical Owner:** `negotiationcoach-backend` — `src/api/routes.ts` + `negotiation-buddy` — `src/lib/apiClient.ts`
+**Decision (ADR-005, 2026-04-11):** Railway `/api/plan` is the canonical
+long-term plan generation path. The `generate-plan` Edge Function is
+temporary. Neither the endpoint nor `planHelpers.ts` will be removed.
 
 **Recommended Action:**
-1. Remove `generatePlan()` from `apiClient.ts`
-2. Remove `/api/plan` route registration from `routes.ts`
-3. Remove `planHelpers.ts` if it has no other callers
-4. Update `api-catalog.md` to mark `/api/plan` as removed
+1. Add a comment block above `generatePlan()` in `src/lib/apiClient.ts`
+   (negotiation-buddy) marking it as the future migration target
+2. Add a comment above the `/api/plan` route in `src/api/routes.ts`
+   (negotiationcoach-backend) marking it as the canonical target path
+3. Update `docs/api-catalog.md` to reflect active/target status
 
-**Depends On:** Nothing
+**Risk:** None — comments only, no logic changes.
+
+**Depends On:** Nothing. Frontend migration depends on RFB-004.
+
+**Status: DONE**
+Commits:
+- `f5e8190` (negotiationcoach-backend) — 2026-04-11
+- `deebb5a` (negotiation-buddy) — 2026-04-11
+Verified: tsc --noEmit clean ✓ (both repos) | ADR-005 comment in routes.ts ✓ |
+api-catalog.md Status field added + REF-BE-01 resolved ✓ |
+apiClient.ts JSDoc block inserted above generatePlan() ✓ |
+Zero active callers confirmed ✓ | No logic changes ✓
+
+---
+
+### RFB-035
+
+**Title:** Replace anon key with user JWT for remaining Edge Function calls in Index.tsx
+
+**Repo:** `negotiation-buddy`
+
+**Category:** `boundary-violation`
+
+**Evidence (Observed):**
+Three Edge Function calls in `src/pages/Index.tsx` (lines 287, 431, 565 as of
+post-RFB-033 line numbering) still send `VITE_SUPABASE_PUBLISHABLE_KEY` as the
+Authorization header instead of the user's JWT. Identified as out-of-scope
+during RFB-033 execution. EFs involved: `analyze-progress` (line 287),
+`analyze-document` (line 429/431), and one unidentified EF (line 563/565).
+
+**Risk:** Same class of boundary violation as RFB-033 — any caller can trigger
+AI inference and DB writes on these endpoints without a valid user identity.
+Severity depends on whether the target EFs have their own auth guards.
+
+**Canonical Owner:** `negotiation-buddy` — `src/pages/Index.tsx`
+
+**Recommended Action:**
+1. Identify the three EF targets (function names, whether each already has a
+   JWT guard)
+2. For each EF that lacks a JWT guard: add auth guard (same pattern as
+   generate-plan/index.ts post-RFB-033)
+3. For each call site in Index.tsx: replace anon key with live JWT (same
+   pattern as line 348 post-RFB-033)
+
+**Depends On:** RFB-033 (pattern proven — reuse directly)
+
+**Status: DONE — 2026-04-13** (via split — RFB-035A ✅ + RFB-035B ✅)
+All 4 EF call sites in Index.tsx now send user JWT. All target EFs have JWT
+auth guards. analyze-progress ownership gap (bonus fix) resolved. Zero bare
+anon-key EF calls remaining in Index.tsx.
+
+  **Status: DONE — fully closed via RFB-035A + RFB-035B**
+All 3 remaining anon-key EF call sites in Index.tsx migrated to user JWT.
+All 4 target EFs now have JWT auth guards.
+analyze-progress: bonus ownership fix on negotiation_sessions UPDATE.
+
+---
+
+### RFB-035A
+
+**Title:** Add JWT auth + user_id ownership fix to summarize-session EF + Index.tsx Change C (line 565)
+
+**Repo:** `negotiation-buddy`
+
+**Category:** `boundary-violation`
+
+**Evidence (Observed):**
+Index.tsx line 565 calls an Edge Function (believed to be `summarize-session`) using `VITE_SUPABASE_PUBLISHABLE_KEY` as the Authorization header. If this EF writes to a session-scoped table without a `user_id` ownership filter, any caller can overwrite another user's session data.
+
+**Risk:** Data breach — potential cross-user session write. Higher severity than RFB-035B because of DB write path with no ownership filter.
+
+**Prerequisite:** Confirm EF target at Index.tsx:565, read its `index.ts`, verify whether it writes to a session-scoped table and whether a `user_id` column exists on that table.
+
+**Recommended Action:**
+1. Identify the EF at line 565 and read its `index.ts`
+2. Add JWT auth guard (same pattern as `generate-plan/index.ts` post-RFB-033)
+3. Add `.eq("user_id", user.id)` to any DB write operations
+4. Replace anon key with live JWT at Index.tsx:565 (`token ?? VITE_SUPABASE_PUBLISHABLE_KEY` pattern)
+
+**Depends On:** RFB-033 (pattern proven — reuse directly)
+
+**Status: DONE**
+Commit: `<hash>` (negotiation-buddy) — 2026-04-11
+Verified: tsc --noEmit clean ✓ | auth.getUser() at line 29 ✓ |
+ownership pre-flight SELECT on negotiation_sessions (lines 50–55) ✓ |
+.eq("user_id") on UPDATE (line 151) ✓ |
+Index.tsx line 567: live JWT with anon-key fallback ✓ |
+analyze-progress + analyze-document untouched ✓
+Schema note: session_messages has no user_id column — ownership verified
+via negotiation_sessions pre-flight (two-query pattern).
+Stop condition correctly triggered in Phase 1 — re-plan executed.
+
+---
+
+### RFB-035B
+
+**Title:** Add JWT auth to analyze-progress + analyze-document EFs + Index.tsx Changes A+B (lines 287, 431)
+
+**Repo:** `negotiation-buddy`
+
+**Category:** `boundary-violation`
+
+**Evidence (Observed):**
+Index.tsx lines 287 and 431 call `analyze-progress` and `analyze-document` Edge Functions using `VITE_SUPABASE_PUBLISHABLE_KEY`. Neither EF has a JWT guard. Any caller can trigger AI inference on these endpoints without a valid user identity.
+
+**Risk:** Cost protection — AI inference without auth. No DB write ownership gap identified for these EFs (lower severity than RFB-035A).
+
+**Recommended Action:**
+1. Read `analyze-progress/index.ts` and `analyze-document/index.ts`
+2. Add JWT auth guard to each (same pattern as `generate-plan/index.ts` post-RFB-033)
+3. Replace anon key with live JWT at Index.tsx:287 and :431
+
+**Depends On:** RFB-035A (sequenced — confirm no DB write gaps before proceeding)
+
+**Status: DONE**
+Commit: `<hash>` (negotiation-buddy) — 2026-04-11
+Verified: tsc --noEmit clean ✓ | auth.getUser() in analyze-progress (line 29) ✓ |
+auth.getUser() in analyze-document (line 29) ✓ |
+Index.tsx: 0 bare anon-key EF calls remaining ✓ (all 4 instances use token ??) |
+RFB-033 + RFB-035A untouched ✓
+Deviation: analyze-progress had an undocumented negotiation_sessions UPDATE
+with no user_id filter — .eq("user_id", user.id) added as part of this pass.
+Plan stated "no DB ops" — incorrect. Fix was correct and necessary.
+
+---
+### RFB-036
+
+**Title:** Migrate subscription_tier DB enum to Railway Tier values (ADR-006)
+
+**Repo:** `negotiation-buddy` (Supabase migration + frontend updates)
+
+**Category:** `contract-gap`
+
+**Decision:** ADR-006 (2026-04-13) — align subscription_tier enum with
+Railway Tier: starter→privat, professional→kmu, expert→profi, team→profi.
+
+**Evidence (Observed):**
+subscription_tier enum uses Lovable scaffold defaults (free/starter/
+professional/expert/team). Railway Tier uses (free/privat/kmu/profi).
+Mismatch is a scaffolding artifact. 8 frontend files reference
+subscription_tier or persona_type. Migration is required before
+RFB-032 (Stripe webhook) can be implemented.
+
+**Risk:** Medium. Schema migration touches user_profiles rows and
+negotiation_sessions rows (persona_type column, separate enum — NOT
+changed). Frontend comparisons on subscription_tier values break if
+not updated atomically.
+
+**Canonical Owner:** `negotiation-buddy` — Supabase migrations
+
+**Recommended Action:**
+1. Audit all frontend files comparing subscription_tier values directly
+2. Write Supabase migration: rename enum values + backfill existing rows
+3. Update frontend comparisons atomically in same Lovable pass
+4. Regenerate Supabase types
+5. Update docs
+
+**Required Docs/Contracts to Update:**
+- source-of-truth-matrix.md — Entity 2
+- contracts/frontend-backend.md — Type Drift Register
+- auth-permission-map.md — Section 2 tier field
+
+**Depends On:** ADR-006 (decided) — nothing else blocks this.
 
 **Status: OPEN**
 
@@ -1637,7 +1829,7 @@ re-verified — their production behaviour was untested before this fix.
 | RFB-004 | Move session/message writes to Railway API — Phase A ✅ `2c51cb4` / Phase B ✅ `2415f72` / Phase C backend ✅ `6021665` / Phase C Lovable ✅ 2026-04-10 — RFB-004-C (count constraint) ⏸ OPEN |
 | RFB-005 | Fix CORS — wildcard overrides allowlist — ✅ DONE `e00e400` | P0 | backend | boundary-violation |
 | RFB-006 | Unify dual Layer 1 implementations | P1 | backend | duplicate-logic |
-| RFB-007 | Unify three incompatible tier systems — Step A ✅ `1c68185` / Step B ✅ `6ba5710` / Step C ⬜ OPEN (unblocked — VG-06 resolved) | P1 | backend + frontend | contract-gap |
+| RFB-007 | Unify three incompatible tier systems — Step A ✅ `1c68185` / Step B ✅ `6ba5710` / Step C ✅ closed (re-scoped → RFB-036) | P1 | backend + frontend | contract-gap |
 | RFB-008 | Eliminate parallel type maintenance — ✅ DONE `9c51a43` | P1 | backend | duplicate-logic |
 | RFB-009 | Propagate actual user tier to Edge Function — ✅ DONE `d90d5c0` | P1 | frontend | contract-gap |
 | RFB-010 | Verify Stripe webhook tier update path — ✅ INVESTIGATED 2026-04-09 (handler absent; spawned RFB-032) | P1 | backend | contract-gap |
@@ -1664,9 +1856,13 @@ re-verified — their production behaviour was untested before this fix.
 | RFB-029 | negotiation_sessions missing analysis columns — Railway analyze inserts silently failing — ✅ DONE `f759c18` | P0 | backend | boundary-violation |
 | RFB-030 | Add RLS policies for negotiation_sessions and session_history — ✅ DONE 2026-04-09 (re-scoped) | P1 | backend (migrations) | boundary-violation |
 | RFB-031 | Fix session_history table name in sessionRoutes.ts — ✅ DONE `2c51cb4` | P0 | backend | boundary-violation |
-| RFB-032 | Implement Stripe webhook handler — POST /api/webhooks/stripe — ⏸ DEFERRED (Stripe not live; blocked on RFB-007) | P0 | backend | contract-gap |
-| RFB-033 | Add JWT auth + tier gate to generate-plan Edge Function (VG-06-A) | P2 | frontend (Supabase EF) | boundary-violation |
-| RFB-034 | Remove dead Railway generatePlan() + /api/plan endpoint (DCC-BE-02) | P3 | backend | dead-code |
+| RFB-032 | Implement Stripe webhook handler — POST /api/webhooks/stripe — ⏸ DEFERRED (Stripe not live; blocked on RFB-036; write target confirmed ADR-006) | P0 | backend | contract-gap |
+| RFB-033 | Add JWT auth and tier gate to generate-plan Edge Function — ✅ DONE `<hash>` | P1 | frontend | boundary-violation |
+| RFB-034 | Annotate Railway /api/plan + generatePlan() as ADR-005 migration targets — ✅ DONE `f5e8190` / `deebb5a` | P3 | backend + frontend | dead-code |
+| RFB-035 | Replace anon key with user JWT for remaining EF calls in Index.tsx — ✅ DONE via RFB-035A + RFB-035B | P1 | frontend | boundary-violation |
+| RFB-035A | summarize-session auth guard + ownership fix + Index.tsx Change C — ✅ DONE `<hash>` | P1 | frontend | boundary-violation |
+| RFB-035B | analyze-progress + analyze-document auth guards + Index.tsx Changes A+B — ✅ DONE `<hash>` | P2 | frontend | boundary-violation |
+| RFB-036 | Migrate subscription_tier DB enum to Railway Tier values (ADR-006) | P1 | frontend | contract-gap |
 | AB-001 | Railway SUPABASE_URL placeholder fixed — ✅ DONE 2026-04-08 | P0 | infrastructure | infrastructure |
 
 ---
@@ -1701,11 +1897,18 @@ VG-07 RESOLVED 2026-04-09 — ADR-004 accepted (Option A).
   EF = canonical chat path all tiers. Unblocks RFB-009 revised scope.
   └─ RFB-009 (revised: target index.ts JWT read + model switching)
 
-RFB-007 (tier enum unification — BLOCKS billing)
+RFB-036 (subscription_tier enum migration per ADR-006 — BLOCKS billing)
   └─ RFB-032 (Stripe webhook handler — DEFERRED until Stripe live)
+
+RFB-007 (tier enum unification — DONE; superseded by RFB-036 for billing path)
 
 RFB-010 (Stripe webhook investigation — DONE 2026-04-09)
   └─ spawned RFB-032
+
+RFB-006 (Layer 1 unification — unblocked VG-06 2026-04-11)
+  └─ RFB-026 (repair batnaDetector Edge Function — blocked on RFB-006)
+
+RFB-004-C (DB count constraint for session_history — OPEN, no current blocker)
 
 RFB-005, RFB-012, RFB-013, RFB-014, RFB-015, RFB-016,
 RFB-017, RFB-018, RFB-019, RFB-020, RFB-021 — no dependencies

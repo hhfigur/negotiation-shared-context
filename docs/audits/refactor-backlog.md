@@ -872,14 +872,13 @@ Choose Option B if there is no near-term roadmap for the knowledge pipeline.
 
 **Depends On:** Product decision (build or remove)
 
-**Status: RE-SCOPED — Option B withdrawn 2026-04-03**
-Product decision: knowledge pipeline will be built (Option A confirmed).
-Item split into:
-- RFB-016a: Architecture design — define collection scope, usage path,
-  ownership. Requires ADR before implementation.
-- RFB-016b: Implementation — blocked on RFB-016a.
-Neither sub-item is ready for Wave 1 execution.
-Deferred to feature backlog pending ADR.
+**Status: DONE**
+Removed: systemPrompt.ts [KNOWLEDGE_CANDIDATE] tag instructions (Methods 2/3/4 + WICHTIG bullets)
+         useChat.ts extraction/storage blocks (stripInternalTags KC logic + localStorage append)
+Cleanup: localStorage.removeItem('knowledge_candidates') added on hook init
+DB retained: knowledge_queue + knowledge_base tables not dropped
+Feature doc: shared-context/docs/features/knowledge-pipeline.md
+Commits: `a647d5a` (negotiation-buddy) — 2026-04-16
 
 ---
 
@@ -1850,7 +1849,7 @@ re-verified — their production behaviour was untested before this fix.
 | RFB-013 | Centralize token accessor in useAuth.tsx — ✅ DONE `c507353` | P2 | frontend | dead-code |
 | RFB-014 | Fix session message fire-and-forget persistence — ✅ DONE 2026-04-03 | P2 | frontend | boundary-violation |
 | RFB-015 | Add TTL/versioning to localStorage state — ✅ DONE 2026-04-03 | P2 | frontend | contract-gap |
-| RFB-016 | Complete or remove knowledge candidate pipeline | P2 | frontend + backend | dead-code |
+| RFB-016 | Complete or remove knowledge candidate pipeline — ✅ DONE `a647d5a` | P2 | frontend + backend | dead-code |
 | RFB-017 | Deduplicate password validation — ✅ DONE `48d0edc` | P2 | frontend | duplicate-logic |
 | RFB-018 | Rename webSearch.ts to reflect actual behaviour — ✅ DONE `675cc21` | P3 | backend | contract-gap |
 | RFB-019 | Consolidate dual toast systems — ✅ DONE `056e672` | P3 | frontend | dead-code |

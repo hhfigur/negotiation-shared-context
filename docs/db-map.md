@@ -17,6 +17,8 @@ Canonical reference for which service reads and writes each Supabase table, what
 | `team_members` | Frontend SDK (`TeamDashboard.tsx`) | Railway (`POST /api/teams/:id/members`, `DELETE /api/teams/:id/members/:userId`) | SERVICE_ROLE_KEY (Railway) | Yes — migration `20260403120000` | Railway backend |
 | `team_training_tasks` | Frontend SDK (`TeamDashboard.tsx`) | Railway (`POST /api/teams/:id/tasks` — RFB-004-C backend `6021665`) + Frontend SDK (INSERT violation — Lovable call-site migration pending) | SERVICE_ROLE_KEY (Railway); anon key (frontend INSERT — pending) | Yes — migration `20260403120000` | Railway backend |
 | `knowledge_graph` | Railway Layer 2 (cache hit check) | Railway Layer 2 (`knowledge_graph` INSERT on cache miss) | SERVICE_ROLE_KEY | Inferred — no confirmation | Railway backend (Layer 2) |
+| `knowledge_queue` | None (zero readers confirmed) | None (zero writers confirmed — submission path never built) | N/A | Yes — permissive (public insert + public read, no ownership filter) — **must be hardened before reactivation** | **DEPRECATED** — RFB-016 (2026-04-16) |
+| `knowledge_base` | None in frontend (auto-generated types only); Layer 2 read unconfirmed | None (admin approval path never built) | N/A | Yes — public read only | **DEPRECATED** — RFB-016 (2026-04-16) |
 | `user_profiles` | Frontend (`Profile.tsx`) | Frontend (`Profile.tsx` → `.update()`) | anon key + RLS | Inferred — no confirmation | Supabase DB |
 
 ---
@@ -72,6 +74,20 @@ See `docs/bounded-contexts.md § BC-05` for write path details.
 
 **RFB-004-C backend DONE `6021665` (2026-04-10):** POST /api/teams/:id/tasks added to teamRoutes.ts.
 Frontend INSERT call-site migration (TeamDashboard.tsx:120) pending — Lovable Phase C.
+
+---
+
+## Deprecated Tables
+
+### `knowledge_queue` / `knowledge_base`
+
+**Status:** Deprecated — zero write callsites as of RFB-016 (2026-04-16).
+Schema retained in `negotiation-buddy/supabase/migrations/20260309105420_15cf29bb-f885-4dfb-87de-a2bd82f42b97.sql`.
+See [shared-context/docs/features/knowledge-pipeline.md](features/knowledge-pipeline.md) for rebuild plan.
+
+**Warning:** `knowledge_queue` RLS is permissive (public insert + public read, no ownership filter). Must be hardened before any reactivation.
+
+Do not drop these tables. A future rebuild starts from the retained schema.
 
 ---
 

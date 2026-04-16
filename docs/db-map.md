@@ -48,13 +48,17 @@ Canonical reference for which service reads and writes each Supabase table, what
 
 | Operation | Caller | Method | Auth | Business Rule |
 |-----------|--------|--------|------|---------------|
-| INSERT | Railway `POST /api/sessions/:id/messages` | `supabase.from('session_history').insert()` | SERVICE_ROLE_KEY | Count-before-insert enforces 50-message limit (non-atomic — DB constraint pending RFB-004-C) |
+| INSERT | Railway `POST /api/sessions/:id/messages` | `supabase.from('session_history').insert()` | SERVICE_ROLE_KEY | Count-before-insert enforces 50-message limit (app-layer); `trg_session_history_message_limit` enforces atomically at DB level (RFB-004-C) |
 | SELECT | Frontend `useSessionManager.ts` | `.select().eq('session_id').order('created_at').limit(50)` | anon key | Last 50 messages, user-scoped via session ownership |
 | ~~INSERT (violation)~~ | ~~Frontend `useSessionManager.ts`~~ | ~~direct SDK insert~~ | ~~anon key~~ | **MIGRATED** → `POST /api/sessions/:id/messages` via `apiClient.ts` — `2415f72` (2026-04-08) |
 
 **RLS Status:** Pre-existing policy `user_sees_own_session_history` (FOR ALL, transitive ownership via `negotiation_sessions.user_id`) confirmed 2026-04-09 (RFB-030). No migration needed.
 
+**Trigger:** `trg_session_history_message_limit` — BEFORE INSERT, enforces max 50 messages per session_id (SQLSTATE 23514 on violation). Migration: `20260416120000_session_history_message_count_trigger.sql` (RFB-004-C, `243c02d`).
+
 **RFB-031 CLOSED `2c51cb4` (2026-04-09):** Both `.from('session_messages')` calls renamed to `.from('session_history')`. `turn_number: (count ?? 0) + 1` added to INSERT. Railway message writes now functional.
+
+**RFB-004-C DONE 2026-04-16:** BEFORE INSERT trigger added — DB-level atomic enforcement of 50-message limit. `sessionRoutes.ts` SQLSTATE 23514 → HTTP 422 SESSION_MESSAGE_LIMIT_REACHED. App-layer count check preserved as defence-in-depth.
 
 **Note:** `session_history` origin is untracked — no `CREATE TABLE` migration exists in either repo. Confirmed schema (live DB, 2026-04-09): `id`, `session_id`, `turn_number`, `role`, `content`, `metadata`, `created_at`.
 

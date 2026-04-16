@@ -263,7 +263,10 @@ push total to 51. Documented during RFB-004 Phase A plan review.
 
 **Depends On:** RFB-004 Phase A (endpoints must exist first)
 
-**Status: OPEN**
+**Status: DONE**
+Migration: 20260416120000_session_history_message_count_trigger.sql
+Commit: `243c02d` (negotiationcoach-backend) — 2026-04-16
+Verified: tsc --noEmit clean ✓ | trigger created ✓ | 422 error path wired ✓
 
 ---
 

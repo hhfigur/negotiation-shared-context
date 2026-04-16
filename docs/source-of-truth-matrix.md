@@ -35,7 +35,24 @@ This matrix identifies the canonical owner and access rules for every core entit
 | Sync Rule | Read fresh from JWT on each Railway request. No caching. |
 | Business Logic Owner | Railway `authMiddleware` + `modelRouter.ts` |
 | Auth Owner | Stripe (billing) → Supabase (stored) |
-| Violations | ~~Three incompatible tier schemas~~ — partial resolved: `persona_type` → `Tier` mapping applied at `POST /api/sessions` via `personaTypeToTier()` (RFB-007-B `6ba5710`); EF chat path resolved server-side via JWT (RFB-009 `d90d5c0`). Step C (EF boundary `personaTypeToTier`) pending VG-06. |
+| Violations | ~~Three incompatible tier schemas~~ — **RESOLVED (2026-04-13):** `persona_type` is UI coaching persona (not billing); `subscription_tier` is Stripe-tied billing column. No enum migration warranted. Runtime bridge `personaTypeToTier()` (RFB-007 Step A `1c68185`) handles translation. `subscription_tier` alignment with Railway `Tier` is RFB-032 scope. |
+
+**Two-column tier structure (confirmed 2026-04-13, schema inspection):**
+
+`user_profiles` has two separate tier-related columns:
+
+| Column | Current enum values | Post-ADR-006 values | Purpose | Canonical bridge |
+|--------|---------------------|---------------------|---------|-----------------|
+| `persona_type` | `pro \| kmu \| private` | unchanged | UI coaching persona — tone, prompt depth, feature visibility | `personaTypeToTier()` → Railway `Tier` |
+| `subscription_tier` | `free \| privat \| kmu \| profi` ✅ **ALIGNED (RFB-036 `a28d28c` 2026-04-16)** | — | Billing tier — Stripe-sourced | Stripe webhook (RFB-032) → `app_metadata.tier` on JWT |
+
+**ADR-006 decision (2026-04-13):** `subscription_tier` enum values migrated to Railway `Tier` labels so the Stripe webhook writes Railway values directly.
+Mapping: `free→free` · `starter→privat` · `professional→kmu` · `expert→profi` · `team→profi` (Option A).
+**Migration applied 2026-04-16 (RFB-036 `a28d28c`).** `personaTypeToTier()` is unaffected — `persona_type` is a separate concern.
+
+**Runtime bridge pattern:** `personaTypeToTier(persona_type)` maps UI persona to Railway `Tier` at call boundaries (`POST /api/sessions`, Edge Functions). `subscription_tier` now uses Railway values directly — no runtime translation needed.
+
+**RFB-032 dependency:** Until Stripe webhook is live, `subscription_tier` is never written post-signup and has no effect on feature gating. Railway reads `app_metadata.tier` from JWT (defaults to `'free'`). RFB-036 ✅ complete — RFB-032 is now unblocked.
 
 ---
 

@@ -38,7 +38,10 @@ Browser
 - Railway validates token via `supabase.auth.getUser(token)` in `authMiddleware.ts`
 
 **JWT Tier Immutability (Confirmed 2026-04-09 — RFB-010):**
-`app_metadata.tier` and `user_metadata.tier` are **never written after signup**. No Stripe webhook handler exists in either repo; `stripe` npm package is not installed. The tier embedded in the JWT at login time never changes regardless of subscription changes. Consequence: Stripe upgrades/downgrades have no effect on Railway tier enforcement. Implementation deferred as RFB-032 (blocked on RFB-007).
+`app_metadata.tier` and `user_metadata.tier` are **never written after signup**. No Stripe webhook handler exists in either repo; `stripe` npm package is not installed. The tier embedded in the JWT at login time never changes regardless of subscription changes. Consequence: Stripe upgrades/downgrades have no effect on Railway tier enforcement. Implementation deferred as RFB-032.
+
+**subscription_tier DB column (Updated 2026-04-16 — RFB-036 `a28d28c`):**
+`user_profiles.subscription_tier` now uses Railway Tier values directly: `free | privat | kmu | profi`. Old scaffold values (`starter`, `professional`, `expert`, `team`) have been renamed/merged via migration. RFB-032 (Stripe webhook) is now unblocked — webhook will write Railway values directly to `subscription_tier`.
 
 **Duplication (Observed):** Token fetching via `supabase.auth.getSession()` is repeated in at least 6 files:
 - `useSessionManager.ts`
@@ -59,6 +62,11 @@ No central `getToken()` accessor exists in `useAuth.tsx`.
 ### 2.3 Browser-to-Edge-Function
 - `useChat.ts` calls Supabase Edge Function `/functions/v1/chat` with the anon key as Authorization header
 - Edge Function runtime validates JWT internally (Supabase Deno runtime)
+
+**generate-plan (RFB-033, 2026-04-11):** JWT validated via
+`supabase.auth.getUser()`. Tier resolved from `user_profiles.persona_type`.
+Session DB ops filtered by `user_id`. Tier gate present, inactive (commented stub).
+Remaining anon-key EF calls: Index.tsx lines 287, 431, 565 → RFB-034.
 
 ---
 
@@ -102,6 +110,7 @@ free (0) < privat (1) < kmu (2) < profi (3)
 | `POST /api/analyze` | none | implicit | tier read for model routing |
 | `POST /api/enrich` | kmu | **explicit** | `requireTier('kmu')` middleware |
 | `POST /api/analyze-full` | none (auto-skips L2 for free/privat) | implicit | `layer2/index.ts` tier check |
+| `POST /functions/v1/generate-plan` | none (gate inactive) | **present, inactive** | EF `generate-plan/index.ts` — `tier === 'free'` commented stub; `user_id` ownership filter on both DB ops active |
 | `GET /api/sessions/:id` | none | user_id check | `.eq('user_id', req.user.id)` |
 | Layer 2 market data | kmu | implicit | `layer2/index.ts` early return |
 | Opus model (what_if) | profi | implicit | `modelRouter.ts` — but `/api/chat` and `/api/plan` bypass modelRouter |
@@ -155,6 +164,7 @@ free (0) < privat (1) < kmu (2) < profi (3)
 | AUTH-06 | ~~subscription_tier hardcoded as "free" in Edge Function chat persona~~ | Medium | **Resolved — RFB-009 `d90d5c0` 2026-04-10.** Tier now propagated via JWT; enforced server-side in Edge Function via `supabase.auth.getUser()` + `user_profiles` lookup. |
 | AUTH-07 | CORS wildcard header overrides allowlist in Railway backend | Medium | Resolved — fixed in `fix(rfb-005)`: wildcard middleware removed, `ngrok-skip-browser-warning` moved to `cors()` `allowedHeaders` |
 | AUTH-08 | Railway anon fallback assigns 'privat' tier — free-tier users get privat access without a token | Low | **Resolved** — fd68e1e 2026-04-03. Default tier for valid tokens with no metadata changed to 'free'. Pre-flight: both production users had tier set in user_metadata before deploy. |
+| AUTH-09 | Edge Function `generate-plan` had no JWT validation, no tier gate, no `user_id` filter on DB writes — any caller with `LOVABLE_API_KEY` could invoke it (VG-06-A) | High | **Resolved — RFB-033 2026-04-11.** JWT guard via `supabase.auth.getUser()`, tier resolved from `user_profiles`, `.eq("user_id")` ownership filters on both SELECT and UPDATE. Tier gate added as commented stub. |
 
 ---
 

@@ -14,10 +14,14 @@ This document defines the contracts between the React SPA (`negotiation-buddy`) 
 | Railway REST API | Browser | Railway (negotiationcoach-backend) | HTTPS + JSON | `Authorization: Bearer <JWT>` |
 | Supabase Edge Function /chat | Browser | Supabase Edge | HTTPS + SSE | `Authorization: Bearer <anon_key>` |
 | Supabase JS SDK | Browser | Supabase PostgreSQL | HTTPS | Anon key + RLS |
+| Supabase Edge Function /generate-plan | Browser | Supabase Edge | HTTPS + JSON | `Authorization: Bearer <JWT>` (user token) — RFB-033 |
 
 **Note (Observed):** Two different Authorization schemes are used:
 - Railway calls: user's JWT (access_token from `supabase.auth.getSession()`)
 - Edge Function calls: Supabase anon/publishable key (not user JWT)
+**Partial fix (RFB-033, 2026-04-11):** `generate-plan` now requires user JWT.
+`/chat` EF still uses anon key. Three other EF calls in Index.tsx (lines 287,
+431, 565) still use anon key — tracked as RFB-034.
 
 ---
 
@@ -446,6 +450,8 @@ title.length > 40 ? title.slice(0, 37) + '...' : title
 | 500 | `SESSION_UPDATE_ERROR` | Supabase update failure on PATCH /sessions/:id |
 | 500 | `MESSAGE_SAVE_ERROR` | Supabase count or insert failure on POST /sessions/:id/messages |
 
+> **RFB-004-C DONE 2026-04-10:** `useSessionManager.ts` token retrieval migrated to `useAuth()`. Structured error toasts wired per error code. Write path fully Railway-owned.
+
 > **Security note:** `SESSION_NOT_FOUND` is returned for both "not found" and "wrong owner" — this is intentional. Returning 403 for wrong-owner would reveal that the session ID is valid. Differs from team endpoints where `FORBIDDEN` (403) is explicit because admin identity is distinct from resource ownership.
 
 ---
@@ -519,6 +525,63 @@ The Edge Function `/functions/v1/chat` is confirmed as the canonical chat path f
 
 ---
 
+### `POST /functions/v1/generate-plan`
+
+**Client:** `src/pages/Index.tsx` — `generatePlan()` closure (~line 338)
+**Protocol:** HTTPS + JSON (non-streaming)
+
+**Request:**
+```typescript
+{
+  session_id?:     string;        // optional — UUID; triggers DB write if present
+  progress_status: object;        // required — keys: situation|ziel|gegenseite|batna|macht|strategie
+  messages?:       ChatMessage[]; // optional — last 15 used for context
+}
+```
+
+**Response:**
+```typescript
+{
+  plan: {
+    summary:           string;
+    situationAnalysis: string;
+    opening:           string;
+    objections:        Array<{ objection: string; response: string }>;
+    recommendations:   string[];
+    nextStep:          string;
+    numbers: {
+      first_offer:     string;
+      target:          string;
+      compromise_zone: string;
+    };
+  }
+}
+```
+
+**Auth (RFB-033, 2026-04-11):**
+`Authorization: Bearer <session.access_token>` — user JWT fetched via `supabase.auth.getSession()` inside `generatePlan()`.
+Returns 401 if header is missing, not `Bearer`-prefixed, or token fails `supabase.auth.getUser()` validation.
+Client-side fallback: `token ?? VITE_SUPABASE_PUBLISHABLE_KEY` (Index.tsx:348) — EF rejects the anon key with 401.
+
+**Tier Resolution (RFB-033):**
+EF calls `supabase.auth.getUser(token)` → queries `user_profiles.persona_type` → maps via inlined `personaTypeToTier()`:
+`pro→profi`, `kmu→kmu`, `private→privat`, default→`free`.
+
+**Tier Gate:** Present, inactive — commented stub in `generate-plan/index.ts`.
+Uncomment `if (tier === 'free') return 403` block to enforce a paid-tier requirement for plan generation.
+
+**Session Ownership (RFB-033):**
+Both DB operations (SELECT `progress_status`, UPDATE `summary`/`progress_status`) include `.eq("user_id", user.id)`.
+A caller cannot read or overwrite a session they do not own, even with a valid `session_id` UUID.
+
+**VG-06-A RESOLVED (RFB-033, 2026-04-11):**
+Previously: no JWT validation, no tier gate, no `user_id` filter on DB writes.
+Now: JWT required, tier resolved from `user_profiles`, both DB writes ownership-filtered.
+
+**Follow-up:** Three remaining anon-key EF calls in Index.tsx (lines 287, 431, 565) — tracked as RFB-034.
+
+---
+
 ## 4. Type Drift Register
 
 | Type | Frontend Definition | Backend Definition | Status |
@@ -529,6 +592,7 @@ The Edge Function `/functions/v1/chat` is confirmed as the canonical chat path f
 | `ChatMessage` | `src/lib/types.ts` | `src/lib/types.ts` | Maintained in parallel |
 | `NegotiationType` | `src/lib/types.ts` | `src/types/index.ts` | Consistent enum values |
 | `Tier` | Not defined in frontend | `'free' \| 'privat' \| 'kmu' \| 'profi'` | **Drift** — frontend uses persona_type instead |
+| `subscription_tier` DB enum | ~~`free \| starter \| professional \| expert \| team`~~ → `free \| privat \| kmu \| profi` | `free \| privat \| kmu \| profi` | ✅ **RESOLVED RFB-036 `a28d28c` 2026-04-16** — DB enum now aligned to Railway Tier values per ADR-006-tier-mapping.md |
 | `persona_type` DB enum | `'pro' \| 'kmu' \| 'private'` | Mapped via `personaTypeToTier()` in `src/utils/tierUtils.ts` | **Partial resolution (RFB-007 Step B)** — wired at `POST /api/sessions`; EF boundary pending Step C (VG-06) |
 | Edge Function inputs | `user_goal / user_walkaway` | `own_target / own_minimum` | **CRITICAL DRIFT** — incompatible schemas |
 

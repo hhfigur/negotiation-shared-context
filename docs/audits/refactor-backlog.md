@@ -1861,8 +1861,8 @@ re-verified — their production behaviour was untested before this fix.
 | RFB-034 | Annotate Railway /api/plan + generatePlan() as ADR-005 migration targets — ✅ DONE `f5e8190` / `deebb5a` | P3 | backend + frontend | dead-code |
 | RFB-035 | Replace anon key with user JWT for remaining EF calls in Index.tsx — ✅ DONE via RFB-035A + RFB-035B | P1 | frontend | boundary-violation |
 | RFB-035A | summarize-session auth guard + ownership fix + Index.tsx Change C — ✅ DONE `ffe0274` | P1 | frontend | boundary-violation |
-| RFB-035B | analyze-progress + analyze-document auth guards + Index.tsx Changes A+B — ✅ DONE `<hash>` | P2 | frontend | boundary-violation |
-| RFB-036 | Migrate subscription_tier DB enum to Railway Tier values (ADR-006) | P1 | frontend | contract-gap |
+| RFB-035B | analyze-progress + analyze-document auth guards + Index.tsx Changes A+B — ✅ DONE `c60c419` | P2 | frontend | boundary-violation |
+| RFB-036 | Migrate subscription_tier DB enum to Railway Tier values (ADR-006) — ✅ DONE `a28d28c` — Migration applied manually via Lovable SQL editor 2026-04-16. Column DEFAULT drop+restore pattern required (Postgres 42804 — documented in rollback SQL). Unblocks: RFB-032. | P1 | frontend | contract-gap |
 | AB-001 | Railway SUPABASE_URL placeholder fixed — ✅ DONE 2026-04-08 | P0 | infrastructure | infrastructure |
 
 ---

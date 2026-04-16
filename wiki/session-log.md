@@ -25,3 +25,7 @@ Append-only log of every Control Tower session. One entry per session. Format: `
 ## [2026-04-16] refactor | RFB-004-C closed
 
 - RFB-004-C closed — Add DB-level message count constraint to session_history, commit 243c02d
+
+## [2026-04-16] refactor | RFB-016 closed
+
+- RFB-016 closed — Remove knowledge candidate extraction pipeline (systemPrompt.ts + useChat.ts), commit a647d5a

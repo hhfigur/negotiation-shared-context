@@ -21,3 +21,7 @@ Append-only log of every Control Tower session. One entry per session. Format: `
 ## [2026-04-16] refactor | RFB-036 closed
 
 - RFB-036 closed — Migrate subscription_tier DB enum to Railway Tier values, commit a28d28c
+
+## [2026-04-16] refactor | RFB-004-C closed
+
+- RFB-004-C closed — Add DB-level message count constraint to session_history, commit 243c02d

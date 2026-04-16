@@ -18,7 +18,6 @@ Full backlog: [../docs/audits/refactor-backlog.md](../docs/audits/refactor-backl
 
 | ID | Title | Priority | Blocker |
 |----|-------|----------|---------|
-| RFB-004-C | Add DB-level message count constraint to `session_history` | P2 | None |
 | RFB-006 | Unify dual Layer 1 implementations (Railway vs Edge Function engine) | P1 | VG-06 (dual Layer 1 architecture decision unresolved) |
 | RFB-016 | Complete or remove knowledge candidate pipeline | P2 | None (deferred to feature backlog pending ADR) |
 | RFB-026 | Repair broken claudeClient import in `batnaDetector.ts` (Edge Function) | P2 | RFB-006 |

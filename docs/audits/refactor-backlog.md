@@ -264,9 +264,9 @@ push total to 51. Documented during RFB-004 Phase A plan review.
 **Depends On:** RFB-004 Phase A (endpoints must exist first)
 
 **Status: DONE**
-Migration: 20260416120000_session_history_message_count_trigger.sql
 Commit: `243c02d` (negotiationcoach-backend) — 2026-04-16
-Verified: tsc --noEmit clean ✓ | trigger created ✓ | 422 error path wired ✓
+Verified: tsc --noEmit clean ✓ | trigger created (`trg_session_history_message_limit`) ✓ | 422 SESSION_MESSAGE_LIMIT_REACHED path wired ✓ | app-layer count check preserved ✓
+Docs updated: shared-context/docs/db-map.md (trigger entry + INSERT row) | negotiationcoach-backend/docs/api-catalog.md (422 error code + DB backstop note)
 
 ---
 
@@ -1838,7 +1838,7 @@ re-verified — their production behaviour was untested before this fix.
 | RFB-001 | Railway authMiddleware never enforces 401 — ✅ DONE `fd68e1e` | P0 | backend | boundary-violation |
 | RFB-002 | Verify/harden Supabase RLS for team admin — ✅ DONE `<hash>` | P0 | backend (migrations) | boundary-violation |
 | RFB-003 | Move team CRUD to Railway API — ✅ DONE Phase A `0b10d9c` + Phase B Lovable 2026-04-08 | P0 | backend + frontend | boundary-violation |
-| RFB-004 | Move session/message writes to Railway API — Phase A ✅ `2c51cb4` / Phase B ✅ `2415f72` / Phase C backend ✅ `6021665` / Phase C Lovable ✅ 2026-04-10 — RFB-004-C (count constraint) ⏸ OPEN |
+| RFB-004 | Move session/message writes to Railway API — Phase A ✅ `2c51cb4` / Phase B ✅ `2415f72` / Phase C backend ✅ `6021665` / Phase C Lovable ✅ 2026-04-10 — RFB-004-C ✅ DONE `243c02d` |
 | RFB-005 | Fix CORS — wildcard overrides allowlist — ✅ DONE `e00e400` | P0 | backend | boundary-violation |
 | RFB-006 | Unify dual Layer 1 implementations | P1 | backend | duplicate-logic |
 | RFB-007 | Unify three incompatible tier systems — Step A ✅ `1c68185` / Step B ✅ `6ba5710` / Step C ✅ closed (re-scoped → RFB-036) | P1 | backend + frontend | contract-gap |

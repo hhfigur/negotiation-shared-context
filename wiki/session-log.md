@@ -17,3 +17,7 @@ Append-only log of every Control Tower session. One entry per session. Format: `
 - Wiki compiled from existing ADRs, bounded-contexts, source-of-truth-matrix, auth-permission-map, service-catalog
 - Captures all six open backlog items in index.md; architecture.md summarizes all six ADRs
 - Next: START NEXT REFACTOR when ready
+
+## [2026-04-16] refactor | RFB-036 closed
+
+- RFB-036 closed — Migrate subscription_tier DB enum to Railway Tier values, commit a28d28c

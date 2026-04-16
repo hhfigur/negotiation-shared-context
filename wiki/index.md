@@ -23,7 +23,6 @@ Full backlog: [../docs/audits/refactor-backlog.md](../docs/audits/refactor-backl
 | RFB-016 | Complete or remove knowledge candidate pipeline | P2 | None (deferred to feature backlog pending ADR) |
 | RFB-026 | Repair broken claudeClient import in `batnaDetector.ts` (Edge Function) | P2 | RFB-006 |
 | RFB-032 | Implement Stripe webhook handler — `POST /api/webhooks/stripe` | P0 | Stripe not yet live in production; RFB-036 must complete first |
-| RFB-036 | Migrate `subscription_tier` DB enum to Railway Tier values (ADR-006) | P1 | None — ADR-006 decided |
 
 ---
 

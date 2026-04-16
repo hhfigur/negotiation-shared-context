@@ -29,3 +29,10 @@ Append-only log of every Control Tower session. One entry per session. Format: `
 ## [2026-04-16] refactor | RFB-016 closed
 
 - RFB-016 closed — Remove knowledge candidate extraction pipeline (systemPrompt.ts + useChat.ts), commit a647d5a
+
+## [2026-04-16] maintenance | Light audit pass — revalidate shared-context docs post Wave 1
+
+- current-state-report.md: CRIT-02, CRIT-03, HIGH-01 (partial), HIGH-02, MED-04, LOW-01, LOW-02, LOW-05 stamped RESOLVED
+- bounded-contexts.md: BC-03 Violations updated (RFB-004-C DONE); BC-05 Canonical Owner — VIOLATION label removed
+- source-of-truth-matrix.md: Entity 4 Business Logic Owner updated (non-atomic → atomic trigger)
+- auth-permission-map.md: Section 2.3 RFB-035 resolved; Section 4.2/4.3 modelRouter bypass note removed (RFB-011)

@@ -66,7 +66,7 @@ No central `getToken()` accessor exists in `useAuth.tsx`.
 **generate-plan (RFB-033, 2026-04-11):** JWT validated via
 `supabase.auth.getUser()`. Tier resolved from `user_profiles.persona_type`.
 Session DB ops filtered by `user_id`. Tier gate present, inactive (commented stub).
-Remaining anon-key EF calls: Index.tsx lines 287, 431, 565 → RFB-034.
+**Remaining anon-key EF calls: RESOLVED — RFB-035A/B (`ffe0274` 2026-04-11):** All 4 EF call sites in `Index.tsx` now send user JWT. `analyze-progress`, `analyze-document`, `summarize-session` EFs have JWT auth guards.
 
 ---
 
@@ -113,7 +113,7 @@ free (0) < privat (1) < kmu (2) < profi (3)
 | `POST /functions/v1/generate-plan` | none (gate inactive) | **present, inactive** | EF `generate-plan/index.ts` — `tier === 'free'` commented stub; `user_id` ownership filter on both DB ops active |
 | `GET /api/sessions/:id` | none | user_id check | `.eq('user_id', req.user.id)` |
 | Layer 2 market data | kmu | implicit | `layer2/index.ts` early return |
-| Opus model (what_if) | profi | implicit | `modelRouter.ts` — but `/api/chat` and `/api/plan` bypass modelRouter |
+| Opus model (what_if) | profi | implicit | `modelRouter.ts` — all LLM calls now route through `selectModel()` (RFB-011 `60848db`) |
 | Team operations | none | **frontend-only** | `admin_user_id === user.id` in React |
 
 ### 4.3 Model Routing by Tier (modelRouter.ts — partially bypassed)
@@ -125,7 +125,7 @@ free (0) < privat (1) < kmu (2) < profi (3)
 | opponent_simulation | haiku | sonnet | sonnet | **opus** |
 | executive_summary | haiku | sonnet | sonnet | **opus** |
 
-**Bypass (Observed):** `/api/chat` hardcodes `claude-haiku-4-5-20251001`. `/api/plan` hardcodes `claude-sonnet-4-6`. Neither calls `modelRouter.selectModel()`. Tier-based model degradation does not apply to these endpoints.
+**Resolved (RFB-011 `60848db`):** Both `/api/chat` and `/api/plan` now call `modelRouter.selectModel()`. Tier-based model selection active for all endpoints.
 
 ---
 

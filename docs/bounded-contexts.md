@@ -81,6 +81,9 @@ Railway `authMiddleware` + `requireTier('kmu')` gate on `/api/enrich`
 - `negotiation_sessions` UPDATE → `PATCH /api/sessions/:id` (Railway) — MIGRATED RFB-004-B `2415f72`
 - `session_history` INSERT → `POST /api/sessions/:id/messages` (Railway) — MIGRATED RFB-004-B `2415f72`
 
+> **RFB-004-C DONE 2026-04-10:** Token retrieval in `useSessionManager.ts` now uses `useAuth()` exclusively for all three write paths. Boundary-violation fully resolved.
+
+
 ### Read Path
 - Resume: `useSessionManager.ts` → `supabase.from('session_history').select()` last 50 messages
 - Real-time: streamed directly from Edge Function
@@ -92,7 +95,7 @@ Railway `authMiddleware` + `requireTier('kmu')` gate on `/api/enrich`
 Supabase anon key (for Edge Function call), Supabase RLS (inferred via `owns_session()` function in DB schema)
 
 ### Violations / Ambiguities
-- **PHASE A + B COMPLETE (RFB-004)** — Railway endpoints live (`2c51cb4`). `useSessionManager.ts` migrated to Railway API calls (`2415f72`, 2026-04-08). Direct Supabase SDK writes retired. Business rules (title truncation, 50-message limit, ownership) enforced server-side only. RFB-004-C (DB count constraint) remains OPEN.
+- **PHASE A + B + C COMPLETE (RFB-004)** — Railway endpoints live (`2c51cb4`). `useSessionManager.ts` migrated to Railway API calls (`2415f72`, 2026-04-08). Direct Supabase SDK writes retired. Business rules (title truncation, 50-message limit, ownership) enforced server-side only. RFB-004-C DONE 2026-04-16 (`243c02d`) — BEFORE INSERT trigger enforces max 50 messages atomically at DB layer.
 - **Observed:** Railway also has a `/api/chat` endpoint (non-streaming fallback) using a hardcoded `claude-haiku` model, not `modelRouter`. The relationship between this fallback and the Edge Function primary path is undocumented.
 - **Inferred:** The Railway `/api/chat` is the original implementation; the Edge Function `/chat` is a later addition. The fallback may be dead code.
 
@@ -125,7 +128,7 @@ Tier gate: privat/free receive no market data. kmu/profi access Layer 2 enrichme
 
 ## BC-05 · Team Management
 
-**Canonical Owner:** Frontend (`TeamDashboard.tsx`) — **VIOLATION**
+**Canonical Owner:** Railway backend (team CRUD endpoints) — Phase A + B complete; RLS enforced at DB layer
 **Primary Datastore:** `teams`, `team_members`, `team_training_tasks` tables
 **Business Logic Owner:** Railway backend (Phase A complete — commit 0b10d9c)
 

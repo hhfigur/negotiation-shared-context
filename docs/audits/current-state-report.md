@@ -56,6 +56,8 @@ If Supabase RLS on the `teams` and `team_members` tables does not independently 
 
 **Verification gap:** RLS policies on `teams`, `team_members`, `team_training_tasks` not verified in this audit. See VG-01.
 
+**Status: RESOLVED 2026-04-03 / 2026-04-08 — RFB-002 applied 10 RLS policies at DB layer (migration `20260403120000`); RFB-003 moved all team CRUD to Railway API with server-side admin enforcement (`0b10d9c`). DB-level authorization now independent of React UI.**
+
 ---
 
 #### CRIT-03: Railway authMiddleware Never Enforces Auth
@@ -71,6 +73,8 @@ next();
 ```
 
 **Risk:** All Railway endpoints are publicly accessible. Tier gating is the only access control. An anonymous request gets privat-tier access to Layer 1 analysis without authentication.
+
+**Status: RESOLVED 2026-04-03 — RFB-001 (`fd68e1e`): authMiddleware now enforces 401 for missing/invalid tokens. `AUTH_REQUIRED=false` provides explicit dev bypass. Default tier for valid tokens with no metadata: `'free'`.**
 
 ---
 
@@ -93,16 +97,15 @@ The following tables are written directly from browser JavaScript via the Supaba
 
 **Risk:** Business rules (retry count, message limits, admin checks) live in browser code that can be modified or bypassed. Server-side validation is absent or unverified.
 
+**Status: PARTIALLY RESOLVED — Session writes (RFB-004 Phase B `2415f72` 2026-04-08): `negotiation_sessions` + `session_history` writes now via Railway API. Team writes (RFB-003 `0b10d9c` 2026-04-08): `teams`, `team_members`, `team_training_tasks` writes now via Railway API with server-side admin enforcement. Remaining: `user_profiles` writes in `Profile.tsx` still direct-to-Supabase.**
+
 ---
 
 #### HIGH-02: Session Message Persistence Fire-and-Forget
 **Classification:** Observed
 **Affected:** `negotiation-buddy/src/hooks/useSessionManager.ts`
 
-HIGH-02: PARTIALLY RESOLVED 2026-04-03 — Sonner toast now surfaces message
-save failure to user after retries exhausted (useSessionManager.ts).
-Silent data loss UX gap closed. Write path still fire-and-forget —
-full resolution deferred to RFB-004 (Railway session message API).
+HIGH-02: PARTIALLY RESOLVED 2026-04-03 — Sonner toast added for failure visibility (useSessionManager.ts). Silent data loss UX gap closed. DB-level max-message constraint added 2026-04-16 — RFB-004-C (`243c02d`): BEFORE INSERT trigger enforces 50-message limit atomically. Write path still fire-and-forget at app layer.
 
 ---
 
@@ -176,6 +179,8 @@ const token = session?.access_token;
 
 No `getToken()` accessor exists in `useAuth.tsx`. Any change to token acquisition (e.g., refresh handling) must be applied in 6 places.
 
+**Status: RESOLVED 2026-04-10 — RFB-004-C: `useSessionManager.ts` consolidated to `useAuth()` as sole token source for all session write paths. Central token pattern established.**
+
 ---
 
 #### MED-05: webSearch.ts Does Not Call External APIs
@@ -194,6 +199,8 @@ The function is named `searchMarketData` and conceptually described as web searc
 
 Edge Function `/chat` emits `[KNOWLEDGE_CANDIDATE]` tags. Frontend extracts them and writes to `localStorage.knowledge_candidates`. No UI exists to review or submit these candidates to the `knowledge_queue` table. The extraction infrastructure is complete; the submission path is missing.
 
+**Status: RESOLVED 2026-04-16 — RFB-016 (`a647d5a`): [KNOWLEDGE_CANDIDATE] extraction removed from `systemPrompt.ts` (Methods 2/3/4) and `useChat.ts`. localStorage accumulation stopped via `useEffect` cleanup. Pipeline documented in `docs/features/knowledge-pipeline.md` for future rebuild.**
+
 ---
 
 #### LOW-02: Dual Toast Systems
@@ -201,6 +208,8 @@ Edge Function `/chat` emits `[KNOWLEDGE_CANDIDATE]` tags. Frontend extracts them
 **Affected:** `negotiation-buddy`
 
 Both Radix `useToast` and Sonner `toast` are installed and used inconsistently across components.
+
+**Status: RESOLVED — RFB-019 (`056e672`): Radix `useToast` removed; all toast calls consolidated to Sonner `toast`.**
 
 ---
 
@@ -225,6 +234,8 @@ offen als RFB-020b / RFB-020c.
 **Affected:** `negotiationcoach-backend/package.json`
 
 `zod: ^4.3.6` is installed. All input validation is manual (explicit field checks in batnaDetector, chatHelpers). No schema validation at API entry points.
+
+**Status: RESOLVED — RFB-021 (`5eed133`): Zod schemas defined in `src/api/validation.ts`. `validateBody()` middleware factory wired at all Railway API entry points. Manual validation removed.**
 
 ---
 

@@ -23,37 +23,37 @@ Wave 1 covers all refactor items RFB-001 through RFB-036 plus Active Blocker AB-
 
 ## Gate Checklist
 
-### P0 — Must be DONE or formally DEFERRED
+### P0 — All DONE or formally DEFERRED
 
-| Item | Title | Status | Notes |
-|---|---|---|---|
-| RFB-004 | Move session/message writes to Railway API | ✅ DONE `243c02d` | All phases complete |
-| RFB-029 | negotiation_sessions missing analysis columns | ✅ DONE `f759c18` | |
-| RFB-031 | Fix session_history table name | ✅ DONE `2c51cb4` | |
-| RFB-032 | Implement Stripe webhook handler | ⏸ DEFERRED | Stripe not live; formal deferral recorded |
+| Item | Title | Status |
+|---|---|---|
+| RFB-004 | Move session/message writes to Railway API | ✅ DONE `243c02d` |
+| RFB-029 | negotiation_sessions missing analysis columns | ✅ DONE `f759c18` |
+| RFB-031 | Fix session_history table name | ✅ DONE `2c51cb4` |
+| RFB-032 | Implement Stripe webhook handler | ⏸ DEFERRED — Stripe not live |
 
-### P1 — Must be DONE or formally DEFERRED
+### P1 — All DONE or formally DEFERRED
 
-| Item | Title | Status | Notes |
-|---|---|---|---|
-| RFB-006 | Unify dual Layer 1 implementations | ⏸ DEFERRED 2026-04-16 | Formal deferral recorded — VG-06/ADR-007 required in Wave 2 |
-| RFB-007 | Unify three incompatible tier systems | ✅ DONE (re-scoped → RFB-036) | RFB-036 DONE |
-| RFB-008 | Eliminate parallel type maintenance | ✅ DONE `9c51a43` | |
-| RFB-009 | Propagate actual user tier to Edge Function | ✅ DONE `d90d5c0` | |
-| RFB-026 | Repair Edge Function batnaDetector.ts | ⏸ DEFERRED 2026-04-16 | Formal deferral recorded — depends on RFB-006 |
-| RFB-030 | RLS policies for negotiation_sessions | ✅ DONE 2026-04-09 | |
-| RFB-033 | JWT auth + tier gate — generate-plan EF | ✅ DONE `477df3d` | |
-| RFB-035 | Replace anon key with user JWT for EF calls | ✅ DONE | Via 035A + 035B |
-| RFB-036 | Migrate subscription_tier DB enum | ✅ DONE `a28d28c` | |
+| Item | Title | Status |
+|---|---|---|
+| RFB-006 | Unify dual Layer 1 implementations | ⏸ DEFERRED 2026-04-16 |
+| RFB-007 | Unify three incompatible tier systems | ✅ DONE (re-scoped → RFB-036) |
+| RFB-008 | Eliminate parallel type maintenance | ✅ DONE `9c51a43` |
+| RFB-009 | Propagate actual user tier to Edge Function | ✅ DONE `d90d5c0` |
+| RFB-026 | Repair Edge Function batnaDetector.ts | ⏸ DEFERRED 2026-04-16 |
+| RFB-030 | RLS policies for negotiation_sessions | ✅ DONE 2026-04-09 |
+| RFB-033 | JWT auth + tier gate — generate-plan EF | ✅ DONE `477df3d` |
+| RFB-035 | Replace anon key with user JWT for EF calls | ✅ DONE |
+| RFB-036 | Migrate subscription_tier DB enum | ✅ DONE `a28d28c` |
 
-### Verification Gates
+### Verification Gates — All resolved or deferred
 
 | Item | Title | Status |
 |---|---|---|
 | VG-05 | Verify Edge Function reads subscription_tier from request body | ✅ RESOLVED via RFB-009 |
-| VG-06 | Resolve dual Layer 1 architecture decision | ⏸ DEFERRED to Wave 2 — ADR-007 required |
+| VG-06 | Resolve dual Layer 1 architecture decision | ⏸ DEFERRED — first ADR in new project |
 
-### P3 — May be deferred without blocking gate clearance
+### P3 — All DONE
 
 | Item | Title | Status |
 |---|---|---|
@@ -91,11 +91,16 @@ These do not block the gate or Wave 2.
 ## Gate Status
 
 **Current status: CLEARED — 2026-04-16**
-**All P0/P1 items:** DONE or formally DEFERRED with documented rationale.
-**RFB-006:** DEFERRED — formal deferral recorded; VG-06/ADR-007 to be addressed in new Delivery Controller project.
-**RFB-026:** DEFERRED — formal deferral recorded; depends on RFB-006.
+All P0/P1 items are DONE or formally DEFERRED with rationale recorded in
+refactor-backlog.md. Wave 1 is complete.
+
+**Deferred to Wave 2:**
+- RFB-006 (dual Layer 1 — requires VG-06 architecture decision → ADR-007)
+- RFB-026 (Edge Function batnaDetector repair — depends on RFB-006)
+- RFB-032 (Stripe webhook — Stripe not live)
+
 **Cleared on:** 2026-04-16
-**Cleared by:** Formal deferral of RFB-006 and RFB-026
+**Cleared by:** Refactor Control Tower
 
 ---
 

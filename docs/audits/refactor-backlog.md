@@ -363,6 +363,7 @@ Tests in `tests/layer1/` reference the Edge Function schema and are currently br
 **Depends On:** VG-06 RESOLVED 2026-04-11 — `generate-plan` has no Layer 1 dependency. RFB-006 scope is the `/chat` Edge Function `_shared/engine/` only. Unblocked.
 
 **Status: DEFERRED — 2026-04-16**
+
 Rationale: The dual Layer 1 architecture decision (VG-06) has not been resolved
 during Wave 1. Unifying the Node.js and Edge Function Layer 1 implementations
 requires first deciding whether the Edge Function engine is retired, kept, or
@@ -379,7 +380,6 @@ Deferral conditions:
   path until VG-06 is decided
 
 Unblocks when: VG-06 resolved in new Delivery Controller project (ADR required)
-
 Spawns: ADR-007 (to be created in new project for VG-06 decision)
 
 ---
@@ -1204,21 +1204,20 @@ means any fix must align with RFB-006 resolution.
 **Depends On:** RFB-006 (dual Layer 1 resolution)
 
 **Status: DEFERRED — 2026-04-16**
-Rationale: This item depends directly on RFB-006 (dual Layer 1 unification).
-Repairing the Edge Function batnaDetector.ts import path and schema divergence
-makes no sense before VG-06 determines whether that file has a future at all.
-If the Edge Function engine is retired (VG-06 Option A), this file is deleted.
-If it is kept (VG-06 Option B), it must be repaired as part of that migration.
-Either path is Wave 2 work.
+
+Rationale: Depends directly on RFB-006 (dual Layer 1 unification). Repairing
+the Edge Function batnaDetector.ts import path and schema divergence makes no
+sense before VG-06 determines whether that file has a future. If the Edge
+Function engine is retired, this file is deleted. If it is kept, it must be
+repaired as part of that migration. Either path is Wave 2 work.
 
 Deferral conditions:
 - RFB-026 is deferred to Wave 2 backlog
-- The Edge Function batnaDetector.ts remains in its current broken state;
-  it must not be deployed
-- DCC-EF-01 (broken import path, missing tier value, schema divergence) remains
-  an open dead-code candidate until VG-06 resolves it
+- Edge Function batnaDetector.ts remains in its current broken state and must
+  not be deployed
+- DCC-EF-01 remains an open dead-code candidate until VG-06 resolves it
 
-Unblocks when: RFB-006 resolved (which requires VG-06 resolved first)
+Unblocks when: RFB-006 resolved (requires VG-06 first)
 
 ---
 
@@ -1876,7 +1875,7 @@ re-verified — their production behaviour was untested before this fix.
 | RFB-003 | Move team CRUD to Railway API — ✅ DONE Phase A `0b10d9c` + Phase B Lovable 2026-04-08 | P0 | backend + frontend | boundary-violation |
 | RFB-004 | Move session/message writes to Railway API — Phase A ✅ `2c51cb4` / Phase B ✅ `2415f72` / Phase C backend ✅ `6021665` / Phase C Lovable ✅ 2026-04-10 — RFB-004-C ✅ DONE `243c02d` | P0 | backend + frontend | boundary-violation |
 | RFB-005 | Fix CORS — wildcard overrides allowlist — ✅ DONE `e00e400` | P0 | backend | boundary-violation |
-| RFB-006 | Unify dual Layer 1 implementations — ⏸ DEFERRED to Wave 2 (VG-06 unresolved; ADR-007 required) | P1 | backend | duplicate-logic |
+| RFB-006 | Unify dual Layer 1 implementations — ⏸ DEFERRED 2026-04-16 (VG-06 unresolved; Wave 2 — requires ADR-007) | P1 | backend | duplicate-logic |
 | RFB-007 | Unify three incompatible tier systems — Step A ✅ `1c68185` / Step B ✅ `6ba5710` / Step C ✅ closed (re-scoped → RFB-036) | P1 | backend + frontend | contract-gap |
 | RFB-008 | Eliminate parallel type maintenance — ✅ DONE `9c51a43` | P1 | backend | duplicate-logic |
 | RFB-009 | Propagate actual user tier to Edge Function — ✅ DONE `d90d5c0` | P1 | frontend | contract-gap |
@@ -1898,7 +1897,7 @@ re-verified — their production behaviour was untested before this fix.
 | RFB-023 | Remove dead useChatApi export — ✅ DONE `aa703bd` | P3 | frontend | dead-code |
 | RFB-024 | Fix `parsePlanResponse()` silent fallback — ✅ DONE `fd031cc` | P1 | backend | boundary-violation |
 | RFB-025 | Fix `parseChatResponse()` silent fallback — ✅ DONE `fe961ee` | P1 | backend | boundary-violation |
-| RFB-026 | Repair broken claudeClient import in Edge Function batnaDetector.ts — ⏸ DEFERRED to Wave 2 (depends on RFB-006) | P2 | backend | boundary-violation |
+| RFB-026 | Repair broken claudeClient import in Edge Function batnaDetector.ts — ⏸ DEFERRED 2026-04-16 (depends on RFB-006; Wave 2) | P2 | backend | boundary-violation |
 | RFB-027 | Repair npm test runner — install Jest or wire ts-node — ✅ DONE `0665780` | P3 | backend | contract-gap |
 | RFB-028 | Enforce max_members limit in POST /api/teams/:id/members — ✅ DONE `402ee63` | P2 | backend | boundary-violation |
 | RFB-029 | negotiation_sessions missing analysis columns — Railway analyze inserts silently failing — ✅ DONE `f759c18` | P0 | backend | boundary-violation |

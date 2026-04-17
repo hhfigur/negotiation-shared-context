@@ -38,7 +38,7 @@ NegotiationCoach AI is a web application that guides users through professional 
 │  Layer 2: Market  │  │  ┌──────────────────────────────────────────────┐  │
 │  Layer 1: Algos   │  │  │ Tables                                        │  │
 │  Layer 0: DB      │  │  │  negotiation_sessions   knowledge_graph       │  │
-│                   │  │  │  session_messages        user_profiles         │  │
+│                   │  │  │  session_history        user_profiles         │  │
 │  SERVICE_ROLE_KEY │  │  │  teams  team_members     team_training_tasks   │  │
 │  bypasses RLS     │  │  └──────────────────────────────────────────────┘  │
 └──────────────────┘  └─────────────────────────────────────────────────────┘
@@ -108,7 +108,7 @@ AnalysisContext → Railway POST /api/plan
 ```
 useSessionManager.ts → Supabase SDK direct writes
   → negotiation_sessions (INSERT/UPDATE)
-  → session_messages (INSERT, fire-and-forget with 2 retries)
+  → session_history (INSERT, fire-and-forget with 2 retries)
   [No Railway API intermediary — frontend writes DB directly]
 ```
 
@@ -135,7 +135,7 @@ The backend enforces feature gating via the `free/privat/kmu/profi` hierarchy. T
 | SYS-01 | Dual Layer 1 implementations (Railway src/ vs Edge Function negotiate/) with divergent type schemas and no sync mechanism | Critical | Observed |
 | SYS-02 | Team admin authorization is frontend-only (no RLS enforcement verified) | High | Observed |
 | SYS-03 | Railway authMiddleware never rejects — no 401 issued in dev mode | High | Observed |
-| SYS-04 | Frontend writes negotiation_sessions, session_messages, teams, team_members, user_profiles directly (no API mediation) | High | Observed |
+| SYS-04 | Frontend writes negotiation_sessions, session_history, teams, team_members, user_profiles directly (no API mediation) | High | Observed |
 | SYS-05 | CORS wildcard header overrides allowlist in Railway backend | Medium | Observed |
 | SYS-06 | Two incompatible tier/subscription enumerations across frontend and backend | Medium | Observed |
 | SYS-07 | AnalysisContext stored in localStorage with no TTL, no versioning, no size limit | Medium | Observed |

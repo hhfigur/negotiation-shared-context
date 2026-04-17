@@ -118,7 +118,7 @@ This ADR reconstructs the implicit system boundary decisions made during develop
 │   - Streaming chat via Edge Function /chat                 │
 │  NOT Allowed:                                               │
 │   - negotiation_sessions writes (→ use Railway API)        │
-│   - session_messages writes (→ use Railway API)            │
+│   - session_history writes (→ use Railway API)            │
 │   - teams / team_members writes (→ use Railway API)        │
 │   - Any business logic (limits, titles, retries)           │
 └──────────────────────────────┬──────────────────────────────┘

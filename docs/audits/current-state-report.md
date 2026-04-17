@@ -18,6 +18,13 @@ However, the system has accumulated **significant architectural debt** from a fr
 4. **Team admin authorization is frontend-only** — no server-side enforcement verified
 5. **Three incompatible tier definitions** exist across frontend, backend, and Edge Functions
 
+## Wave 1 Closure — 2026-04-16
+
+Wave 1 refactoring complete. Gate cleared.
+All P0/P1 findings from this report are resolved or formally deferred.
+Deferred to Wave 2: RFB-006 (VG-06/ADR-007), RFB-026, RFB-032.
+Active source of truth transfers to delivery-controller-setup.md.
+
 ---
 
 ## Finding Registry

@@ -1,6 +1,6 @@
 # Wave 1 Completion Gate — Formal Closure Checklist
 
-> **Status:** GATE NEARLY CLEARED | **Type:** Governance | **Created:** 2026-04-16
+> **Status:** CLEARED | **Type:** Governance | **Created:** 2026-04-16 | **Cleared:** 2026-04-16
 > **Path:** `shared-context/docs/audits/wave1-completion-gate.md`
 
 **Purpose:** Formal gate for closing Wave 1 of the NegotiationCoach AI refactor backlog. Documents every item's status at closure, open carry-forward items, and post-gate actions.
@@ -36,11 +36,11 @@ Wave 1 covers all refactor items RFB-001 through RFB-036 plus Active Blocker AB-
 
 | Item | Title | Status | Notes |
 |---|---|---|---|
-| RFB-006 | Unify dual Layer 1 implementations | **OPEN** | Depends on VG-06 — formal deferral required |
+| RFB-006 | Unify dual Layer 1 implementations | ⏸ DEFERRED 2026-04-16 | Formal deferral recorded — VG-06/ADR-007 required in Wave 2 |
 | RFB-007 | Unify three incompatible tier systems | ✅ DONE (re-scoped → RFB-036) | RFB-036 DONE |
 | RFB-008 | Eliminate parallel type maintenance | ✅ DONE `9c51a43` | |
 | RFB-009 | Propagate actual user tier to Edge Function | ✅ DONE `d90d5c0` | |
-| RFB-026 | Repair Edge Function batnaDetector.ts | **OPEN** | Depends on RFB-006 — formal deferral required |
+| RFB-026 | Repair Edge Function batnaDetector.ts | ⏸ DEFERRED 2026-04-16 | Formal deferral recorded — depends on RFB-006 |
 | RFB-030 | RLS policies for negotiation_sessions | ✅ DONE 2026-04-09 | |
 | RFB-033 | JWT auth + tier gate — generate-plan EF | ✅ DONE `477df3d` | |
 | RFB-035 | Replace anon key with user JWT for EF calls | ✅ DONE | Via 035A + 035B |
@@ -51,7 +51,7 @@ Wave 1 covers all refactor items RFB-001 through RFB-036 plus Active Blocker AB-
 | Item | Title | Status |
 |---|---|---|
 | VG-05 | Verify Edge Function reads subscription_tier from request body | ✅ RESOLVED via RFB-009 |
-| VG-06 | Resolve dual Layer 1 architecture decision | **OPEN** — formal deferral required |
+| VG-06 | Resolve dual Layer 1 architecture decision | ⏸ DEFERRED to Wave 2 — ADR-007 required |
 
 ### P3 — May be deferred without blocking gate clearance
 
@@ -90,11 +90,12 @@ These do not block the gate or Wave 2.
 
 ## Gate Status
 
-**Current status: GATE NEARLY CLEARED**
-**Blocking items remaining:** RFB-006 and RFB-026 require formal DEFERRED decisions with rationale before gate can be marked CLEARED.
-**All other P0/P1 items:** DONE or formally DEFERRED.
-**Cleared on:** —
-**Cleared by:** —
+**Current status: CLEARED — 2026-04-16**
+**All P0/P1 items:** DONE or formally DEFERRED with documented rationale.
+**RFB-006:** DEFERRED — formal deferral recorded; VG-06/ADR-007 to be addressed in new Delivery Controller project.
+**RFB-026:** DEFERRED — formal deferral recorded; depends on RFB-006.
+**Cleared on:** 2026-04-16
+**Cleared by:** Formal deferral of RFB-006 and RFB-026
 
 ---
 

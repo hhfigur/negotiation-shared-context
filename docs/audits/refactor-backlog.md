@@ -362,6 +362,26 @@ Tests in `tests/layer1/` reference the Edge Function schema and are currently br
 
 **Depends On:** VG-06 RESOLVED 2026-04-11 — `generate-plan` has no Layer 1 dependency. RFB-006 scope is the `/chat` Edge Function `_shared/engine/` only. Unblocked.
 
+**Status: DEFERRED — 2026-04-16**
+Rationale: The dual Layer 1 architecture decision (VG-06) has not been resolved
+during Wave 1. Unifying the Node.js and Edge Function Layer 1 implementations
+requires first deciding whether the Edge Function engine is retired, kept, or
+migrated. This is a product architecture decision, not a refactoring task, and
+belongs in the Wave 2 / feature delivery phase under the Delivery Controller
+project.
+
+Deferral conditions:
+- RFB-006 is deferred to Wave 2 backlog
+- VG-06 must be the first architecture decision addressed in the new project
+- Until VG-06 is resolved, no new logic should be added to the Edge Function
+  engine path
+- The Node.js Layer 1 (negotiationcoach-backend) is the canonical execution
+  path until VG-06 is decided
+
+Unblocks when: VG-06 resolved in new Delivery Controller project (ADR required)
+
+Spawns: ADR-007 (to be created in new project for VG-06 decision)
+
 ---
 
 ### RFB-007
@@ -1183,6 +1203,15 @@ means any fix must align with RFB-006 resolution.
 
 **Depends On:** RFB-006 (dual Layer 1 resolution)
 
+**Status: DEFERRED — 2026-04-16**
+Rationale: RFB-006 (dual Layer 1 unification) was formally deferred to Wave 2.
+RFB-026 depends entirely on RFB-006 resolution — the claudeClient import path,
+NegotiationTier alignment, and schema reconciliation cannot be addressed until
+the Edge Function engine architecture is decided. Deferred as a direct consequence
+of RFB-006 deferral.
+
+Unblocks when: RFB-006 resolved in new Delivery Controller project.
+
 ---
 
 ## Completed — Out-of-Band Items
@@ -1839,7 +1868,7 @@ re-verified — their production behaviour was untested before this fix.
 | RFB-003 | Move team CRUD to Railway API — ✅ DONE Phase A `0b10d9c` + Phase B Lovable 2026-04-08 | P0 | backend + frontend | boundary-violation |
 | RFB-004 | Move session/message writes to Railway API — Phase A ✅ `2c51cb4` / Phase B ✅ `2415f72` / Phase C backend ✅ `6021665` / Phase C Lovable ✅ 2026-04-10 — RFB-004-C ✅ DONE `243c02d` | P0 | backend + frontend | boundary-violation |
 | RFB-005 | Fix CORS — wildcard overrides allowlist — ✅ DONE `e00e400` | P0 | backend | boundary-violation |
-| RFB-006 | Unify dual Layer 1 implementations | P1 | backend | duplicate-logic |
+| RFB-006 | Unify dual Layer 1 implementations — ⏸ DEFERRED to Wave 2 (VG-06 unresolved; ADR-007 required) | P1 | backend | duplicate-logic |
 | RFB-007 | Unify three incompatible tier systems — Step A ✅ `1c68185` / Step B ✅ `6ba5710` / Step C ✅ closed (re-scoped → RFB-036) | P1 | backend + frontend | contract-gap |
 | RFB-008 | Eliminate parallel type maintenance — ✅ DONE `9c51a43` | P1 | backend | duplicate-logic |
 | RFB-009 | Propagate actual user tier to Edge Function — ✅ DONE `d90d5c0` | P1 | frontend | contract-gap |
@@ -1861,7 +1890,7 @@ re-verified — their production behaviour was untested before this fix.
 | RFB-023 | Remove dead useChatApi export — ✅ DONE `aa703bd` | P3 | frontend | dead-code |
 | RFB-024 | Fix `parsePlanResponse()` silent fallback — ✅ DONE `fd031cc` | P1 | backend | boundary-violation |
 | RFB-025 | Fix `parseChatResponse()` silent fallback — ✅ DONE `fe961ee` | P1 | backend | boundary-violation |
-| RFB-026 | Repair broken claudeClient import in Edge Function batnaDetector.ts | P2 | backend | boundary-violation |
+| RFB-026 | Repair broken claudeClient import in Edge Function batnaDetector.ts — ⏸ DEFERRED to Wave 2 (depends on RFB-006) | P2 | backend | boundary-violation |
 | RFB-027 | Repair npm test runner — install Jest or wire ts-node — ✅ DONE `0665780` | P3 | backend | contract-gap |
 | RFB-028 | Enforce max_members limit in POST /api/teams/:id/members — ✅ DONE `402ee63` | P2 | backend | boundary-violation |
 | RFB-029 | negotiation_sessions missing analysis columns — Railway analyze inserts silently failing — ✅ DONE `f759c18` | P0 | backend | boundary-violation |

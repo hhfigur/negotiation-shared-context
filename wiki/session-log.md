@@ -22,6 +22,13 @@ Append-only log of every Control Tower session. One entry per session. Format: `
 
 - RFB-036 closed — Migrate subscription_tier DB enum to Railway Tier values, commit a28d28c
 
+## [2026-04-16] maintenance | Wave 1 gate CLEARED — RFB-006 and RFB-026 formally deferred
+
+- RFB-006 DEFERRED to Wave 2: dual Layer 1 unification blocked on VG-06; ADR-007 required in Delivery Controller project; Node.js Layer 1 is canonical until resolved
+- RFB-026 DEFERRED to Wave 2: depends on RFB-006; batnaDetector.ts repair sequenced behind architecture decision
+- Wave 1 Completion Gate: CLEARED 2026-04-16 — all P0/P1 items DONE or formally DEFERRED
+- wiki/index.md: RFB-006 and RFB-026 removed from open items (carry to Wave 2 under new project)
+
 ## [2026-04-16] refactor | RFB-004-C closed
 
 - RFB-004-C closed — Add DB-level message count constraint to session_history, commit 243c02d

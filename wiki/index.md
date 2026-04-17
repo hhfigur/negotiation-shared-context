@@ -18,8 +18,6 @@ Full backlog: [../docs/audits/refactor-backlog.md](../docs/audits/refactor-backl
 
 | ID | Title | Priority | Blocker |
 |----|-------|----------|---------|
-| RFB-006 | Unify dual Layer 1 implementations (Railway vs Edge Function engine) | P1 | VG-06 (dual Layer 1 architecture decision unresolved) |
-| RFB-026 | Repair broken claudeClient import in `batnaDetector.ts` (Edge Function) | P2 | RFB-006 |
 | RFB-032 | Implement Stripe webhook handler — `POST /api/webhooks/stripe` | P0 | Stripe not yet live in production; RFB-036 must complete first |
 
 ---

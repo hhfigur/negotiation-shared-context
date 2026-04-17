@@ -1204,13 +1204,21 @@ means any fix must align with RFB-006 resolution.
 **Depends On:** RFB-006 (dual Layer 1 resolution)
 
 **Status: DEFERRED — 2026-04-16**
-Rationale: RFB-006 (dual Layer 1 unification) was formally deferred to Wave 2.
-RFB-026 depends entirely on RFB-006 resolution — the claudeClient import path,
-NegotiationTier alignment, and schema reconciliation cannot be addressed until
-the Edge Function engine architecture is decided. Deferred as a direct consequence
-of RFB-006 deferral.
+Rationale: This item depends directly on RFB-006 (dual Layer 1 unification).
+Repairing the Edge Function batnaDetector.ts import path and schema divergence
+makes no sense before VG-06 determines whether that file has a future at all.
+If the Edge Function engine is retired (VG-06 Option A), this file is deleted.
+If it is kept (VG-06 Option B), it must be repaired as part of that migration.
+Either path is Wave 2 work.
 
-Unblocks when: RFB-006 resolved in new Delivery Controller project.
+Deferral conditions:
+- RFB-026 is deferred to Wave 2 backlog
+- The Edge Function batnaDetector.ts remains in its current broken state;
+  it must not be deployed
+- DCC-EF-01 (broken import path, missing tier value, schema divergence) remains
+  an open dead-code candidate until VG-06 resolves it
+
+Unblocks when: RFB-006 resolved (which requires VG-06 resolved first)
 
 ---
 

@@ -107,6 +107,7 @@ Operationsprofile, Governance-Übersichten und Inventare — vollständige Wiki-
 | **Repo Profile: Backend** | `docs/wiki/WIKI---Repo-Profile-negotiationcoach-backend.md` | Vollständiges Operationsprofil des Backend-Repos: Architektur, API, Supabase-Nutzung, Risiken, Skills |
 | **Repo Profile: Frontend** | `docs/wiki/WIKI---Repo-Profile-negotiation-buddy.md` | Vollständiges Operationsprofil des Frontend-Repos: Screens, Hooks, Supabase-Nutzung, Risiken |
 | **Wiki Index** | `docs/wiki/WIKI---Index.md` | Dieses Dokument |
+| **Delivery Controller Betriebsmodell** | `docs/wiki/WIKI---Delivery-Controller-Betriebsmodell.md` | Kanonische Betriebsdefinition: Rolle, Systemlandschaft, Produktstatus, Architekturregeln, ADR-Referenz, Tool-Routing, Standardvorgehen, Pflichtperspektiven, Pflichtartefakte, Kommunikationsstil — Established 2026-04-18 |
 
 ---
 

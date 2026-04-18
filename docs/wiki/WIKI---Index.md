@@ -103,7 +103,7 @@ Operationsprofile, Governance-Übersichten und Inventare — vollständige Wiki-
 |-----------|------|-------------|
 | **Governance Baseline** | `docs/wiki/WIKI---Governance-Baseline.md` | 12 nicht verhandelbare Architekturregeln, Anti-Patterns, Entscheidungsprinzipien, aktive Restrisiken, Tier-Modell |
 | **Transition Knowledge Package** | `docs/wiki/WIKI---Transition-Knowledge-Package.md` | Was aus dem alten Audit-Projekt übernommen wurde — Artefakte, Anpassungen, Lücken, DEVS01-Extrakt |
-| **Skills and Commands Inventory** | `docs/wiki/WIKI---Skills-and-Commands-Inventory.md` | Vollständiges Inventar: alle Skills (A–J), Prompt-Templates, Hooks, Tool-Routing, Rule-Files, Lücken |
+| **Skills and Commands Inventory** | `docs/wiki/WIKI---Skills-and-Commands-Inventory.md` | Vollständiges Inventar aller 42 Artefakte in 6 Gruppen (Governance, Delivery, Execution, Workflow, Controller, Knowledge) mit Redundanz- und Lückenanalyse — v1.1 (2026-04-18) |
 | **Repo Profile: Backend** | `docs/wiki/WIKI---Repo-Profile-negotiationcoach-backend.md` | Vollständiges Operationsprofil des Backend-Repos: Architektur, API, Supabase-Nutzung, Risiken, Skills |
 | **Repo Profile: Frontend** | `docs/wiki/WIKI---Repo-Profile-negotiation-buddy.md` | Vollständiges Operationsprofil des Frontend-Repos: Screens, Hooks, Supabase-Nutzung, Risiken |
 | **Wiki Index** | `docs/wiki/WIKI---Index.md` | Dieses Dokument |

@@ -109,6 +109,8 @@ Operationsprofile, Governance-Übersichten und Inventare — vollständige Wiki-
 | **Wiki Index** | `docs/wiki/WIKI---Index.md` | Dieses Dokument |
 | **Delivery Controller Betriebsmodell** | `docs/wiki/WIKI---Delivery-Controller-Betriebsmodell.md` | Kanonische Betriebsdefinition: Rolle, Systemlandschaft, Produktstatus, Architekturregeln, ADR-Referenz, Tool-Routing, Standardvorgehen, Pflichtperspektiven, Pflichtartefakte, Kommunikationsstil — Established 2026-04-18 |
 | **Wiki Gap Analysis** | `docs/wiki/WIKI---Wiki-Gap-Analysis.md` | Gap-Analyse der Wiki-Struktur gegen 9-Bereiche-Zielbild — offene Governance-Docs identifiziert, priorisierte Empfehlungsliste (P0–P3) — 2026-04-18 |
+| **Memory Compensation Baseline** | `docs/wiki/WIKI---Memory-Compensation-Baseline.md` | Analyse des Memory-Verlusts beim Projektübergang; rekonstruierte implizite Regeln, Entscheidungsmuster, Warnhinweise; Baseline-Lückenliste — 2026-04-18 |
+| **Delivery Controller Betriebshandbuch** | `docs/wiki/WIKI---Delivery-Controller-Betriebshandbuch.md` | Operative Protokolle des Delivery Controllers: Control Tower Commands, Prompt-Templates, Tool-Routing, Lernprinzipien, Session-End-Protokoll — 2026-04-18 |
 
 ---
 

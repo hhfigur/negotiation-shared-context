@@ -152,4 +152,15 @@
 
 ---
 
+## Supabase-Architektur-Korrektur (2026-04-18)
+
+**Observed:** Es gibt eine Supabase-Instanz (`ujnyioggxipvuxxxcivr`), nicht zwei. Die Formulierung "zwei Supabase-Instanzen" in früheren Dokumenten bezog sich auf zwei Clients (anon key / service role key) gegen dieselbe Instanz.
+
+- **AB-001:** Railway SUPABASE_URL auf `ujnyioggxipvuxxxcivr.supabase.co` korrigiert — DONE.
+- **Dual-Client-Setup:** Permanent und intentional (ADR-001, ADR-002). Kein Problem zu lösen.
+- **Frontend:** anon key, RLS-enforced
+- **Railway Backend:** service role key, bypasses RLS, code-enforced via authMiddleware + assertSessionOwner()
+
+---
+
 *Dieses Dokument ist eine einmalige Transition-Dokumentation. Es muss nicht kontinuierlich aktualisiert werden. Änderungen am System werden in den operativen Docs (refactor-backlog.md, source-of-truth-matrix.md, ADRs) dokumentiert.*

@@ -205,7 +205,50 @@ Layer-3-Implementierung beginnt erst nach Layer-2-Fix (Wave-2-Abhängigkeitsgrap
 
 ---
 
-## 8. Offene Governance-Dokumente — Identified 2026-04-18
+## 8. Verification Gaps — Aktueller Stand (2026-04-18)
+
+| VG-ID | Frage | Status |
+|---|---|---|
+| VG-01 | RLS auf teams/team_members — admin_user_id = auth.uid()? | ✅ Resolved — 10 snake_case Policies via Migration `20260403120000` |
+| VG-02 | RLS auf negotiation_sessions — cross-user reads mit anon key? | ✅ Resolved — `user_sees_own_sessions` policy pre-existing |
+| VG-03 | Stripe Webhook — wo wird user_metadata.tier aktualisiert? | ✅ Closed — Handler absent; RFB-032 registriert (deferred) |
+| VG-04 | Was erstellt die initiale user_profiles Zeile bei Signup? | ⚠️ Offen — vor User-Profile-Features verifizieren |
+| VG-05 | Liest EF /chat echten User-Tier aus JWT? | ✅ Resolved — tier aus Request Body gelesen, aber nicht enforced; kein JWT Auth (→ VG-05-A) |
+| VG-05-A | EF /chat ohne JWT Auth — kein RFB registriert | ⚠️ Offen — High Severity; kein RFB-Eintrag vorhanden |
+| VG-06 | Ist generate-plan EF aktiv oder Railway /api/plan? | ✅ Resolved — generate-plan EF ist ACTIVE; Railway generatePlan() ist Dead Code (→ ADR-005) |
+| VG-07 | ADR-004 Option? | ✅ Resolved — Option A akzeptiert |
+
+---
+
+## 9. Backlog-Status Wave 2 (Stand 2026-04-18)
+
+### Completed (Wave 1 — Auszug relevanter Abschlüsse)
+
+| ID | Titel | Commit |
+|---|---|---|
+| RFB-004 | Session/Message writes → Railway API (alle Phasen A/B/C) | `2c51cb4`, `2415f72`, `6021665`, `243c02d` |
+| RFB-031 | session_history Tabellenname-Fix in sessionRoutes.ts | `2c51cb4` |
+| RFB-036 | subscription_tier DB-Enum auf Railway Tier-Werte (ADR-006) | `a28d28c` |
+
+### Offen / Blockiert Wave 2
+
+| ID | Status | Blocker |
+|---|---|---|
+| RFB-006 | ⏸ Deferred | ADR-007 erforderlich |
+| RFB-009 | ⏸ Blocked | RFB-007 + VG-05 resolved; scope expanded (EF enforcement nötig) |
+| RFB-020 | Open P3 | kein Blocker |
+| RFB-026 | ⏸ Deferred | RFB-006 erforderlich |
+| RFB-032 | ⏸ Deferred | Stripe nicht live |
+
+### Permanent geparkt (nie in START NEXT REFACTOR nominieren)
+
+- RFB-010 — in RFB-032 überführt
+- RFB-016 — deferred, nicht surfacen
+- Team-Features (RFB-003 Phase C etc.) — bis explizit angefordert
+
+---
+
+## 10. Offene Governance-Dokumente — Identified 2026-04-18
 
 Die folgenden Governance-Dokumente sind identifiziert aber noch nicht erstellt.
 Reihenfolge nach Priorität. Details und Begründungen in `WIKI---Wiki-Gap-Analysis.md`.

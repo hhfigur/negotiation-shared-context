@@ -205,4 +205,20 @@ Layer-3-Implementierung beginnt erst nach Layer-2-Fix (Wave-2-Abhängigkeitsgrap
 
 ---
 
+## 8. Offene Governance-Dokumente — Identified 2026-04-18
+
+Die folgenden Governance-Dokumente sind identifiziert aber noch nicht erstellt.
+Reihenfolge nach Priorität. Details und Begründungen in `WIKI---Wiki-Gap-Analysis.md`.
+
+| Priorität | Dokument | Zweck |
+|---|---|---|
+| P1 | `docs/governance/architecture-guardrails.md` | Single-page Reference aller Architekturregeln, Non-negotiables, Anti-Patterns |
+| P2 | `docs/governance/supabase-governance.md` | Konsolidierte Supabase-Regeln (Instanzen, Migrations, RLS, Auth) |
+| P2 | `docs/governance/change-doc-standard.md` | Pflichtfelder und Definition of Done für Änderungen |
+| P2 | `docs/delivery/playbook.md` | Standalone Delivery Playbook (aus initial-setup-baseline konsolidieren) |
+
+**Klassifizierung:** Proposed — noch nicht entschieden, wann erstellt.
+
+---
+
 *Dieses Dokument wird nicht automatisch aktualisiert. Nach jeder Wave und nach jeder wesentlichen Governance-Entscheidung reviewen.*

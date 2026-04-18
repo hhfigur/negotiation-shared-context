@@ -108,6 +108,7 @@ Operationsprofile, Governance-Übersichten und Inventare — vollständige Wiki-
 | **Repo Profile: Frontend** | `docs/wiki/WIKI---Repo-Profile-negotiation-buddy.md` | Vollständiges Operationsprofil des Frontend-Repos: Screens, Hooks, Supabase-Nutzung, Risiken |
 | **Wiki Index** | `docs/wiki/WIKI---Index.md` | Dieses Dokument |
 | **Delivery Controller Betriebsmodell** | `docs/wiki/WIKI---Delivery-Controller-Betriebsmodell.md` | Kanonische Betriebsdefinition: Rolle, Systemlandschaft, Produktstatus, Architekturregeln, ADR-Referenz, Tool-Routing, Standardvorgehen, Pflichtperspektiven, Pflichtartefakte, Kommunikationsstil — Established 2026-04-18 |
+| **Wiki Gap Analysis** | `docs/wiki/WIKI---Wiki-Gap-Analysis.md` | Gap-Analyse der Wiki-Struktur gegen 9-Bereiche-Zielbild — offene Governance-Docs identifiziert, priorisierte Empfehlungsliste (P0–P3) — 2026-04-18 |
 
 ---
 
@@ -123,6 +124,23 @@ Operationsprofile, Governance-Übersichten und Inventare — vollständige Wiki-
 | Layer-2-Diagnose-Plan | `docs/delivery/layer2-diagnosis-plan.md` | ❌ Fehlt | Nach Wave-2-Step-2-Diagnose |
 
 Bereits vorhanden: `docs/features/knowledge-pipeline.md` (deferred — ADR-016a erforderlich).
+
+---
+
+## Wiki-Zielbild — 9 Bereiche
+
+Das vollständige Wiki deckt folgende 9 Bereiche ab. Den aktuellen
+Dokumentationsstatus pro Bereich siehe `WIKI---Wiki-Gap-Analysis.md`.
+
+1. System Overview
+2. Architecture Governance
+3. Audit & Refactoring Baseline
+4. Repo Profiles
+5. Supabase Governance
+6. Delivery Playbook
+7. Skills Catalog
+8. Decisions / ADRs
+9. Change Documentation Standard
 
 ---
 

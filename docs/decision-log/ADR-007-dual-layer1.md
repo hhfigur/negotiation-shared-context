@@ -138,13 +138,13 @@ Datum:
 
 ### Bei Option A (Retire)
 
-- `supabase/functions/_shared/engine/` wird gelöscht
-- Betroffene EF delegieren an Railway via `fetch(process.env.RAILWAY_URL + '/api/...')`
-- `tests/layer1/` testen ausschließlich gegen `src/layer1/` (Node.js)
-- RFB-006 und RFB-026 werden als DONE geschlossen
-- `bounded-contexts.md` BC-02 CRIT-01 → resolved
-- `source-of-truth-matrix.md` Entity 5 → resolved
-- `frontend-backend.md` Type Drift Register CRITICAL DRIFT → resolved
+- [x] `supabase/functions/_shared/engine/` wird gelöscht
+- [x] Betroffene EF delegieren an Railway via `fetch(process.env.RAILWAY_URL + '/api/...')`
+- [x] `tests/layer1/` testen ausschließlich gegen `src/layer1/` (Node.js)
+- [x] RFB-006 und RFB-026 werden als DONE geschlossen
+- [x] `bounded-contexts.md` BC-02 CRIT-01 → resolved
+- [x] `source-of-truth-matrix.md` Entity 5 → resolved
+- [x] `frontend-backend.md` Type Drift Register CRITICAL DRIFT → resolved
 
 ### Bei Option B (Migrate)
 

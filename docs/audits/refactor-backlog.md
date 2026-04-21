@@ -362,25 +362,10 @@ Tests in `tests/layer1/` reference the Edge Function schema and are currently br
 
 **Depends On:** VG-06 RESOLVED 2026-04-11 — `generate-plan` has no Layer 1 dependency. RFB-006 scope is the `/chat` Edge Function `_shared/engine/` only. Unblocked.
 
-**Status: DEFERRED — 2026-04-16**
+**Status: DONE — 2026-04-21**
 
-Rationale: The dual Layer 1 architecture decision (VG-06) has not been resolved
-during Wave 1. Unifying the Node.js and Edge Function Layer 1 implementations
-requires first deciding whether the Edge Function engine is retired, kept, or
-migrated. This is a product architecture decision, not a refactoring task, and
-belongs in the Wave 2 / feature delivery phase under the Delivery Controller
-project.
-
-Deferral conditions:
-- RFB-006 is deferred to Wave 2 backlog
-- VG-06 must be the first architecture decision addressed in the new project
-- Until VG-06 is resolved, no new logic should be added to the Edge Function
-  engine path
-- The Node.js Layer 1 (negotiationcoach-backend) is the canonical execution
-  path until VG-06 is decided
-
-Unblocks when: VG-06 resolved in new Delivery Controller project (ADR required)
-Spawns: ADR-007 (to be created in new project for VG-06 decision)
+Commit: `9c6f1f2` (negotiationcoach-backend) — 2026-04-21
+Note: _shared/engine/ retired (8 Dateien), negotiate/index.ts als Railway-Proxy umgeschrieben. ADR-007-A umgesetzt.
 
 ---
 
@@ -1203,21 +1188,9 @@ means any fix must align with RFB-006 resolution.
 
 **Depends On:** RFB-006 (dual Layer 1 resolution)
 
-**Status: DEFERRED — 2026-04-16**
+**Status: CLOSED — superseded by ADR-007-A — 2026-04-21**
 
-Rationale: Depends directly on RFB-006 (dual Layer 1 unification). Repairing
-the Edge Function batnaDetector.ts import path and schema divergence makes no
-sense before VG-06 determines whether that file has a future. If the Edge
-Function engine is retired, this file is deleted. If it is kept, it must be
-repaired as part of that migration. Either path is Wave 2 work.
-
-Deferral conditions:
-- RFB-026 is deferred to Wave 2 backlog
-- Edge Function batnaDetector.ts remains in its current broken state and must
-  not be deployed
-- DCC-EF-01 remains an open dead-code candidate until VG-06 resolves it
-
-Unblocks when: RFB-006 resolved (requires VG-06 first)
+Note: Repair nicht mehr erforderlich. batnaDetector.ts wurde mit _shared/engine/ gelöscht (RFB-006, Commit 9c6f1f2).
 
 ---
 

@@ -1,6 +1,6 @@
 # ADR-007 — Dual Layer-1-Architektur: Edge Function Engine
 
-**Status:** DRAFT — Entscheidung ausstehend
+**Status:** DECIDED — Option A (Retire) — 2026-04-21
 **Erstellt:** 2026-04-17
 **Entscheider:** Maik
 **Klassifizierung:** Architecture Decision — Wave-2-Start-Gate
@@ -107,18 +107,30 @@ Diese Situation wurde in Wave 1 als `CRIT-01` klassifiziert und aufgrund fehlend
 
 ## Entscheidung
 
-**[ ] Noch nicht getroffen**
-
 Optionen:
-- [ ] **Option A — Retire**
+- [x] **Option A — Retire**
 - [ ] **Option B — Migrate**
 - [ ] **Option C — Adapter**
 
 Begründung:
-> _(wird nach Entscheidung ausgefüllt)_
+> Observed 2026-04-21: Nur negotiate/index.ts ruft _shared/engine/ auf. chat/ und generate-plan/ EF existieren nicht. batnaDetector.ts ist nicht kompilierbar (broken imports: _shared/types/index + _shared/utils/claudeClient, Name-Mismatch detectBatna vs detectBATNA). types.ts hat broken Tier-Import. negotiate/index.ts verwendet intern bereits own_target/own_minimum (Railway-Schema) während types.ts noch user_goal/user_walkaway exportiert — internes Schema-Divergenz. Keine aktive EF kann _shared/engine/ sauber nutzen. Retire eliminiert technische Schulden ohne Datenverlust-Risiko.
 
 Datum:
-> _(wird nach Entscheidung ausgefüllt)_
+> 2026-04-21
+
+---
+
+## Verifikations-Befunde — 2026-04-21
+
+| Frage | Befund | Klassifikation |
+|---|---|---|
+| chat/ EF existiert | Nicht vorhanden | Observed |
+| generate-plan/ EF existiert | Nicht vorhanden | Observed |
+| Einziger _shared/engine/ Aufrufer | negotiate/index.ts | Observed |
+| batnaDetector.ts kompilierbar | Nein — 2 broken imports, Name-Mismatch | Observed |
+| types.ts Tier-Import | Broken — exportiert NegotiationTier, nicht Tier | Observed |
+| negotiate/index.ts internes Schema | Teilmigration — own_target in buildSystemPrompt, user_goal in types.ts | Observed |
+| Datenverlust-Risiko bei Retire | Keines | Observed |
 
 ---
 
@@ -152,9 +164,9 @@ Datum:
 
 ## Voraussetzungen vor Entscheidung
 
-- [ ] Verifizieren: Ruft `/functions/v1/chat` aktiv Layer-1-Logik aus `_shared/engine/` auf?
-- [ ] Verifizieren: Hat `/functions/v1/generate-plan` nach RFB-033 noch Layer-1-Abhängigkeit?
-- [ ] Verifizieren: Welche anderen EF nutzen `_shared/engine/`?
+- [x] Verifizieren: Ruft `/functions/v1/chat` aktiv Layer-1-Logik aus `_shared/engine/` auf? → Nein (EF existiert nicht)
+- [x] Verifizieren: Hat `/functions/v1/generate-plan` nach RFB-033 noch Layer-1-Abhängigkeit? → Nein (EF existiert nicht)
+- [x] Verifizieren: Welche anderen EF nutzen `_shared/engine/`? → Nur negotiate/index.ts
 
 **Verifikations-Prompt für Claude Code in `negotiationcoach-backend`:**
 ```

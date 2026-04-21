@@ -100,6 +100,20 @@ Nach Abschluss der Start-Gates folgt diese geordnete Reihenfolge. Kein Schritt b
 
 ### Step 3 — Layer-2-Fix
 
+**Status: DONE — 2026-04-21**
+
+**Commit:** negotiationcoach-backend — Layer-2-Fix
+- H1 Tier-Propagation
+- H2 Migration + Error Handling
+- H3 Unit-Normalisierung
+- H4 nicht code-fixbar
+- H5 Error Isolation
+- H6 market_comparison Feld
+
+**Offener Punkt:** knowledge_graph Migration `20260421000000_create_knowledge_graph.sql` committed aber noch nicht via MCP applied — muss manuell via Supabase SQL-Editor oder MCP apply ausgeführt werden. Tracked als **FU-L2-01** (`docs/delivery/follow-ups/FU-L2-01.md`).
+
+---
+
 **Klassifizierung:** Bug Fix
 **Abhängigkeit:** Step 2 (Diagnose abgeschlossen)
 **Tool:** Claude Code in `negotiationcoach-backend`

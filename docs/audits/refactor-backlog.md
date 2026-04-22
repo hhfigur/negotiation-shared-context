@@ -1884,6 +1884,9 @@ re-verified — their production behaviour was untested before this fix.
 | RFB-035B | analyze-progress + analyze-document auth guards + Index.tsx Changes A+B — ✅ DONE `c60c419` | P2 | frontend | boundary-violation |
 | RFB-036 | Migrate subscription_tier DB enum to Railway Tier values (ADR-006) — ✅ DONE `a28d28c` — Migration applied manually via Lovable SQL editor 2026-04-16. Column DEFAULT drop+restore pattern required (Postgres 42804 — documented in rollback SQL). Unblocks: RFB-032. | P1 | frontend | contract-gap |
 | RFB-037 | Layer-2 enrichWithMarketData repair — H1 Tier, H2 Migration, H3 Units, H5 Error Isolation, H6 market_comparison — ✅ DONE 2026-04-21 | P0 | backend | bug |
+| RFB-039 | Chat-Context geht bei Navigation verloren — Route-Wechsel (z.B. zu ZOPA-Rechner) löscht AnalysisContext / localStorage Session | P1 | frontend | bug |
+| RFB-040 | What-If Simulator: Slider-Änderungen haben keine Wirkung — analyzeOnly() wird nicht ausgelöst, Monte Carlo zeigt 0,00€ | P1 | frontend | bug |
+| RFB-041 | Railway /api/chat: 'inputs' column insert in negotiation_sessions entfernen — Supabase gibt "column not found" | P1 | backend | bug |
 | AB-001 | Railway SUPABASE_URL placeholder fixed — ✅ DONE 2026-04-08 | P0 | infrastructure | infrastructure |
 
 ---

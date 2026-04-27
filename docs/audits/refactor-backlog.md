@@ -1887,6 +1887,7 @@ re-verified — their production behaviour was untested before this fix.
 | RFB-039 | Chat-Context geht bei Navigation verloren — Route-Wechsel (z.B. zu ZOPA-Rechner) löscht AnalysisContext / localStorage Session | P1 | frontend | bug |
 | RFB-040 | What-If Simulator: Slider-Änderungen haben keine Wirkung — analyzeOnly() wird nicht ausgelöst, Monte Carlo zeigt 0,00€ | P1 | frontend | bug |
 | RFB-041 | Railway /api/chat: 'inputs' column insert in negotiation_sessions entfernen — Supabase gibt "column not found" | P1 | backend | bug |
+| RFB-042 | MCP Supabase auf ujnyioggxipvuxxxcivr reconnecten + CLAUDE.md-Regel updaten | P0 | infra | bug |
 | AB-001 | Railway SUPABASE_URL placeholder fixed — ✅ DONE 2026-04-08 | P0 | infrastructure | infrastructure |
 
 ---

@@ -37,6 +37,17 @@ it is invoked automatically at the end of Template 2-DEV.
 > Trigger: `PLAN ITEM [ITEM_ID]` from the Feature Delivery Controller
 
 ```
+SESSION CONTEXT:
+
+Working directory: shared-context/
+Available repos: negotiation-buddy (../negotiation-buddy), negotiationcoach-backend (../negotiationcoach-backend)
+TARGET REPO: [TARGET_REPO]
+TARGET PATH: ../[TARGET_REPO]/[konkreter Pfad — aus Prompt-Inhalt ableiten]
+Active rules: shared-context/CLAUDE.md + ../[TARGET_REPO]/CLAUDE.md + ../[TARGET_REPO]/AGENTS.md
+Git commits: cd ../[TARGET_REPO] && git add [files] && git commit -m "[type(scope): msg]"
+
+---
+
 PLAN ONLY. DO NOT CHANGE CODE YET.
 
 Context:
@@ -125,6 +136,17 @@ Return exactly:
 > Trigger: `REVIEW PLAN` → GO decision issued by Feature Delivery Controller
 
 ```
+SESSION CONTEXT:
+
+Working directory: shared-context/
+Available repos: negotiation-buddy (../negotiation-buddy), negotiationcoach-backend (../negotiationcoach-backend)
+TARGET REPO: [TARGET_REPO]
+TARGET PATH: ../[TARGET_REPO]/[konkreter Pfad — aus Prompt-Inhalt ableiten]
+Active rules: shared-context/CLAUDE.md + ../[TARGET_REPO]/CLAUDE.md + ../[TARGET_REPO]/AGENTS.md
+Git commits: cd ../[TARGET_REPO] && git add [files] && git commit -m "[type(scope): msg]"
+
+---
+
 IMPLEMENT THE APPROVED PLAN ONLY.
 
 Context:

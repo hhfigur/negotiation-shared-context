@@ -1805,6 +1805,125 @@ ADR: ADR-006-tier-mapping.md (2026-04-13)
 
 ---
 
+### RFB-039
+
+**Title:** Chat-Context geht bei Navigation verloren — Message-Truncation nach Route-Wechsel
+
+**Repo:** `negotiation-buddy`
+
+**Category:** `bug`
+
+**Evidence (Observed):**
+Navigation von `/app` zu `/zopa` oder `/what-if` unmountet `Index.tsx`. Beim Remount stellt
+"Fix 4" Nachrichten aus `AnalysisContext`/`localStorage` wieder her. `addMessage` im Context
+speicherte beim Streaming nur den ersten Chunk (Längen-basierter Sync, kein In-Place-Update).
+Zusätzlich akkumulierte `handleNewSession` Context-Messages über Sessions hinweg, da
+`clearMessages()` nur den `useChat`-State leerte, nicht den Context.
+
+**Impact:**
+- Vollständige AI-Antworten erscheinen nach Tool-Navigation verkürzt
+- Alle Nutzer betroffen (alle Tiers, alle Verhandlungstypen)
+
+**Fix:**
+1. `useChat.ts`: `upsertAssistant` speichert `assistantSoFar` (roh) statt `cleanText`
+2. `ChatMessage.tsx`: `stripSystemTags()` beim Rendern ergänzt
+3. `AnalysisContext.tsx`: `updateLastMessage`-Action hinzugefügt + `clearMessages`-Action
+4. `Index.tsx`: Effect nach Streaming-Ende (`isLoading: true→false`) synct finale Message in Context; `handleNewSession` ruft `clearContextMessages()` auf
+
+**Status: DONE**
+Commit: `2060c1b` (negotiation-buddy) — 2026-04-28
+Verified: tsc --noEmit clean ✓ | Fix in Production verifiziert ✓
+Docs updated: none
+
+---
+
+### RFB-040
+
+**Title:** What-If Simulator: POST /api/analyze liefert 500 — batnaDetector wirft unbehandelten Error
+
+**Repo:** `negotiationcoach-backend`
+
+**Category:** `bug`
+
+**Evidence (Observed):**
+`detectBatna()` in `src/layer1/batnaDetector.ts` macht einen synchronen Claude-API-Call ohne
+Error-Handling. Bei API-Fehler (Auth, Netzwerk, Rate Limit) propagiert die Exception durch
+`Promise.all` in `analyzeNegotiation()` und crasht den `/api/analyze`-Handler mit 500.
+Der What-If Simulator ruft `analyzeOnly()` bei jeder Slider-Änderung auf — jeder Fehler
+wiederholt sich als Toast-Loop.
+
+**Impact:**
+- What-If Simulator komplett unbrauchbar (P1)
+- Alle Tiers betroffen
+- `/api/analyze-full` ebenfalls betroffen
+
+**Fix:**
+`batnaDetector.ts`: Claude-API-Call in `try/catch` gewrappt. Bei Fehler: `recommendations: []`,
+Analyse läuft durch ohne Empfehlungen. Fehler wird geloggt (`[batnaDetector]` Prefix).
+
+**Status: DONE**
+Commit: `a99503b` (negotiationcoach-backend) — 2026-04-28
+Verified: tsc --noEmit clean ✓ | Render.com Live ✓ | What-If Simulator 500 behoben ✓
+Docs updated: none
+
+---
+
+### RFB-043
+
+**Title:** Gehalt-Chat-Flow fragt Zielgehalt vor aktuellem Gehalt — Basis fehlt für Berechnung
+
+**Repo:** `negotiation-buddy`
+
+**Category:** `bug`
+
+**Evidence (Observed):**
+`GUIDED_CONFIG["gehalt"]` in `src/hooks/useGuidedFlow.ts` (Zeilen 31–42) definiert die
+Frage-Sequenz mit Ziel ("10% mehr") und Zielgehalt vor der Erfassung des aktuellen Gehalts.
+Ohne Ausgangsbasis kann der Coach Prozentangaben nicht in absolute Beträge umrechnen.
+
+**Impact:**
+- Gehaltsverhandlung: Coach arbeitet ohne Baseline
+- Alle Tiers betroffen (Verhandlungstyp "gehalt")
+
+**Fix:**
+`q2b`-Feld ("Wie hoch ist Ihr aktuelles Jahresgehalt?") als Step 3 in
+`GUIDED_CONFIG["gehalt"]` eingefügt. Nachfolgende Steps verschoben. Andere Verhandlungstypen unverändert.
+
+**Status: DONE**
+Commit: `46b2dbd` (negotiation-buddy) — 2026-04-28
+Verified: tsc --noEmit clean ✓ | Flow in Production verifiziert ✓
+Docs updated: none
+
+---
+
+### RFB-044
+
+**Title:** What-If Simulator: fehlende Tooltips für Slider und Monte-Carlo-Ergebnisse
+
+**Repo:** `negotiation-buddy`
+
+**Category:** `bug`
+
+**Evidence (Observed):**
+`src/pages/WhatIfSimulator.tsx` zeigt Slider (Eigenes Ziel, Eigenes Minimum, Gegenseite Max/Min)
+und Monte-Carlo-Werte (P50, P90) ohne Erklärung. Nutzer können die Bedeutung der Werte nicht
+einschätzen.
+
+**Impact:**
+- UX: Nutzer navigieren den Simulator ohne Verständnis der Ausgaben (P3)
+- Alle Tiers betroffen
+
+**Fix:**
+Shadcn-Tooltip-Komponente (bereits in Codebase) um alle Slider-Labels und P50/P90 ergänzt.
+Info-Icon (`lucide-react`) als Trigger. `TooltipProvider` bereits in App.tsx aktiv.
+
+**Status: DONE**
+Commit: `6e093c8` (negotiation-buddy) — 2026-04-28
+Verified: tsc --noEmit clean ✓ | Tooltips in Production sichtbar ✓
+Docs updated: none
+
+---
+
 ## Active Blockers
 
 ### AB-001
@@ -1884,10 +2003,12 @@ re-verified — their production behaviour was untested before this fix.
 | RFB-035B | analyze-progress + analyze-document auth guards + Index.tsx Changes A+B — ✅ DONE `c60c419` | P2 | frontend | boundary-violation |
 | RFB-036 | Migrate subscription_tier DB enum to Railway Tier values (ADR-006) — ✅ DONE `a28d28c` — Migration applied manually via Lovable SQL editor 2026-04-16. Column DEFAULT drop+restore pattern required (Postgres 42804 — documented in rollback SQL). Unblocks: RFB-032. | P1 | frontend | contract-gap |
 | RFB-037 | Layer-2 enrichWithMarketData repair — H1 Tier, H2 Migration, H3 Units, H5 Error Isolation, H6 market_comparison — ✅ DONE 2026-04-21 | P0 | backend | bug |
-| RFB-039 | Chat-Context geht bei Navigation verloren — Route-Wechsel (z.B. zu ZOPA-Rechner) löscht AnalysisContext / localStorage Session | P1 | frontend | bug |
-| RFB-040 | What-If Simulator: Slider-Änderungen haben keine Wirkung — analyzeOnly() wird nicht ausgelöst, Monte Carlo zeigt 0,00€ | P1 | frontend | bug |
+| RFB-039 | Chat-Context geht bei Navigation verloren — Message-Truncation nach Route-Wechsel — ✅ DONE `2060c1b` | P1 | frontend | bug |
+| RFB-040 | What-If Simulator: POST /api/analyze 500 — batnaDetector unhandled error — ✅ DONE `a99503b` | P1 | backend | bug |
 | RFB-041 | Railway /api/chat: 'inputs' column insert in negotiation_sessions entfernen — Supabase gibt "column not found" | P1 | backend | bug |
 | RFB-042 | MCP Supabase auf ujnyioggxipvuxxxcivr reconnecten + CLAUDE.md-Regel updaten | P0 | infra | bug |
+| RFB-043 | Gehalt-Chat-Flow: aktuelles Gehalt vor Zielgehalt abfragen — ✅ DONE `46b2dbd` | P2 | frontend | bug |
+| RFB-044 | What-If Simulator: Tooltips für Slider und Monte-Carlo-Ergebnisse fehlen — ✅ DONE `6e093c8` | P3 | frontend | bug |
 | AB-001 | Railway SUPABASE_URL placeholder fixed — ✅ DONE 2026-04-08 | P0 | infrastructure | infrastructure |
 
 ---

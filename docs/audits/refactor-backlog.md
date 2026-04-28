@@ -1967,7 +1967,7 @@ re-verified — their production behaviour was untested before this fix.
 | RFB-003 | Move team CRUD to Railway API — ✅ DONE Phase A `0b10d9c` + Phase B Lovable 2026-04-08 | P0 | backend + frontend | boundary-violation |
 | RFB-004 | Move session/message writes to Railway API — Phase A ✅ `2c51cb4` / Phase B ✅ `2415f72` / Phase C backend ✅ `6021665` / Phase C Lovable ✅ 2026-04-10 — RFB-004-C ✅ DONE `243c02d` | P0 | backend + frontend | boundary-violation |
 | RFB-005 | Fix CORS — wildcard overrides allowlist — ✅ DONE `e00e400` | P0 | backend | boundary-violation |
-| RFB-006 | Unify dual Layer 1 implementations — ⏸ DEFERRED 2026-04-16 (VG-06 unresolved; Wave 2 — requires ADR-007) | P1 | backend | duplicate-logic |
+| RFB-006 | Unify dual Layer 1 implementations — ✅ DONE `9c6f1f2` (ADR-007-A: _shared/engine/ retired 2026-04-21) | P1 | backend | duplicate-logic |
 | RFB-007 | Unify three incompatible tier systems — Step A ✅ `1c68185` / Step B ✅ `6ba5710` / Step C ✅ closed (re-scoped → RFB-036) | P1 | backend + frontend | contract-gap |
 | RFB-008 | Eliminate parallel type maintenance — ✅ DONE `9c51a43` | P1 | backend | duplicate-logic |
 | RFB-009 | Propagate actual user tier to Edge Function — ✅ DONE `d90d5c0` | P1 | frontend | contract-gap |
@@ -1989,7 +1989,7 @@ re-verified — their production behaviour was untested before this fix.
 | RFB-023 | Remove dead useChatApi export — ✅ DONE `aa703bd` | P3 | frontend | dead-code |
 | RFB-024 | Fix `parsePlanResponse()` silent fallback — ✅ DONE `fd031cc` | P1 | backend | boundary-violation |
 | RFB-025 | Fix `parseChatResponse()` silent fallback — ✅ DONE `fe961ee` | P1 | backend | boundary-violation |
-| RFB-026 | Repair broken claudeClient import in Edge Function batnaDetector.ts — ⏸ DEFERRED 2026-04-16 (depends on RFB-006; Wave 2) | P2 | backend | boundary-violation |
+| RFB-026 | Repair broken claudeClient import in Edge Function batnaDetector.ts — ✅ CLOSED (superseded by ADR-007-A — batnaDetector.ts mit _shared/engine/ gelöscht 2026-04-21) | P2 | backend | boundary-violation |
 | RFB-027 | Repair npm test runner — install Jest or wire ts-node — ✅ DONE `0665780` | P3 | backend | contract-gap |
 | RFB-028 | Enforce max_members limit in POST /api/teams/:id/members — ✅ DONE `402ee63` | P2 | backend | boundary-violation |
 | RFB-029 | negotiation_sessions missing analysis columns — Railway analyze inserts silently failing — ✅ DONE `f759c18` | P0 | backend | boundary-violation |

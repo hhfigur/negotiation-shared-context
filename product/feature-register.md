@@ -14,9 +14,9 @@ Mapping: AR-xxx Einträge entsprechen den RFB-xxx Items im Audit-Backlog.
 ## Register
 | ID | Title | Type | Status | Affected Repos | Target Release | Notes |
 |---|---|---|---|---|---|---|
-| AR-006 | ADR-007 schreiben (VG-06 Dual Layer 1) | Enabler | In Delivery | shared-context | R-2026-06 | ADR-007 DECIDED Option A 2026-04-21. Brief: product/briefs/AR-006.md. Formal close pending. |
+| AR-006 | ADR-007 schreiben (VG-06 Dual Layer 1) | Enabler | Released | shared-context | R-2026-06 | ADR-007 DECIDED Option A 2026-04-21, Commit 9c6f1f2. Brief: product/briefs/AR-006.md. |
 | NC-L2-FIX | Layer 2 Market Data Diagnose + Reparatur | Bug | Released | negotiationcoach-backend | R-2026-05 | Released 2026-04-21. Verified locally via two-run cache test. Run 1: web_search. Run 2: knowledge_graph. reality_score: 25%, non-NaN. market_context_summary: non-empty. Brief: product/briefs/NC-L2-FIX.md |
-| AR-026 | batnaDetector Edge Function reparieren | Bug | Paused | negotiation-buddy, negotiationcoach-backend | TBD | Out of R-2026-05 scope. Blocked by AR-006 (Paused). Candidate for next release. |
+| AR-026 | batnaDetector Edge Function reparieren | Bug | Dropped | negotiationcoach-backend | — | Superseded by ADR-007-A (RFB-006 Commit 9c6f1f2). _shared/engine/ gelöscht 2026-04-21 — kein Repair mehr erforderlich. |
 | AR-032 | Stripe Webhook Handler | Feature | Paused | negotiationcoach-backend | TBD | Stripe nicht live |
 | AR-016a | Knowledge Pipeline | Enabler | Dropped | negotiationcoach-backend, shared-context | — | Done via Option B — extraction code removed from useChat.ts and systemPrompt.ts, commit a647d5a, 2026-04-16. |
 | AR-020b | Extract useGuidedFlow hook from Index.tsx | Refactor | Qualified | negotiation-buddy | TBD | Requires test plan before implementation. Not blocking R-2026-05. |

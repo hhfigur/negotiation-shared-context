@@ -15,9 +15,9 @@ All item additions, removals, or technical changes go into
 
 | ID | RFB-Ref | Title | Priority | Status | Blocks |
 |---|---|---|---|---|---|
-| AR-006 | RFB-006 | ADR-007 schreiben — VG-06 Dual Layer 1 | P0 | In Delivery | AR-026 |
-| NC-L2-FIX | — | Layer 2 Market Data Diagnose + Reparatur | P0 | Released | — |
-| AR-026 | RFB-026 | batnaDetector Edge Function reparieren | P0 | Paused | blocked by AR-006 (Paused — not in R-2026-05) |
+| AR-006 | RFB-006 | ADR-007 schreiben — VG-06 Dual Layer 1 — ✅ Released `9c6f1f2` | P0 | Released | — |
+| NC-L2-FIX | — | Layer 2 Market Data Diagnose + Reparatur — ✅ DONE `339f136` | P0 | Released | — |
+| AR-026 | RFB-026 | batnaDetector Edge Function reparieren — ✅ Dropped (superseded by ADR-007-A) | P0 | Dropped | — |
 | AR-032 | RFB-032 | Stripe Webhook Handler | P2 | Paused | Stripe not live |
 | AR-016a | RFB-016a | Knowledge Pipeline | P2 | Paused | ADR required |
 

@@ -1,47 +1,56 @@
 # Current Release
 
 ## Release ID
-R-2026-05
+R-2026-06
 
 ## Release status
-In Progress
+Planned
 
 ## Release goal
-Layer 2 Market Data diagnostizieren und reparieren.
-Single-focus release. AR-006 und AR-026 sind nicht in scope.
+ADR-007 entscheiden (Dual Layer 1 — VG-06) und AR-026 (batnaDetector
+Edge Function) unmittelbar danach umsetzen. Zwei sequenzielle Items,
+minimaler Scope, so schnell wie möglich.
 
 ## In scope
-- NC-L2-FIX: Layer 2 Market Data Diagnose und Reparatur
-
-## Released items
-- NC-L2-FIX: Released 2026-04-21 — verified
-
-## Conditional — not in this release
-- AR-026: batnaDetector-Reparatur — removed from R-2026-05 scope. Depends on AR-006 (ADR-007), which is Paused. Candidate for next release after AR-006 is resolved.
+- AR-006: ADR-007 schreiben — VG-06 Dual Layer 1 Entscheidung
+- AR-026: batnaDetector Edge Function reparieren (abhängig von AR-006)
 
 ## Out of scope
-- AR-006: ADR-007 (VG-06 Dual Layer 1) — Paused, requires separate architectural slot
 - Layer 3 Simulation Engine
-- Scenario Marketplace UI
-- PDF Export
-- Stripe Webhook Handler
-- Knowledge Pipeline
-- Neue Frontend-Screens
-- Jedes Item, das nicht explizit in "In scope" steht
+- Wave 2 neue Features (noch nicht briefed)
+- Stripe Webhook Handler (nicht live)
+- Knowledge Pipeline (ADR ausstehend)
+- AR-020b / AR-020c (Index.tsx Refactors — kein Release-Druck)
+- Jedes Item das nicht explizit in "In scope" steht
 
 ## Affected repos
-- negotiationcoach-backend (NC-L2-FIX)
+- shared-context (ADR-007 — AR-006)
+- negotiation-buddy (AR-026 — EF batnaDetector)
+- negotiationcoach-backend (AR-026 — falls Layer-1-Anpassung nötig)
 
 ## Dependencies
-- none (single-item release)
+- AR-026 ist hart geblockt durch AR-006
+- Reihenfolge: AR-006 → AR-026
+- Kein paralleles Delivery möglich
 
 ## Exit criteria
-- Layer 2 Market Data liefert korrekte Ergebnisse (manuell verifiziert)
-- NC-L2-FIX hat einen Brief
-- TypeCheck backend: 0 Fehler
-
-## Open risks
-- Layer-2-Fehlerursache noch nicht diagnostiziert — Diagnose ist erster Schritt
+- ADR-007 geschrieben, reviewed und committed (AR-006 DONE)
+- batnaDetector Edge Function liefert korrekte Ergebnisse (AR-026 DONE)
+- TypeCheck negotiation-buddy: 0 Fehler
+- TypeCheck negotiationcoach-backend: 0 Fehler
 
 ## Open decisions
-- VG-06: Dual Layer 1 — welche Implementierung bleibt kanonisch? (ADR-007, deferred to next release)
+- VG-06: Welche Layer-1-Implementierung bleibt kanonisch?
+  Option A: Railway `src/layer1/` (EF-Engine löschen)
+  Option B: EF `supabase/functions/_shared/engine/` (Railway delegiert)
+  Option C: Beide aktiv mit explizitem Routing
+  → Entscheidung ist der Kern von AR-006 / ADR-007
+
+## Briefs
+- AR-006: Brief muss erstellt werden (einfach — nur ADR schreiben)
+- AR-026: Brief erst nach AR-006-Entscheidung möglich (Scope hängt von Option ab)
+
+## Open risks
+- ADR-007-Entscheidung kann technische Analyse erfordern (Beides lesen,
+  Divergenzen dokumentieren) — Aufwand noch nicht geschätzt
+- AR-026-Scope ist unbekannt bis ADR-007 entschieden

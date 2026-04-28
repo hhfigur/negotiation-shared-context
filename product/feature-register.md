@@ -14,7 +14,7 @@ Mapping: AR-xxx Einträge entsprechen den RFB-xxx Items im Audit-Backlog.
 ## Register
 | ID | Title | Type | Status | Affected Repos | Target Release | Notes |
 |---|---|---|---|---|---|---|
-| AR-006 | ADR-007 schreiben (VG-06 Dual Layer 1) | Enabler | Paused | shared-context, negotiationcoach-backend | TBD | Deferred — ADR-007 requires separate architectural slot. Not in R-2026-05. |
+| AR-006 | ADR-007 schreiben (VG-06 Dual Layer 1) | Enabler | In Delivery | shared-context | R-2026-06 | ADR-007 DECIDED Option A 2026-04-21. Brief: product/briefs/AR-006.md. Formal close pending. |
 | NC-L2-FIX | Layer 2 Market Data Diagnose + Reparatur | Bug | Released | negotiationcoach-backend | R-2026-05 | Released 2026-04-21. Verified locally via two-run cache test. Run 1: web_search. Run 2: knowledge_graph. reality_score: 25%, non-NaN. market_context_summary: non-empty. Brief: product/briefs/NC-L2-FIX.md |
 | AR-026 | batnaDetector Edge Function reparieren | Bug | Paused | negotiation-buddy, negotiationcoach-backend | TBD | Out of R-2026-05 scope. Blocked by AR-006 (Paused). Candidate for next release. |
 | AR-032 | Stripe Webhook Handler | Feature | Paused | negotiationcoach-backend | TBD | Stripe nicht live |

@@ -1,166 +1,112 @@
 ---
 name: bug-report
-description: Interaktive Bug-Erfassung für NegotiationCoach AI. Führt durch 6 Fragen und generiert einen fertigen Plan-Prompt (CC-RP-01 + CC-HEADER-v1) für Claude Code.
+description: Strukturierte Bug-Erfassung für NegotiationCoach AI. Erstellt docs/delivery/bugs/BUG-[ID].md als einzigen Input für Template 1-DEV (Plan) und Template 2-DEV (Implement).
 ---
 
-# Skill: bug-report
+# Skill: /bug-report
 
-Wenn dieser Skill aufgerufen wird, führe exakt die folgenden Schritte durch.
+## Zweck
+Strukturierte Bug-Erfassung. Erzeugt eine Bug-Datei unter `docs/delivery/bugs/BUG-[ID].md`.
+Diese Datei ist der einzige Input für Template 1-DEV (Plan) und Template 2-DEV (Implement).
+Der Skill selbst führt keinen Code aus und erzeugt keine Prompts.
 
----
+## Verhalten bei Aufruf
 
-## Schritt 1 — Begrüßung
+### Schritt 1 — Begrüßung
+Gib aus:
+"BUG REPORT — NegotiationCoach AI
+Ich stelle dir 6 Fragen und erstelle danach docs/delivery/bugs/BUG-[ID].md.
+Diese Datei verwendest du als Input für /bug-plan (Template 1-DEV).
+Frage 1 von 6:"
+
+### Schritt 2 — Interaktive Abfrage (eine Frage nach der anderen, auf Antwort warten)
+
+Frage 1: "Beschreibe den Bug in eigenen Worten. Was passiert, was sollte passieren?"
+Frage 2: "Wo tritt der Bug auf? (Screen-Name, API-Endpunkt, Layer, Funktion)"
+Frage 3: "Ist der Bug reproduzierbar? Wenn ja: welche Schritte führen dazu?"
+Frage 4: "Welche Tiers sind betroffen? (free / privat / kmu / profi / alle / unbekannt)"
+Frage 5: "Gibt es Fehlermeldungen, Logs oder auffällige Outputs? Einfügen oder beschreiben."
+Frage 6: "Hast du eine Vermutung zur Ursache? (Datei, Funktion, Layer — oder 'unbekannt')"
+
+### Schritt 3 — Klassifizierung (intern ableiten, nicht ausgeben)
+
+- TARGET REPO: negotiationcoach-backend | negotiation-buddy | shared-context | cross-repo
+- Layer: 0 | 1 | 2 | 3 | API | Frontend | unbekannt
+- Bug-Typ: Logic-Bug | Boundary-Violation | Contract-Gap | Auth-Bug | Data-Bug | UI-Bug | unbekannt
+- Risiko: P0 (Datenverlust/Auth) | P1 (falsche Ergebnisse) | P2 (UX) | P3 (kosmetisch)
+- Bug-ID: BUG-[YYYYMMDD]-[kurzname-kebab-case] — Datum = heute, Kurzname aus Symptom ableiten
+
+### Schritt 4 — Klassifizierung bestätigen
 
 Gib aus:
-
-```
-BUG REPORT — NegotiationCoach AI
-Ich stelle dir 6 Fragen. Danach erstelle ich den fertigen Plan-Prompt.
-Frage 1 von 6:
-```
-
----
-
-## Schritt 2 — Interaktive Abfrage
-
-Stelle die Fragen **eine nach der anderen**. Warte nach jeder Frage auf die Antwort, bevor du die nächste stellst.
-
-**Frage 1:** "Beschreibe den Bug in eigenen Worten. Was passiert, was sollte passieren?"
-
-**Frage 2:** "Wo tritt der Bug auf? (z.B. Screen-Name, API-Endpunkt, Layer, Funktion)"
-
-**Frage 3:** "Ist der Bug reproduzierbar? Wenn ja: welche Schritte führen dazu?"
-
-**Frage 4:** "Welche Tiers sind betroffen? (free / privat / kmu / profi / alle / unbekannt)"
-
-**Frage 5:** "Gibt es Fehlermeldungen, Logs oder auffällige Outputs? Wenn ja: einfügen oder beschreiben."
-
-**Frage 6:** "Hast du eine Vermutung, wo die Ursache liegt? (Datei, Funktion, Layer — oder 'unbekannt')"
-
----
-
-## Schritt 3 — Klassifizierung (intern — nicht ausgeben)
-
-Leite aus den Antworten ab:
-
-- **TARGET REPO:** `negotiationcoach-backend` | `negotiation-buddy` | `shared-context` | `cross-repo`
-  - Backend-Signale: API-Endpunkt, Layer 1/2/3, Railway, Algorithmus, DB, Auth-Middleware
-  - Frontend-Signale: Screen-Name, UI-Komponente, Edge Function, Supabase direkt
-  - Cross-repo: wenn Bug beide Repos betrifft
-- **Betroffener Layer:** `0` | `1` | `2` | `3` | `API` | `Frontend` | `unbekannt`
-- **Bug-Typ:** `Logic-Bug` | `Boundary-Violation` | `Contract-Gap` | `Auth-Bug` | `Data-Bug` | `UI-Bug` | `unbekannt`
-- **Risiko:**
-  - `P0` — Datenverlust, Auth-Bypass, Silent-Data-Corruption
-  - `P1` — Falsche Berechnungsergebnisse, Layer-Output-Fehler
-  - `P2` — UX-Probleme, nicht-kritische Fehler
-  - `P3` — Kosmetisch, Typos, Minor-Layout
-- **ADR-Constraints:** Prüfe ob ADR-001 bis ADR-007 relevant sind:
-  - ADR-001: System-Boundaries (Browser vs Railway vs Supabase)
-  - ADR-002: Data-Ownership (wer schreibt welche Tabelle)
-  - ADR-003: AI-Provider-Strategy (Railway → Anthropic, EF → Gemini)
-  - ADR-004: Edge Function Tier Enforcement
-  - ADR-006: Tier-Mapping
-  - ADR-007: Dual Layer-1 (wenn Layer 1 betroffen)
-
----
-
-## Schritt 4 — Klassifizierung ausgeben und bestätigen
-
-Gib aus:
-
-```
-KLASSIFIZIERUNG:
+"KLASSIFIZIERUNG:
+- Bug-ID: [Wert]
 - TARGET REPO: [Wert]
 - Layer: [Wert]
 - Bug-Typ: [Wert]
 - Risiko: [Wert]
-- ADR-Constraints: [relevante ADRs nennen, oder 'keine erkennbar']
+- ADR-Constraints: [relevante ADRs nennen oder 'keine erkennbar']
 
-Ist die Klassifizierung korrekt? (ja / korrigiere: [Korrektur])
-```
+Ist die Klassifizierung korrekt? (ja / korrigiere: [Korrektur])"
 
-Warte auf Bestätigung oder Korrektur. Bei Korrektur: übernehme die korrigierten Werte und fahre fort.
+Warte auf Bestätigung oder Korrektur. Passe bei Korrektur die Werte an.
 
----
+### Schritt 5 — Bug-Datei erstellen
 
-## Schritt 5 — Fertigen Plan-Prompt ausgeben
-
-Nach Bestätigung gib exakt den folgenden Plan-Prompt aus — befüllt mit den gesammelten Informationen.
-
-Hinweise zur Befüllung:
-- `Bug-ID`: Format `BUG-[YYYYMMDD]-[max-3-wörter-kebab-case]` — Kurzname aus Symptombeschreibung ableiten
-- `TARGET PATH`: Aus Antwort Frage 2 ableiten; wo kein konkreter Pfad erkennbar: `[konkreter Pfad — aus Prompt-Inhalt ableiten]`
-- `Active rules` und `Git commits`: je nach TARGET REPO anpassen (Varianten siehe unten)
-- `[relevante ADRs]`: durch konkrete ADR-Dateinamen aus Klassifizierung ersetzen, oder Zeile weglassen wenn keine
-
-**Active rules — Varianten je nach TARGET REPO:**
-- `negotiationcoach-backend`: `shared-context/CLAUDE.md + ../negotiationcoach-backend/CLAUDE.md + ../negotiationcoach-backend/AGENTS.md`
-- `negotiation-buddy`: `shared-context/CLAUDE.md + ../negotiation-buddy/CLAUDE.md + ../negotiation-buddy/AGENTS.md`
-- `shared-context`: `shared-context/CLAUDE.md + shared-context/AGENTS.md`
-- `cross-repo`: `shared-context/CLAUDE.md + ../negotiationcoach-backend/CLAUDE.md + ../negotiation-buddy/CLAUDE.md`
-
-**Git commits — Varianten je nach TARGET REPO:**
-- `negotiationcoach-backend`: `cd ../negotiationcoach-backend && git add [files] && git commit -m "[type(scope): msg]"`
-- `negotiation-buddy`: `cd ../negotiation-buddy && git add [files] && git commit -m "[type(scope): msg]"`
-- `shared-context`: `git add [files] && git commit -m "[type(scope): msg]"`
-
----
-
-**Ausgabe-Template:**
+Erstelle `docs/delivery/bugs/[Bug-ID].md` mit folgendem Inhalt:
 
 ```
-BUG REPORT. PLAN ONLY. DO NOT CHANGE CODE YET.
+# [Bug-ID]
 
-SESSION CONTEXT:
-- Working directory: shared-context/
-- Available repos: negotiation-buddy (../negotiation-buddy), negotiationcoach-backend (../negotiationcoach-backend)
-- TARGET REPO: [aus Klassifizierung]
-- TARGET PATH: [aus Antwort Frage 2 ableiten]
-- Active rules: [Variante je nach TARGET REPO]
-- Git commits: [Variante je nach TARGET REPO]
+**Erstellt:** [Datum]
+**Status:** OPEN
+**Risiko:** [P0 | P1 | P2 | P3]
+**TARGET REPO:** [Wert]
+**Layer:** [Wert]
+**Bug-Typ:** [Wert]
+**Betroffene Tiers:** [Wert]
+**ADR-Constraints:** [Wert]
 
-Bug-ID: BUG-[YYYYMMDD]-[kurzname-kebab-case]
-Risiko: [P0 | P1 | P2 | P3]
-Layer: [Wert]
-Betroffene Tiers: [Antwort Frage 4]
-
-Symptom:
+## Symptom
 [Antwort Frage 1]
 
-Ort:
+## Ort
 [Antwort Frage 2]
 
-Reproduktion:
+## Reproduktion
 [Antwort Frage 3]
 
-Logs / Fehlermeldungen:
+## Logs / Fehlermeldungen
 [Antwort Frage 5]
 
-Verdacht:
+## Verdacht
 [Antwort Frage 6]
 
-Aufgabe:
-Lies die relevanten Dateien im TARGET REPO.
-Lese zusätzlich:
-- shared-context/docs/audits/refactor-backlog.md
-- shared-context/docs/contracts/frontend-backend.md
-- [relevante ADRs]
+## Plan
+_Wird durch Template 1-DEV befüllt._
 
-Erstelle einen Planungsvorschlag:
-1. Wahrscheinliche Fehlerursache (mit Dateiname und Funktion)
-2. Kleinste sichere Fix-Scope
-3. Exakt betroffene Dateien
-4. Seiteneffekte
-5. Tests die danach laufen müssen
-6. Docs/Contracts die zu updaten sind
-7. Rollback-Strategie
-8. Exakter Git-Commit-Befehl
+## Implement
+_Wird durch Template 2-DEV befüllt._
+
+## Abschluss
+_Wird durch /close-task befüllt._
 ```
 
----
+### Schritt 6 — Abschluss
 
-Schreibe danach:
+Führe aus:
+```bash
+git add docs/delivery/bugs/[Bug-ID].md
+git commit -m "docs(bugs): [Bug-ID] erstellt"
+```
 
-```
-Plan-Prompt bereit. In Claude Code eingeben oder hier reviewen?
-```
+Gib aus:
+"Bug-Datei erstellt: docs/delivery/bugs/[Bug-ID].md
+Commit: [Hash]
+
+Nächster Schritt:
+Öffne Template 1-DEV in docs/delivery/claude-code-prompt-templates-dev.md.
+Setze BUG_FILE: docs/delivery/bugs/[Bug-ID].md
+und führe den Plan-Prompt in Claude Code aus."
+
+STOP. Kein weiterer Code. Kein Plan. Kein Implement.

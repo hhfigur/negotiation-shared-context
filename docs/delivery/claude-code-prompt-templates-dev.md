@@ -48,85 +48,31 @@ Git commits: cd ../[TARGET_REPO] && git add [files] && git commit -m "[type(scop
 
 ---
 
+BUG_FILE: [Pfad zur Bug-Datei — z.B. docs/delivery/bugs/BUG-20260427-xyz.md]
 PLAN ONLY. DO NOT CHANGE CODE YET.
+Lies zuerst vollständig: [BUG_FILE]
+Lies zusätzlich:
 
-Context:
-  App: negotiationcoach
-  Repo: [TARGET_REPO]
-  Item ID: [ITEM_ID]
-  Item title: [ITEM_TITLE]
-  Type: [bug | feature | arch]
-  Layer: [0 | 1 | 2 | 3 | cross-cutting]
-  Tier scope: [free | privat | kmu | profi | all]
+  shared-context/docs/audits/refactor-backlog.md
+  shared-context/docs/contracts/frontend-backend.md
+  ../[TARGET REPO]/CLAUDE.md
+  ../[TARGET REPO]/AGENTS.md
+  [ADR-Constraints aus BUG_FILE]
 
-Primary goal:
-Produce the smallest safe implementation plan for this item.
+Erstelle einen Planungsvorschlag:
+1. Wahrscheinliche Fehlerursache (Dateiname + Funktion)
+2. Kleinste sichere Fix-Scope
+3. Exakt betroffene Dateien (vollständige Pfade)
+4. Seiteneffekte
+5. Tests die danach laufen müssen
+6. Docs/Contracts die zu updaten sind
+7. Rollback-Strategie
+8. Exakter Git-Commit-Befehl
 
-Read first:
-  repo-level CLAUDE.md and AGENTS.md
-  relevant .claude/rules/*
-  relevant repo docs under docs/**
-  if available and relevant:
-    ../shared-context/docs/adr/ADR-001-system-boundaries.md
-    ../shared-context/docs/adr/ADR-002-data-ownership.md
-    ../shared-context/docs/adr/ADR-003-ai-provider-strategy.md
-    ../shared-context/docs/adr/ADR-006-tier-mapping.md
-    ../shared-context/docs/adr/ADR-007-dual-layer1.md
-    ../shared-context/docs/contracts/frontend-backend.md
-    ../shared-context/docs/source-of-truth-matrix.md
-    ../shared-context/docs/audits/refactor-backlog.md
-
-Rules:
-  Do not implement anything yet.
-  Do not change files.
-  Classify all statements as Observed, Inferred, Missing, or Proposed.
-  Check Layer dependency order: the layer below this item's layer must be stable.
-  Layer 0 → 1 → 2 → 3. Do not plan work that skips a broken layer.
-  Check ADR-001: is this on the Railway execution path or Edge Function path?
-  All new business logic must go to Railway Backend, not Edge Functions.
-  Check ADR-002: does this introduce a new DB write? Who is the canonical writer?
-  Service role key is only used by Railway. Frontend never writes directly.
-  Check ADR-003: which AI provider is required?
-  Railway Backend → Anthropic Claude. Edge Functions → Gemini via Lovable AI Gateway.
-  Check ADR-007: does this item depend on the Dual Layer-1 decision?
-  If yes and ADR-007 is not yet decided, stop and mark BACK TO DOCS.
-  If tier gating is involved: confirm the check is serverside, never clientside only.
-  Prefer existing modules, services, hooks, utilities, components, and validators
-  over introducing new ones.
-  If ownership, contract, auth, permission, write path, or datastore
-  responsibility is unclear, stop and mark BACK TO DOCS.
-
-Analyze:
-  Exact goal and expected behavior after this item is complete
-  Affected modules and files (new and existing)
-  API contract changes (new endpoints, changed shapes, new error codes)
-  DB/schema changes required (new tables, columns, migrations, RLS policies)
-  Tier gating implications — which tiers are affected, where is the gate enforced?
-  Layer dependency — is the layer below this item stable?
-  Cross-repo impact (frontend + backend + shared-context)
-  Hidden coupling risks
-  Tests currently covering this area (if any)
-  ADR required — yes / no, and if yes: new ADR or amend existing?
-  Required docs/contracts updates (before and after implementation)
-
-Return exactly:
-  Item summary
-  Observed (what exists today relevant to this item)
-  Missing (what does not exist yet)
-  ADR required: yes / no — if yes: which decision, new or amend existing ADR
-  Decision recommendation (GO / HOLD / SPLIT / BACK TO DOCS)
-  Smallest safe scope
-  New files to create
-  Existing files likely to change
-  Files that must NOT change unless explicitly approved
-  API contract delta (new/changed endpoints, shapes, error codes — or "none")
-  DB delta (migrations, new tables, RLS policies needed — or "none")
-  Risks and side effects
-  Required tests and checks
-  Required doc updates before and after implementation
-  Proposed implementation sequence
-  Rollback strategy
-  Suggested commit message for the implementation step
+Schreibe den Plan nach Fertigstellung in den Abschnitt ## Plan der BUG_FILE.
+Setze Status in BUG_FILE auf PLANNED.
+Committe BUG_FILE: git add [BUG_FILE] && git commit -m "docs(bugs): [Bug-ID] plan hinzugefügt"
+STOP. Warte auf GO / HOLD / SPLIT / BACK TO DOCS.
 ```
 
 ---
@@ -147,63 +93,30 @@ Git commits: cd ../[TARGET_REPO] && git add [files] && git commit -m "[type(scop
 
 ---
 
+BUG_FILE: [Pfad zur Bug-Datei — gleiche Datei wie in Template 1-DEV]
 IMPLEMENT THE APPROVED PLAN ONLY.
+Lies zuerst vollständig: [BUG_FILE]
+Der genehmigte Plan steht im Abschnitt ## Plan der BUG_FILE.
+Weiche nicht vom Plan ab. Kein Gold-Plating.
+Regeln:
 
-Context:
-  App: negotiationcoach
-  Repo: [TARGET_REPO]
-  Item ID: [ITEM_ID]
-  Item title: [ITEM_TITLE]
-  Type: [bug | feature | arch]
-  Approved plan summary: [PASTE_SHORT_APPROVED_PLAN]
-  ADR required: [yes — ADR-XXX to be created / amended | no]
+  Minimale Änderung only
+  Bestehenden Code wiederverwenden vor neuen Utilities/Services
+  Contracts/Docs updaten wenn Boundaries sich ändern
+  Unrelated shared logic nicht anfassen
 
-Constraints:
-  Implement exactly what was approved. Nothing more.
-  Stay within the approved scope.
-  Reuse existing modules, services, hooks, utilities, and validators before
-  introducing new ones.
-  Do not touch unrelated code.
-  Do not change ownership, contract, auth, permission, or datastore boundaries
-  unless the approved plan explicitly includes it.
-  All tier checks must be serverside — never clientside only.
-  All LLM calls must go via Railway Backend using Anthropic Claude.
-  Never add LLM calls to Edge Functions.
-  No new DB writes from Frontend without a documented ADR reference.
-  All new DB tables must have an RLS policy in the same migration file.
-  Schema changes via migration files only — never via Supabase Dashboard.
+Nach Implementierung:
 
-Before changing code:
-  Read repo CLAUDE.md and AGENTS.md
-  Read relevant .claude/rules/*
-  Read the approved plan
-  Run impact-check skill if any cross-repo impact is present
+  Geänderte Dateien ausgeben (vollständige Pfade)
+  Tests ausgeführt und Ergebnis
+  Docs aktualisiert
+  Verbleibende Risiken
+  Exakter Git-Commit-Befehl
 
-Implementation rules:
-  Prefer consolidation over reinvention.
-  Preserve existing public behavior unless the approved plan explicitly changes it.
-  If you discover a blocker that invalidates the approved plan, STOP and report
-  it — do not improvise or broaden scope.
-  If a required doc update is part of this change, make it in the same commit.
-  If a migration is needed: create the migration file, include RLS policies,
-  do NOT apply via dashboard.
-  If an ADR is required: create or amend it before or alongside the implementation
-  — not after.
-  Keep the diff as small and reviewable as possible.
-
-Required output at the end:
-  What changed (per file — one line each)
-  Files changed (list)
-  New files created (list, or "none")
-  API contract delta (changed/new endpoints, shapes, error codes — or "none")
-  DB delta (migration file name, tables, RLS policies — or "none")
-  Tests run or still required
-  Docs updated (list, or "none")
-  ADR created or amended (file name and decision — or "none required")
-  Remaining risks or follow-up items
-
-After producing this output, immediately run:
-/close-task-dev ITEM_ID=[ITEM_ID] COMMIT=[COMMIT_HASH] REPO=[TARGET_REPO] DATE=[DATE]
+Schreibe Ergebnis in Abschnitt ## Implement der BUG_FILE.
+Setze Status in BUG_FILE auf IN PROGRESS.
+Committe BUG_FILE: git add [BUG_FILE] && git commit -m "docs(bugs): [Bug-ID] implement-ergebnis hinzugefügt"
+STOP. Warte auf /close-task.
 ```
 
 ---

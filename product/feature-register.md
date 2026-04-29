@@ -14,7 +14,7 @@ Mapping: AR-xxx Einträge entsprechen den RFB-xxx Items im Audit-Backlog.
 ## Register
 | ID | Title | Type | Status | Affected Repos | Target Release | Notes |
 |---|---|---|---|---|---|---|
-| NC-WAVE2 | Wave 2 Scope-Dokument erstellen | Enabler | In Delivery | shared-context | R-2026-07 | Brief: product/briefs/NC-WAVE2.md |
+| NC-WAVE2 | Wave 2 Scope-Dokument erstellen | Enabler | Released | shared-context | R-2026-07 | Brief: product/briefs/NC-WAVE2.md. Released 2026-04-29, Commit 494d706. |
 | NC-SEC-01 | VG-01/VG-02: RLS-Audit in Produktion (teams, negotiation_sessions) | Enabler | Qualified | shared-context, negotiationcoach-backend | TBD (Wave 2) | Brief: product/briefs/NC-SEC-01.md. P0 security — Critical/High aus Wave-1-Audit. |
 | NC-SEC-02 | VG-05-A: JWT-Auth-Hardening in Edge Functions (Tier-Enforcement) | Enabler | Qualified | negotiation-buddy | TBD (Wave 2) | Brief: product/briefs/NC-SEC-02.md. ADR-004 umsetzen. |
 | NC-TIER-01 | Stripe-Readiness-Check — was fehlt bis Stripe live? | Research | Qualified | shared-context | TBD (Wave 2) | Brief: product/briefs/NC-TIER-01.md. Prerequisite für AR-032. |

@@ -4,15 +4,18 @@
 R-2026-07
 
 ## Release status
-Planned
+Released & Verified
 
 ## Release goal
 Wave 2 Scope finalisieren: alle Wave-2-Items identifizieren, mit IDs
 versehen, Briefs erstellen und Feature Register auf Stand bringen.
 Kein Code-Delivery — reine Planung und Housekeeping.
 
-## In scope
-- NC-WAVE2: Wave 2 Scope-Dokument erstellen (Enabler)
+## Released items
+- NC-WAVE2: Released 2026-04-29 — 5 Briefs + Feature Register + Strategy + Roadmap, Commit 494d706
+
+## In scope (CLEANUP-001–003 noch offen)
+- NC-WAVE2: Wave 2 Scope-Dokument erstellen (Enabler) ✅
   Deliverable: product/feature-register.md mit vollständigen Wave-2-Items
   (ID, Typ, Status Qualified, Brief, Affected Repos)
 - CLEANUP-001: Feature Register bereinigen

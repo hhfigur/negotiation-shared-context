@@ -14,6 +14,7 @@ Mapping: AR-xxx Einträge entsprechen den RFB-xxx Items im Audit-Backlog.
 ## Register
 | ID | Title | Type | Status | Affected Repos | Target Release | Notes |
 |---|---|---|---|---|---|---|
+| NC-WAVE2 | Wave 2 Scope-Dokument erstellen | Enabler | In Delivery | shared-context | R-2026-07 | Brief: product/briefs/NC-WAVE2.md |
 | AR-006 | ADR-007 schreiben (VG-06 Dual Layer 1) | Enabler | Released | shared-context | R-2026-06 | ADR-007 DECIDED Option A 2026-04-21, Commit 9c6f1f2. Brief: product/briefs/AR-006.md. |
 | NC-L2-FIX | Layer 2 Market Data Diagnose + Reparatur | Bug | Released | negotiationcoach-backend | R-2026-05 | Released 2026-04-21. Verified locally via two-run cache test. Run 1: web_search. Run 2: knowledge_graph. reality_score: 25%, non-NaN. market_context_summary: non-empty. Brief: product/briefs/NC-L2-FIX.md |
 | AR-026 | batnaDetector Edge Function reparieren | Bug | Dropped | negotiationcoach-backend | — | Superseded by ADR-007-A (RFB-006 Commit 9c6f1f2). _shared/engine/ gelöscht 2026-04-21 — kein Repair mehr erforderlich. |

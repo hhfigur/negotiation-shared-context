@@ -1,43 +1,54 @@
 # Current Release
 
 ## Release ID
-R-2026-06
+R-2026-07
 
 ## Release status
-Released & Verified
+Planned
 
 ## Release goal
-ADR-007 entscheiden (Dual Layer 1 — VG-06) und AR-026 (batnaDetector
-Edge Function) unmittelbar danach umsetzen. Zwei sequenzielle Items,
-minimaler Scope, so schnell wie möglich.
-
-## Released items
-- AR-006: Released 2026-04-28 — ADR-007 Option A formal geschlossen, Commit 9c6f1f2
+Wave 2 Scope finalisieren: alle Wave-2-Items identifizieren, mit IDs
+versehen, Briefs erstellen und Feature Register auf Stand bringen.
+Kein Code-Delivery — reine Planung und Housekeeping.
 
 ## In scope
-_(leer — AR-006 war letztes offenes Item)_
+- NC-WAVE2: Wave 2 Scope-Dokument erstellen (Enabler)
+  Deliverable: product/feature-register.md mit vollständigen Wave-2-Items
+  (ID, Typ, Status Qualified, Brief, Affected Repos)
+- CLEANUP-001: Feature Register bereinigen
+  AR-020b → Released, AR-020c → Released (bereits in technischem Backlog DONE)
+- CLEANUP-002: Strategy.md aktualisieren
+  Stale Constraints entfernen (ADR-007 resolved, Layer 2 done)
+  Neuen Fokus setzen (Wave 2 + Tier-Conversion)
+- CLEANUP-003: Roadmap "Now" auf Wave-2-Items aktualisieren
 
 ## Out of scope
-- AR-026: Dropped — superseded by ADR-007-A (batnaDetector.ts mit _shared/engine/ gelöscht 2026-04-21)
+- Implementierung von Wave-2-Features (erst nach NC-WAVE2)
 - Layer 3 Simulation Engine
-- Wave 2 neue Features
-- Stripe Webhook Handler
-- Knowledge Pipeline
-- Jedes Item das nicht explizit in "Released items" steht
+- Stripe Webhook Handler (nicht live)
+- NC-TELEMETRY (Idea — braucht Wave-2-Scope zuerst)
+- NC-ONBOARDING (Idea — braucht Wave-2-Scope zuerst)
+- Jedes Code-Delivery-Item
 
 ## Affected repos
-- shared-context (AR-006 — Docs only)
+- shared-context (alle Änderungen — Docs only)
 
 ## Dependencies
-- keine
+- Keine blocking Dependencies
+- NC-WAVE2 muss vor CLEANUP-003 fertig sein
+  (Roadmap erst aktualisieren wenn Scope klar)
 
-## Exit criteria (alle erfüllt)
-- ADR-007 Option A formal geschlossen ✅
-- RFB-006 + RFB-026 im Backlog gestempelt ✅
-- Feature Register synchronisiert ✅
+## Exit criteria
+- product/feature-register.md: Wave-2-Items vollständig mit ID + Brief + Status
+- AR-020b, AR-020c: Status = Released in Feature Register
+- Strategy.md: aktuell (keine stale Constraints, neuer Fokus)
+- Roadmap "Now" enthält konkrete Wave-2-Delivery-Items
 
 ## Open decisions
-- keine — VG-06 entschieden 2026-04-21 (ADR-007 Option A)
+- Was sind die Wave-2-Items? (Kern von NC-WAVE2)
+  Kandidaten aus Strategy: Tier-Conversion-Pfad, Telemetrie, Onboarding
+  → Entscheidung ist Teil des NC-WAVE2-Deliverables
 
 ## Open risks
-- keine
+- Wave-2-Scope könnte ADRs erfordern bevor Delivery beginnt
+  (insbes. Tier-Enforcement-Pfad — VG-05-A noch offen)

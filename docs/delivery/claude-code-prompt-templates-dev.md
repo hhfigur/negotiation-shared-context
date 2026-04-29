@@ -32,6 +32,16 @@ it is invoked automatically at the end of Template 2-DEV.
 
 ---
 
+## Template-Auswahl
+
+| Situation | Template |
+|---|---|
+| Plan erstellen (immer zuerst) | Template 1-DEV |
+| Reine Docs-Änderung implementieren | Template 2-DEV (Variante A) |
+| Code-Delivery implementieren | Template 2b-DEV (Variante B — Subagent) |
+
+---
+
 ## Template 1-DEV — Claude Code Plan (Feature / Bug)
 
 > Trigger: `PLAN ITEM [ITEM_ID]` from the Feature Delivery Controller
@@ -116,6 +126,60 @@ Nach Implementierung:
 Schreibe Ergebnis in Abschnitt ## Implement der BUG_FILE.
 Setze Status in BUG_FILE auf IN PROGRESS.
 Committe BUG_FILE: git add [BUG_FILE] && git commit -m "docs(bugs): [Bug-ID] implement-ergebnis hinzugefügt"
+STOP. Warte auf /close-task.
+```
+
+---
+
+## Template 2b-DEV — Claude Code Implement (Subagent-driven)
+
+> Nutze dieses Template wenn: Code-Delivery (kein reines Docs-Item), approved Plan aus Template 1-DEV liegt vor.
+> Nutze Template 2-DEV (Variante A) wenn: Reine Docs-Änderungen, Wiki-Updates, ADR-Writes ohne Code.
+
+```
+SESSION CONTEXT:
+
+Working directory: shared-context/
+Available repos: negotiation-buddy (../negotiation-buddy), negotiationcoach-backend (../negotiationcoach-backend)
+TARGET REPO: [TARGET_REPO]
+TARGET PATH: ../[TARGET_REPO]/[konkreter Pfad]
+Active rules: shared-context/CLAUDE.md + ../[TARGET_REPO]/CLAUDE.md + ../[TARGET_REPO]/AGENTS.md
+Git commits: cd ../[TARGET_REPO] && git add [files] && git commit -m "[type(scope): msg]"
+
+---
+
+BRIEF: [Pfad zur Brief-Datei — z.B. product/briefs/NC-SEC-01.md]
+APPROVED PLAN: [Pfad zur Plan-Ausgabe oder Inline-Plan]
+IMPLEMENT THE APPROVED PLAN ONLY. NO GOLD-PLATING.
+/subagent-driven-development
+
+Subagent-Konfiguration:
+
+  Implementer: Umsetzt den approved Plan. Stellt Fragen BEVOR er beginnt.
+  Committet nach Implementierung.
+  Report-Format: DONE | DONE_WITH_CONCERNS | BLOCKED | NEEDS_CONTEXT
+
+  Spec-Reviewer: Liest Code direkt — vertraut NICHT dem Implementer-Report.
+  Prüft: Missing requirements, Extra work, Misunderstandings.
+  Output: ✅ Spec compliant ODER ❌ Issues found: [file:line]
+
+  Code-Quality-Reviewer: Nur nach bestandenem Spec-Review dispatchen.
+  Prüft: Single responsibility, Unit-Decomposition, File-Growth.
+  Output: Strengths | Issues (Critical/Important/Minor) | Assessment
+
+Constraints (immer aktiv, nicht verhandelbar):
+
+  Keine Logik oder Business-Regeln ins Frontend
+  Alle LLM-Calls: Railway Backend → Anthropic Claude (ADR-003)
+  Edge Functions: Gemini via Lovable AI Gateway
+  Tier-Prüfungen immer serverseitig
+  Schema-Änderungen nur via Migration-Files
+  Layer-Abhängigkeiten: 0 → 1 → 2 → 3
+
+Nach bestandenem Code-Quality-Review:
+Schreibe Ergebnis in Abschnitt ## Implement der Brief-Datei.
+Setze Status in Brief-Datei auf IN PROGRESS.
+git add [BRIEF_FILE] && git commit -m "docs(briefs): [Item-ID] implement-ergebnis hinzugefügt"
 STOP. Warte auf /close-task.
 ```
 

@@ -1,10 +1,20 @@
 # Brief: NC-TELEMETRY — Telemetrie-Setup
 
-**Status:** Qualified
-**Release:** TBD (Wave 2 — Tier 3, nach NC-SEC-01/02)
+**Status:** Released
+**Release:** R-2026-08 (Wave 2 — Tier 3)
 **Typ:** Feature
 **Priorität:** P1 — alle Metriken sind UNKNOWN ohne Telemetrie
 **Erstellt:** 2026-04-29
+**Abgeschlossen:** 2026-04-30
+
+**Status: DONE**
+Verification: Spec-Review 17/17 ✓ | Code-Quality APPROVED ✓ | tsc --noEmit clean ✓
+Teil A: POST /api/analyze (negotiationcoach-backend) loggt `{event, tier, negotiation_type, layer2_used, success}`
+Teil B: `src/lib/telemetry.ts` (negotiation-buddy) — `logTelemetry()` — 3 Events instrumentiert,
+  Commit: `5b66bfc`
+Open: Kein Capture-Layer — Baselines in metrics.md bleiben UNKNOWN bis NC-TELEMETRY-C.
+Follow-ups: useRef-Guard bei Backend-Migration (FU-01), TeamDashboard Grenzfall (FU-02).
+Docs updated: product/metrics.md, docs/delivery/follow-ups/telemetry-followups.md
 
 ---
 

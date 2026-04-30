@@ -16,7 +16,7 @@ Mapping: AR-xxx Einträge entsprechen den RFB-xxx Items im Audit-Backlog.
 |---|---|---|---|---|---|---|
 | NC-WAVE2 | Wave 2 Scope-Dokument erstellen | Enabler | Released | shared-context | R-2026-07 | Brief: product/briefs/NC-WAVE2.md. Released 2026-04-29, Commit 494d706. |
 | NC-SEC-01 | VG-01/VG-02: RLS-Audit in Produktion (teams, negotiation_sessions) | Enabler | Released | shared-context, negotiationcoach-backend | R-2026-08 | Brief: product/briefs/NC-SEC-01.md. Released 2026-04-30. VG-01+VG-02 RESOLVED. Audit: docs/audits/rls-audit-2026.md |
-| NC-SEC-02 | VG-05-A: JWT-Auth-Hardening in Edge Functions (Tier-Enforcement) | Enabler | Qualified | negotiation-buddy | TBD (Wave 2) | Brief: product/briefs/NC-SEC-02.md. ADR-004 umsetzen. |
+| NC-SEC-02 | VG-05-A: JWT-Auth-Hardening in Edge Functions (Tier-Enforcement) | Enabler | Released | negotiation-buddy | R-2026-08 | Brief: product/briefs/NC-SEC-02.md. Released 2026-04-30. VG-05-A RESOLVED — Tier-Chain bereits implementiert. |
 | NC-TIER-01 | Stripe-Readiness-Check — was fehlt bis Stripe live? | Research | Qualified | shared-context | TBD (Wave 2) | Brief: product/briefs/NC-TIER-01.md. Prerequisite für AR-032. |
 | NC-TELEMETRY | Telemetrie-Setup — Konversions- und Nutzungsdaten | Feature | Qualified | negotiationcoach-backend, negotiation-buddy | TBD (Wave 2) | Brief: product/briefs/NC-TELEMETRY.md. Alle Metriken UNKNOWN ohne dieses Item. |
 | NC-ONBOARDING | Guest Mode / Free-Tier Onboarding-Optimierung | Feature | Qualified | negotiation-buddy | TBD (Wave 2) | Brief: product/briefs/NC-ONBOARDING.md. Blocked by NC-TELEMETRY (braucht Baseline-Daten). |

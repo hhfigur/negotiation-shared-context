@@ -1,10 +1,23 @@
 # Brief: NC-SEC-02 — VG-05-A: JWT-Auth-Hardening in Edge Functions
 
-**Status:** Qualified
-**Release:** TBD (Wave 2 — Tier 1)
+**Status:** Released
+**Release:** R-2026-08 (Wave 2 — Tier 1)
 **Typ:** Enabler
 **Priorität:** P1 — High; Tier-Value-Promise aktuell ungesichert
 **Erstellt:** 2026-04-29
+**Abgeschlossen:** 2026-04-30
+
+**Status: DONE**
+Verified: Code-Review via Claude Code ✓ | Tier-Chain vollständig Z.97-143 ✓
+Finding: VG-05-A de facto erfüllt — JWT-Extraktion (Z.97-98), auth.getUser (Z.100),
+  persona_type→tier (Z.101-113), Modell-Auswahl (Z.141-143) vollständig implementiert.
+  Fallback-Architektur (free/Guest-Mode) ist architektonisch korrekt — kein Hard-401.
+Open Minor: auth.getUser error-Logging fehlt (Observability, kein Blocker, kein RFB).
+API contract updated: no
+DB delta: none
+ADR created/amended: none
+Docs updated: docs/source-of-truth-matrix.md (VG-05-A RESOLVED),
+  docs/contracts/frontend-backend.md (VG-05-A RESOLVED)
 
 ---
 

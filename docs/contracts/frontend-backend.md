@@ -520,6 +520,13 @@ power analysis, ZOPA estimation, Black Swan identification, alternative strategy
 Previously: no JWT validation, model hardcoded, tier decorative only.
 Now: server-side JWT read, tier-dependent model, M-10 depth gate. RFB-009 `d90d5c0`.
 
+**VG-05-A Finding (2026-04-09 → RESOLVED 2026-04-30 — NC-SEC-02):**
+Previously: no JWT auth at all — tier was decorative metadata. Severity: High.
+Now (Code-Review 2026-04-30): JWT-Extraktion (Z.97-98), auth.getUser (Z.100),
+persona_type→tier aus user_profiles (Z.101-113), Modell-Auswahl tier-basiert (Z.141-143)
+vollständig implementiert. Fallback free/Guest-Mode architektonisch korrekt — kein Hard-401.
+Minor open: auth.getUser error-Logging fehlt (Observability, kein Blocker).
+
 **VG-07 Decision (2026-04-09 — ADR-004):**
 The Edge Function `/functions/v1/chat` is confirmed as the canonical chat path for **ALL** tiers. Railway `/api/chat` is NOT a frontend chat endpoint.
 

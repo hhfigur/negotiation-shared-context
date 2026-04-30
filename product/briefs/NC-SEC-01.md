@@ -1,10 +1,19 @@
 # Brief: NC-SEC-01 — VG-01/VG-02: RLS-Audit in Produktion
 
-**Status:** Qualified
+**Status:** Released
 **Release:** TBD (Wave 2 — Tier 1)
 **Typ:** Enabler
 **Priorität:** P0 — Critical/High Risk aus Wave-1-Audit
 **Erstellt:** 2026-04-29
+**Abgeschlossen:** 2026-04-30
+
+**Status: DONE**
+Commit: `e74b49d` (negotiationcoach-backend) + `a1f91cc` (shared-context) — 2026-04-30
+Verified: tsc --noEmit clean ✓ | Audit manuell via Lovable SQL Editor ✓
+API contract updated: no
+DB delta: supabase/migrations/20260403120000_add_team_rls_policies.sql committed (war untracked)
+ADR created/amended: none
+Docs updated: docs/audits/rls-audit-2026.md, docs/audits/wave1-completion-gate.md (VG-01/VG-02 RESOLVED)
 
 ---
 

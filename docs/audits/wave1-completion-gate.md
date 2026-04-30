@@ -69,8 +69,8 @@ Wave 1 covers all refactor items RFB-001 through RFB-036 plus Active Blocker AB-
 | RFB-026 | P2 | Blocked on RFB-006. Sequenced behind it. |
 | RFB-032 | P0 | Stripe not live. First Wave 2 item activated once Stripe goes live. |
 | VG-06 | — | No architectural decision yet on dual Layer 1. Wave 2 kickoff action. |
-| VG-01 | Critical | RLS enforcement unconfirmed in prod. Wave 2-A audit target. |
-| VG-02 | High | Cross-user read prevention unconfirmed. Wave 2-A audit target. |
+| VG-01 | Critical | ✅ RESOLVED 2026-04-30 — NC-SEC-01. Alle 9 Tabellen haben RLS aktiv. Audit: docs/audits/rls-audit-2026.md |
+| VG-02 | High | ✅ RESOLVED 2026-04-30 — NC-SEC-01. owns_session() existiert und ist aktiv in session_messages. |
 | VG-05-A | High | No JWT auth in Edge Functions — tier enforcement is decorative. Needs hardening. |
 
 ---

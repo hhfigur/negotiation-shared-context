@@ -362,10 +362,16 @@ Tests in `tests/layer1/` reference the Edge Function schema and are currently br
 
 **Depends On:** VG-06 RESOLVED 2026-04-11 — `generate-plan` has no Layer 1 dependency. RFB-006 scope is the `/chat` Edge Function `_shared/engine/` only. Unblocked.
 
-**Status: DONE — 2026-04-21**
+**Status: DONE — 2026-04-21 (umgesetzt), dokumentiert 2026-04-30**
 
 Commit: `9c6f1f2` (negotiationcoach-backend) — 2026-04-21
-Note: _shared/engine/ retired (8 Dateien), negotiate/index.ts als Railway-Proxy umgeschrieben. ADR-007-A umgesetzt.
+Umsetzung: ADR-007-A (Retire). `_shared/engine/` retired, `negotiate/index.ts` als Railway-Proxy umgeschrieben.
+Verifikation: Claude Code 2026-04-30 — 0 aktive Imports bestätigt. `_shared/engine/` leer, 0 Dateien.
+Unblocks: RFB-026 (ebenfalls geschlossen — batnaDetector-Verzeichnis existiert nicht)
+Docs: ADR-007-dual-layer1.md → DECIDED + vollständig umgesetzt ✅
+      bounded-contexts.md BC-02 CRIT-01 → resolved ✅
+      source-of-truth-matrix.md Entity 5 → resolved ✅
+      frontend-backend.md CRITICAL DRIFT → resolved ✅
 
 ---
 
@@ -1188,9 +1194,13 @@ means any fix must align with RFB-006 resolution.
 
 **Depends On:** RFB-006 (dual Layer 1 resolution)
 
-**Status: CLOSED — superseded by ADR-007-A — 2026-04-21**
+**Status: DONE — 2026-04-30**
 
-Note: Repair nicht mehr erforderlich. batnaDetector.ts wurde mit _shared/engine/ gelöscht (RFB-006, Commit 9c6f1f2).
+Begründung: batnaDetector-Verzeichnis existiert nicht in
+`negotiationcoach-backend/supabase/functions/` (Observed 2026-04-30).
+Reparatur nicht nötig — durch ADR-007-A (Retire) vollständig obsolet.
+Keine Code-Änderung erforderlich.
+Superseded by: RFB-006, Commit `9c6f1f2` (2026-04-21).
 
 ---
 

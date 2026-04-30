@@ -601,7 +601,7 @@ Now: JWT required, tier resolved from `user_profiles`, both DB writes ownership-
 | `Tier` | Not defined in frontend | `'free' \| 'privat' \| 'kmu' \| 'profi'` | **Drift** — frontend uses persona_type instead |
 | `subscription_tier` DB enum | ~~`free \| starter \| professional \| expert \| team`~~ → `free \| privat \| kmu \| profi` | `free \| privat \| kmu \| profi` | ✅ **RESOLVED RFB-036 `a28d28c` 2026-04-16** — DB enum now aligned to Railway Tier values per ADR-006-tier-mapping.md |
 | `persona_type` DB enum | `'pro' \| 'kmu' \| 'private'` | Mapped via `personaTypeToTier()` in `src/utils/tierUtils.ts` | **Partial resolution (RFB-007 Step B)** — wired at `POST /api/sessions`; EF boundary pending Step C (VG-06) |
-| Edge Function inputs | `user_goal / user_walkaway` | `own_target / own_minimum` | **CRITICAL DRIFT** — incompatible schemas |
+| Edge Function inputs | ~~`user_goal / user_walkaway`~~ | `own_target / own_minimum` | ~~**CRITICAL DRIFT**~~ **RESOLVED — ADR-007-A 2026-04-21.** `_shared/engine/` retired. EF-Schema-Konflikt obsolet. Verified 2026-04-30. |
 
 ---
 

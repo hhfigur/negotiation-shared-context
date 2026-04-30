@@ -61,10 +61,10 @@ Analysis results are computed on-demand. The `negotiation_sessions` record is cr
 Railway `authMiddleware` + `requireTier('kmu')` gate on `/api/enrich`
 
 ### Violations / Ambiguities
-- **CRITICAL:** Layer 1 algorithms (ZOPA, Nash Bargaining, Monte Carlo, Deadline Effect, Strategy Score) are **duplicated** in:
-  - `src/layer1/` — Express path, uses `own_target / own_minimum / opponent_estimated_max / opponent_estimated_min`
-  - `supabase/functions/_shared/engine/` — Edge Function path, uses `user_goal / user_walkaway / counterpart_goal / counterpart_walkaway`
-  - These schemas are **incompatible**. Any algorithm change must be applied in both locations. No mechanism enforces this. (Observed)
+- ~~**CRITICAL:** Layer 1 algorithms duplicated in `src/layer1/` and `supabase/functions/_shared/engine/` with incompatible schemas.~~
+  **RESOLVED — CRIT-01: ADR-007-A 2026-04-21.** `_shared/engine/` retired (leer, 0 Dateien, Observed 2026-04-30).
+  Eine kanonische Layer-1-Implementierung: `negotiationcoach-backend/src/layer1/` (Railway).
+  `negotiate/index.ts` delegiert via HTTP an Railway `/api/analyze` — kein lokaler Layer-1-Code.
 - **Observed:** Tests in `tests/layer1/` reference the Edge Function schema (stale). Tests are broken and should not be trusted.
 
 ---

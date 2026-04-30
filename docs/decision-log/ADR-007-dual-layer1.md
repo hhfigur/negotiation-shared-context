@@ -1,6 +1,6 @@
 # ADR-007 — Dual Layer-1-Architektur: Edge Function Engine
 
-**Status:** DECIDED — Option A (Retire) — 2026-04-21
+**Status:** DECIDED — Option A (Retire) — 2026-04-21, dokumentiert 2026-04-30
 **Erstellt:** 2026-04-17
 **Entscheider:** Maik
 **Klassifizierung:** Architecture Decision — Wave-2-Start-Gate
@@ -138,13 +138,22 @@ Datum:
 
 ### Bei Option A (Retire)
 
-- [x] `supabase/functions/_shared/engine/` wird gelöscht
-- [x] Betroffene EF delegieren an Railway via `fetch(process.env.RAILWAY_URL + '/api/...')`
-- [x] `tests/layer1/` testen ausschließlich gegen `src/layer1/` (Node.js)
-- [x] RFB-006 und RFB-026 werden als DONE geschlossen
-- [x] `bounded-contexts.md` BC-02 CRIT-01 → resolved
-- [x] `source-of-truth-matrix.md` Entity 5 → resolved
-- [x] `frontend-backend.md` Type Drift Register CRITICAL DRIFT → resolved
+**Status: VOLLSTÄNDIG UMGESETZT — 2026-04-21, verifiziert 2026-04-30**
+
+- [x] `supabase/functions/_shared/engine/` wird gelöscht — ✅ leer, 0 Dateien (Observed 2026-04-30)
+- [x] Betroffene EF delegieren an Railway via `fetch(process.env.RAILWAY_URL + '/api/...')` — ✅ negotiate/index.ts ist Railway-Proxy
+- [x] `tests/layer1/` testen ausschließlich gegen `src/layer1/` (Node.js) — ✅
+- [x] RFB-006 und RFB-026 werden als DONE geschlossen — ✅ (refactor-backlog.md aktualisiert 2026-04-30)
+- [x] `bounded-contexts.md` BC-02 CRIT-01 → resolved — ✅ (aktualisiert 2026-04-30)
+- [x] `source-of-truth-matrix.md` Entity 5 → resolved — ✅ (aktualisiert 2026-04-30)
+- [x] `frontend-backend.md` Type Drift Register CRITICAL DRIFT → resolved — ✅ (aktualisiert 2026-04-30)
+
+Verifikations-Befunde 2026-04-30 (Claude Code):
+- `chat/index.ts` (negotiationcoach-backend): kein `_shared/engine/` Import, Gemini direkt
+- `negotiate/index.ts`: Kommentar Z.6+9 bestätigt Retire 2026-04-21, delegiert an Railway
+- `generate-plan/`: existiert nicht in negotiationcoach-backend
+- `batnaDetector/`: existiert nicht in negotiationcoach-backend
+- `_shared/engine/`: leer, 0 Dateien — Retire vollständig
 
 ### Bei Option B (Migrate)
 
@@ -164,9 +173,9 @@ Datum:
 
 ## Voraussetzungen vor Entscheidung
 
-- [x] Verifizieren: Ruft `/functions/v1/chat` aktiv Layer-1-Logik aus `_shared/engine/` auf? → Nein (EF existiert nicht)
-- [x] Verifizieren: Hat `/functions/v1/generate-plan` nach RFB-033 noch Layer-1-Abhängigkeit? → Nein (EF existiert nicht)
-- [x] Verifizieren: Welche anderen EF nutzen `_shared/engine/`? → Nur negotiate/index.ts
+- [x] Verifizieren: Ruft `/functions/v1/chat` aktiv Layer-1-Logik aus `_shared/engine/` auf? → Nein — chat/index.ts nutzt Gemini direkt, kein `_shared/engine/` Import (Observed 2026-04-30)
+- [x] Verifizieren: Hat `/functions/v1/generate-plan` nach RFB-033 noch Layer-1-Abhängigkeit? → Nein — generate-plan/ existiert nicht in negotiationcoach-backend (Observed 2026-04-30)
+- [x] Verifizieren: Welche anderen EF nutzen `_shared/engine/`? → 0 aktive Imports — grep bestätigt nur Kommentare in negotiate/index.ts (Observed 2026-04-30)
 
 **Verifikations-Prompt für Claude Code in `negotiationcoach-backend`:**
 ```

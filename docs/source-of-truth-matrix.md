@@ -109,7 +109,7 @@ Mapping: `free→free` · `starter→privat` · `professional→kmu` · `expert�
 | Sync Rule | Computed on-demand. Stored once. Not invalidated unless re-analyzed. |
 | Business Logic Owner | `src/layer1/` (zopaCalculator, nashBargaining, monteCarlo, deadlineEffect, strategyScore, batnaDetector) |
 | Auth Owner | Railway authMiddleware + user_id validation |
-| Violations | **CRITICAL:** Algorithms duplicated verbatim in `supabase/functions/_shared/engine/`. The two implementations use different type schemas and may diverge. |
+| Violations | ~~**CRITICAL:** Algorithms duplicated in `_shared/engine/`.~~ **RESOLVED — ADR-007-A 2026-04-21.** `_shared/engine/` retired. Kanonisch: `negotiationcoach-backend/src/layer1/` (Railway). Verified 2026-04-30. |
 
 ---
 

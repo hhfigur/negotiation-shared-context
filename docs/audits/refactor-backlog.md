@@ -1567,6 +1567,29 @@ user_profiles.subscription_tier using Railway Tier values
 (free | privat | kmu | profi).
 JWT field target: confirm via grep on middleware.ts before planning.
 
+**Architekturentscheidungen (NC-TIER-01, 2026-04-30):**
+
+| Entscheidung | Gewählt | Begründung |
+|---|---|---|
+| Write-Target | app_metadata.tier | Admin-Write-Pfad (Supabase-Konvention). authMiddleware-Lesereihenfolge wird bei Aktivierung auf app_metadata-first geändert (1-Zeilen-Fix in middleware.ts:112). |
+| Token-Refresh | Automatisch via Supabase JS | Nach Stripe-Redirect refresht onAuthStateChange den Token. Tier wirkt beim nächsten Railway-Call. Akzeptable Latenz. |
+| Customer-ID-Lookup | Option A — Stripe Metadata | Checkout-Session setzt metadata: { supabase_user_id: user.id }. Webhook liest via stripe.customers.retrieve(). Keine DB-Migration nötig. |
+| Checkout-Flow | Voraussetzung — noch nicht gebaut | POST /api/checkout muss vor RFB-032 existieren. Wird bei Stripe-Aktivierung entschieden (eigenes Item oder Teil von RFB-032). |
+
+**Widerspruch aufgelöst (aus NC-TIER-01 Analyse D):**
+RFB-032 Schritt 7 schreibt auf app_metadata.tier (korrekt).
+DEFERRED-Note "webhook writes to user_profiles.subscription_tier" war
+ungenau — subscription_tier ist DB-Spalte für Frontend-Anzeige,
+app_metadata.tier ist der Railway-Read-Pfad. Beide können beschrieben
+werden; app_metadata.tier ist Pflicht für Railway authMiddleware.
+
+**Aktivierungsbedingungen (alle müssen erfüllt sein):**
+- [ ] Stripe-Konto aktiv + Preise in Dashboard angelegt
+- [ ] STRIPE_PRICE_PRIVAT/KMU/PROFI bekannt
+- [ ] Checkout-Flow (POST /api/checkout) gebaut
+- [ ] Entscheidung: RFB-032 als erstes oder Checkout-Flow zuerst
+- [ ] .env / Railway-Env-Vars befüllt
+
 ---
 
 ### RFB-033

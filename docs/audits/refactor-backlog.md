@@ -1957,6 +1957,35 @@ Docs updated: none
 
 ---
 
+### RFB-045
+
+**Title:** Layer-2 Error-Isolation, Zod-Validation und Unit-Mismatch-Prompt-Fix (Bug-1 bis Bug-5)
+
+**Repo:** `negotiationcoach-backend`
+
+**Category:** `bug`
+
+**Evidence (Observed — 2026-05-01):**
+Diagnose in Layer-2-Code ergab 5 Bugs:
+1. `index.ts` Z.72: `generateMarketContextSummary` ohne try-catch → 500 bei Claude-Ausfall
+2. `index.ts` Z.48: `resolveMarketData` ohne try-catch → 500 bei DB-Fehler
+3. `knowledgeGraph.ts` Z.27: Cached data kein Schema-Check → stille undefined-Felder bei Schema-Drift
+4. `marketDataInterpreter.ts` Z.33: System-Prompt Einheiten-Instruktion unscharf → unit-mismatch für Miete
+5. `marketDataInterpreter.ts` Z.70: Claude-Response kein Runtime-Check → stiller NaN bei String-Wert
+
+**Fix:**
+- `src/layer2/schemas.ts` (neu): `MarketSearchResultSchema` (Zod)
+- `src/layer2/index.ts`: try-catch um beide async-Calls (Bug-1, Bug-2)
+- `src/layer2/knowledgeGraph.ts`: `safeParse` vor Cache-Return, Mismatch → Cache-Miss (Bug-3)
+- `src/layer2/marketDataInterpreter.ts`: Prompt verschärft (Bug-4), `safeParse` auf Claude-Response (Bug-5)
+
+**Status: DONE**
+Commit: `2f01bd9` (negotiationcoach-backend) — 2026-05-01
+Verified: tsc --noEmit clean ✓ | Layer-2-Integrationstest bestanden ✓ | Spec-Review PASS ✓
+Docs updated: none
+
+---
+
 ## Active Blockers
 
 ### AB-001
@@ -2042,6 +2071,7 @@ re-verified — their production behaviour was untested before this fix.
 | RFB-042 | MCP Supabase auf ujnyioggxipvuxxxcivr reconnecten + CLAUDE.md-Regel updaten | P0 | infra | bug |
 | RFB-043 | Gehalt-Chat-Flow: aktuelles Gehalt vor Zielgehalt abfragen — ✅ DONE `46b2dbd` | P2 | frontend | bug |
 | RFB-044 | What-If Simulator: Tooltips für Slider und Monte-Carlo-Ergebnisse fehlen — ✅ DONE `6e093c8` | P3 | frontend | bug |
+| RFB-045 | Layer-2 Error-Isolation, Zod-Validation, Unit-Mismatch-Fix (Bug-1–5) — ✅ DONE `2f01bd9` | P1 | backend | bug |
 | AB-001 | Railway SUPABASE_URL placeholder fixed — ✅ DONE 2026-04-08 | P0 | infrastructure | infrastructure |
 
 ---

@@ -1,57 +1,41 @@
 # Current Release
 
 ## Release ID
-R-2026-07
+R-2026-08
 
 ## Release status
 Released & Verified
 
 ## Release goal
-Wave 2 Scope finalisieren: alle Wave-2-Items identifizieren, mit IDs
-versehen, Briefs erstellen und Feature Register auf Stand bringen.
-Kein Code-Delivery — reine Planung und Housekeeping.
+Wave 2 — Tier 1 + 2: Security, Telemetrie und Stripe-Readiness.
+Alle P0-Sicherheitslücken aus Wave-1-Audit behoben,
+Telemetrie instrumentiert, Stripe-Architekturentscheidungen dokumentiert.
 
 ## Released items
-- NC-WAVE2: Released 2026-04-29 — 5 Briefs + Feature Register + Strategy + Roadmap, Commit 494d706
+- NC-SEC-01: Released — RLS-Audit abgeschlossen, VG-01/VG-02 RESOLVED (61dfb5d)
+- NC-SEC-02: Released — JWT-Hardening verifiziert, VG-05-A RESOLVED (244e6de)
+- NC-TIER-01: Released — Stripe-Readiness-Audit, Architekturentscheidungen dokumentiert (23cbae9)
+- NC-TELEMETRY Teil A: Released — console.log in POST /api/analyze (e6401ca)
+- NC-TELEMETRY Teil B: Released — Frontend logTelemetry(), 3 Events (5b66bfc)
+- ADR-007 Docs-Rückstand: Released — Retire vollständig dokumentiert (ea39735)
 
-## In scope (CLEANUP-001–003 noch offen)
-- NC-WAVE2: Wave 2 Scope-Dokument erstellen (Enabler) ✅
-  Deliverable: product/feature-register.md mit vollständigen Wave-2-Items
-  (ID, Typ, Status Qualified, Brief, Affected Repos)
-- CLEANUP-001: Feature Register bereinigen
-  AR-020b → Released, AR-020c → Released (bereits in technischem Backlog DONE)
-- CLEANUP-002: Strategy.md aktualisieren
-  Stale Constraints entfernen (ADR-007 resolved, Layer 2 done)
-  Neuen Fokus setzen (Wave 2 + Tier-Conversion)
-- CLEANUP-003: Roadmap "Now" auf Wave-2-Items aktualisieren
-
-## Out of scope
-- Implementierung von Wave-2-Features (erst nach NC-WAVE2)
-- Layer 3 Simulation Engine
-- Stripe Webhook Handler (nicht live)
-- NC-TELEMETRY (Idea — braucht Wave-2-Scope zuerst)
-- NC-ONBOARDING (Idea — braucht Wave-2-Scope zuerst)
-- Jedes Code-Delivery-Item
+## Blocked / Open items
+- NC-TELEMETRY-C: OPEN — Capture-Layer (PostHog/Sentry): strategische Entscheidung ausstehend
+- NC-ONBOARDING: BLOCKED — wartet auf 14-Tage Telemetrie-Baseline (frühestens Mitte Mai 2026)
+- AR-032 Stripe Webhook: BLOCKED EXTERN — wartet auf Stripe go-live
 
 ## Affected repos
-- shared-context (alle Änderungen — Docs only)
+- negotiationcoach-backend (NC-SEC-01, NC-TIER-01, NC-TELEMETRY Teil A, ADR-007 Docs)
+- negotiation-buddy (NC-TELEMETRY Teil B)
+- shared-context (alle Docs)
 
-## Dependencies
-- Keine blocking Dependencies
-- NC-WAVE2 muss vor CLEANUP-003 fertig sein
-  (Roadmap erst aktualisieren wenn Scope klar)
-
-## Exit criteria
-- product/feature-register.md: Wave-2-Items vollständig mit ID + Brief + Status
-- AR-020b, AR-020c: Status = Released in Feature Register
-- Strategy.md: aktuell (keine stale Constraints, neuer Fokus)
-- Roadmap "Now" enthält konkrete Wave-2-Delivery-Items
+## Exit criteria (alle erfüllt)
+- VG-01/VG-02 RESOLVED ✅
+- VG-05-A RESOLVED ✅
+- ADR-007 DECIDED + dokumentiert ✅
+- NC-TELEMETRY Teil A + B committed ✅
+- TypeCheck negotiationcoach-backend: 0 Fehler ✅
 
 ## Open decisions
-- Was sind die Wave-2-Items? (Kern von NC-WAVE2)
-  Kandidaten aus Strategy: Tier-Conversion-Pfad, Telemetrie, Onboarding
-  → Entscheidung ist Teil des NC-WAVE2-Deliverables
-
-## Open risks
-- Wave-2-Scope könnte ADRs erfordern bevor Delivery beginnt
-  (insbes. Tier-Enforcement-Pfad — VG-05-A noch offen)
+- NC-TELEMETRY-C: welches Capture-Layer-Tool?
+- NC-ONBOARDING Scope: nach Baseline-Daten definieren

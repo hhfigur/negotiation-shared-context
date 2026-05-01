@@ -16,7 +16,8 @@
 ## Now (R-2026-09 — Planned)
 - NC-TELEMETRY-C: Capture-Layer-Entscheidung (PostHog / Sentry / Custom)
   → Blocking: metrics.md Baselines bleiben UNKNOWN ohne dieses Item
-- NC-ONBOARDING: BLOCKED — wartet auf 14-Tage Telemetrie-Baseline (frühestens Mitte Mai)
+- NC-ONBOARDING: BLOCKED — wartet auf 14-Tage PostHog-Baseline ab VITE_POSTHOG_API_KEY-Aktivierung
+  (frühestens Mitte Mai 2026). Unblockiert sobald metrics.md Baselines vorliegen.
 
 ## Next
 - AR-032: Stripe Webhook Handler (extern blockiert — wartet auf Stripe go-live)

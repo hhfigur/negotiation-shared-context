@@ -14,8 +14,8 @@
 - R-2026-08: NC-SEC-01, NC-SEC-02, NC-TIER-01, NC-TELEMETRY A+B ✅
 
 ## Now (R-2026-09 — Planned)
-- NC-TELEMETRY-C: Capture-Layer-Entscheidung (PostHog / Sentry / Custom)
-  → Blocking: metrics.md Baselines bleiben UNKNOWN ohne dieses Item
+- NC-PLAN-FIX (P1): Verhandlungsplan-Trigger reparieren — Plan wird nie generiert
+- NC-L2-UI (P1): Market Data anzeigen + /api/enrich einbinden
 - NC-ONBOARDING: BLOCKED — wartet auf 14-Tage PostHog-Baseline ab VITE_POSTHOG_API_KEY-Aktivierung
   (frühestens Mitte Mai 2026). Unblockiert sobald metrics.md Baselines vorliegen.
 

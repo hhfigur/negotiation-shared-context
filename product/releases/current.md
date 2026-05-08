@@ -1,41 +1,39 @@
 # Current Release
 
 ## Release ID
-R-2026-08
+R-2026-09
 
 ## Release status
-Released & Verified
+Planned
 
 ## Release goal
-Wave 2 — Tier 1 + 2: Security, Telemetrie und Stripe-Readiness.
-Alle P0-Sicherheitslücken aus Wave-1-Audit behoben,
-Telemetrie instrumentiert, Stripe-Architekturentscheidungen dokumentiert.
+Kernfunktionen reparieren: Verhandlungsplan-Trigger und Market-Data-Anzeige.
+Beides ist für Nutzer aktuell nicht funktionierend — P1-Fixes vor NC-ONBOARDING.
 
-## Released items
-- NC-SEC-01: Released — RLS-Audit abgeschlossen, VG-01/VG-02 RESOLVED (61dfb5d)
-- NC-SEC-02: Released — JWT-Hardening verifiziert, VG-05-A RESOLVED (244e6de)
-- NC-TIER-01: Released — Stripe-Readiness-Audit, Architekturentscheidungen dokumentiert (23cbae9)
-- NC-TELEMETRY Teil A: Released — console.log in POST /api/analyze (e6401ca)
-- NC-TELEMETRY Teil B: Released — Frontend logTelemetry(), 3 Events (5b66bfc)
-- ADR-007 Docs-Rückstand: Released — Retire vollständig dokumentiert (ea39735)
+## In scope
+- NC-PLAN-FIX (P1 — NEU): Verhandlungsplan-Trigger anpassen
+  Symptom: Plan wird nie generiert weil "gegenseite"-Felder nie aus Chat
+  extrahiert werden. Fix: Trigger-Logik anpassen.
+  Brief: product/briefs/NC-PLAN-FIX.md
+
+- NC-L2-UI (P1 — NEU): Market Data anzeigen + /api/enrich einbinden
+  Symptom: Layer-2-Ergebnisse (Marktmedian, Reality Score) nirgends sichtbar.
+  Fix: /api/enrich aufrufen + Werte im UI anzeigen.
+  Brief: product/briefs/NC-L2-UI.md
 
 ## Blocked / Open items
-- NC-TELEMETRY-C: OPEN — Capture-Layer (PostHog/Sentry): strategische Entscheidung ausstehend
-- NC-ONBOARDING: BLOCKED — wartet auf 14-Tage Telemetrie-Baseline (frühestens Mitte Mai 2026)
+- NC-ONBOARDING: BLOCKED — wartet auf PostHog-Baseline (frühestens Mitte Mai 2026)
 - AR-032 Stripe Webhook: BLOCKED EXTERN — wartet auf Stripe go-live
 
 ## Affected repos
-- negotiationcoach-backend (NC-SEC-01, NC-TIER-01, NC-TELEMETRY Teil A, ADR-007 Docs)
-- negotiation-buddy (NC-TELEMETRY Teil B)
-- shared-context (alle Docs)
+- negotiation-buddy (NC-PLAN-FIX, NC-L2-UI — Frontend)
+- negotiationcoach-backend (NC-L2-UI — /api/enrich bereits vorhanden)
 
-## Exit criteria (alle erfüllt)
-- VG-01/VG-02 RESOLVED ✅
-- VG-05-A RESOLVED ✅
-- ADR-007 DECIDED + dokumentiert ✅
-- NC-TELEMETRY Teil A + B committed ✅
-- TypeCheck negotiationcoach-backend: 0 Fehler ✅
+## Exit criteria
+- Verhandlungsplan erscheint nach vollständigem Chat-Flow ✅
+- Market-Data-Werte (Marktmedian, Reality Score) im UI sichtbar ✅
+- TypeCheck negotiation-buddy: 0 Fehler ✅
 
 ## Open decisions
-- NC-TELEMETRY-C: welches Capture-Layer-Tool?
-- NC-ONBOARDING Scope: nach Baseline-Daten definieren
+- NC-PLAN-FIX: Welche der 6 Fortschrittspunkte sind Pflicht für Plan-Trigger?
+- NC-L2-UI: Wo genau werden Market Data angezeigt (Strategy Report, eigene Sektion)?

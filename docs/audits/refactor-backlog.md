@@ -758,7 +758,13 @@ Files: `useSessionManager.ts`, `NegotiationCanvas.tsx`, `DebriefDashboard.tsx`, 
 | 5 inline patterns replaced | `c507353` | Index.tsx, NegotiationCanvas.tsx, DebriefDashboard.tsx, WhatIfSimulator.tsx, ZopaCalculator.tsx |
 | `supabase` import removed where auth-only | `c507353` | DebriefDashboard, NegotiationCanvas, WhatIfSimulator, ZopaCalculator |
 
-Note: `useSessionManager.ts` uses the same pattern but was not in scope (inline pattern already wraps a helper there). `ChatInterface.tsx` DCC-FE-02 is a separate item.
+Note: `ChatInterface.tsx` DCC-FE-02 is a separate item.
+
+Scope closure (2026-05-21): `useSessionManager.ts` was explicitly excluded from
+this item. BUG-20260521-session-reload-after-auth (commit e813f42) migrated
+`loadSessions()` to use `authSession` from `useAuth()` instead of calling
+`supabase.auth.getSession()` inline — closing the last remaining occurrence of
+the pattern in `negotiation-buddy`.
 
 ---
 
@@ -802,6 +808,14 @@ Change: Sonner toast.error() added to useSessionManager.ts, fires once
 after all retries exhausted. console.error preserved.
 Scope: useSessionManager.ts only. localStorage queuing excluded (RFB-004).
 Note: Interim fix — final resolution deferred to RFB-004 (Railway message API).
+
+Partial-completion note (2026-05-21): RFB-014 originally targeted
+`saveMessage()` fire-and-forget only. BUG-20260521-session-reload-after-auth
+(commit e813f42) extended error surfacing to `loadSessions()` — adding
+`console.error` on missing userId and `toast.error` on Supabase query failure.
+The `loadSessions()` portion of the RFB-014 pattern is now resolved.
+Remaining scope (if any): verify no other silent-failure paths exist in
+`useSessionManager.ts` beyond the two addressed.
 
 ---
 
@@ -1986,6 +2000,81 @@ Docs updated: none
 
 ---
 
+### RFB-046
+
+**Title:** Add loadError state to useSessionManager — enable retry UX for failed session loads
+
+**Repo:** `negotiation-buddy`
+
+**Category:** `boundary-violation`
+
+**Priority:** P3
+
+**Evidence (Observed):**
+BUG-20260521 fix (commit e813f42) added `console.error` and `toast.error` to
+`loadSessions()` for the two silent-failure paths (missing userId + Supabase query
+error). However, no `loadError` state is exposed from the hook. The caller
+(`Index.tsx`) has no way to detect a failed load and offer a retry button.
+
+**Risk:** Low at current scale. After a session-load failure, the user sees only a
+toast — no retry mechanism. A page reload is the only recovery path. Debt-1 from
+BUG-20260521 Staff Check (APPROVED_WITH_DEBT).
+
+**Canonical Owner:** `negotiation-buddy` — `src/hooks/useSessionManager.ts`
+
+**Recommended Action:**
+1. Add `loadError: string | null` to the hook's return type
+2. Set `loadError` on Supabase error or missing userId
+3. Clear `loadError` at start of `loadSessions()`
+4. In `Index.tsx`: render a retry button when `loadError` is truthy
+
+**Depends On:** Nothing — standalone
+
+**Status:** OPEN
+
+---
+
+### RFB-047
+
+**Title:** Investigate personaType !== "private" gate in useSessionManager — potential session invisibility for free-tier accounts
+
+**Repo:** `negotiation-buddy`
+
+**Category:** `contract-gap`
+
+**Priority:** P2
+
+**Evidence (Inferred):**
+`useSessionManager.ts` line 47: `if (personaType && personaType !== "private") { loadSessions(); }`
+
+Accounts with `personaType = "private"` never load sessions. If a user account
+temporarily has no valid profile (e.g. during signup delay, migration edge case,
+or after a Supabase error in `loadProfile()`) and defaults to `"private"`, all
+sessions become permanently invisible without any error. Identified during
+BUG-20260521 diagnosis as Inferred finding I-03.
+
+**Risk:** Medium. Silent data invisibility — sessions exist in DB but are
+unreachable from UI. No error surfaced to user.
+
+**Canonical Owner:** `negotiation-buddy` — `src/hooks/useSessionManager.ts`
+
+**Recommended Action:**
+1. Clarify product intent: should `free`-tier / `private`-type accounts have
+   session history at all?
+2. If yes: remove or loosen the `!== "private"` gate
+3. If no: add explicit UI messaging for these accounts ("Session history not
+   available on free tier")
+4. Document decision in ADR or frontend-backend.md tier-feature matrix
+
+**ADR reference:** ADR-006 (tier mapping) — tier-feature matrix does not
+currently specify session-history access per tier.
+
+**Depends On:** ADR-006 clarification (product decision required before code)
+
+**Status:** OPEN
+
+---
+
 ## Active Blockers
 
 ### AB-001
@@ -2072,6 +2161,8 @@ re-verified — their production behaviour was untested before this fix.
 | RFB-043 | Gehalt-Chat-Flow: aktuelles Gehalt vor Zielgehalt abfragen — ✅ DONE `46b2dbd` | P2 | frontend | bug |
 | RFB-044 | What-If Simulator: Tooltips für Slider und Monte-Carlo-Ergebnisse fehlen — ✅ DONE `6e093c8` | P3 | frontend | bug |
 | RFB-045 | Layer-2 Error-Isolation, Zod-Validation, Unit-Mismatch-Fix (Bug-1–5) — ✅ DONE `2f01bd9` | P1 | backend | bug |
+| RFB-046 | Add loadError state to useSessionManager — enable retry UX for failed session loads | P3 | frontend | boundary-violation |
+| RFB-047 | Investigate personaType gate — session invisibility for free-tier accounts | P2 | frontend | contract-gap |
 | AB-001 | Railway SUPABASE_URL placeholder fixed — ✅ DONE 2026-04-08 | P0 | infrastructure | infrastructure |
 
 ---
@@ -2124,4 +2215,7 @@ RFB-017, RFB-018, RFB-019, RFB-020, RFB-021 — no dependencies
 
 RFB-024, RFB-025 — no dependencies; DONE (fd031cc, fe961ee)
 RFB-023 (dead useChatApi / DCC-FE-02) — no dependencies; unblocked by RFB-025
+
+RFB-046 (loadError state) — no dependencies
+RFB-047 (personaType gate) — depends on ADR-006 clarification (product decision)
 ```

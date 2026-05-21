@@ -1,3 +1,6 @@
+## Working Context
+Always read MEMORY.md first — current working state.
+
 @AGENTS.md
 
 ## Shared Product Operations Layer

@@ -1,7 +1,7 @@
 # BUG-20260521-session-save-retry-loop
 
 **Erstellt:** 2026-05-21
-**Status:** OPEN
+**Status:** DONE
 **Risiko:** P1
 **TARGET REPO:** negotiation-buddy (primary), negotiationcoach-backend (secondary)
 **Layer:** Layer 0 (Session Persistence / Data Foundation)
@@ -69,10 +69,50 @@ Falls ein Session-Save-Fehler den State verändert, der wiederum einen erneuten 
 - BUG-20260521-slow-return-from-tool (App-Freeze — möglicherweise gleiche Ursache)
 
 ## Plan
-_Wird durch Template 1-DEV befüllt._
+
+Root Cause via Diagnose-Report (commit `0fcffc8`):
+- Hypothese A (Retry-Loop in useSessionManager): ausgeschlossen — kein Retry, single try/catch, return null
+- Hypothese B (AnalysisContext-Write-Loop): ausgeschlossen — saveToStorage ist synchrones localStorage
+- **Hypothese C (Caller-Fan-Out in Index.tsx): bestätigt**
+  Ein useEffect ruft `createSession` bei jeder neuen Nachricht erneut auf, solange
+  `activeSessionId === null`. Nach Fehler bleibt activeSessionId null → jeder SSE-Chunk
+  triggert erneuten Call → N Toasts + N offene Fetch-Promises → Resource-Exhaustion.
+
+Fix-Scope: nur `src/pages/Index.tsx`
+- Guard-Flag `isCreatingSession: useRef<boolean>` — verhindert concurrent Creates
+- Error-Flag `sessionCreateFailed: useRef<boolean>` — verhindert Retry nach Fehler
+- AbortController `createSessionAbortRef` — Cleanup bei Unmount
 
 ## Implement
-_Wird durch Template 2-DEV befüllt._
+
+Commit: `967475d` (negotiation-buddy) — 2026-05-21
+Datei: `src/pages/Index.tsx` — 30 Insertions, 1 Deletion
+
+Implementierte Änderungen (Zeilen):
+- Z.268: `const isCreatingSession = useRef<boolean>(false);`
+- Z.269: `const sessionCreateFailed = useRef<boolean>(false);`
+- Z.270: `const createSessionAbortRef = useRef<AbortController | null>(null);`
+- Z.273–277: useEffect-Cleanup → `createSessionAbortRef.current?.abort()`
+- Z.607: Guard `if (isCreatingSession.current || sessionCreateFailed.current) return;`
+- Z.609: `isCreatingSession.current = true;` vor createSession-Call
+- Z.614: `await createSession(title)`
+- Z.615–617: `if (result === null) { sessionCreateFailed.current = true; }`
+- Z.618–620: `finally { isCreatingSession.current = false; }`
+- Z.293 (handleUseCaseStart) + Z.656 (handleNewSession): Reset `sessionCreateFailed.current = false`
+
+Spec-Review: PASS_WITH_NOTES
+Code-Quality-Review: APPROVED_WITH_DEBT
+
+Debt dokumentiert (nicht blockierend):
+- AbortController signal nicht an createSessionApi durchgereicht → abort() auf Unmount ist inert für HTTP-Cancellation
+- Silent return bei sessionCreateFailed gibt keinen User-Feedback auf Retry-Versuche nach Fehler
 
 ## Abschluss
-_Wird durch /close-task befüllt._
+
+**Status: DONE**
+Commit: `967475d` (negotiation-buddy) — 2026-05-21
+Verified: `npx tsc --noEmit` exit 0 ✓ | Spec-Review: PASS_WITH_NOTES | Code-Quality: APPROVED_WITH_DEBT
+API contract updated: no
+DB delta: none
+ADR created/amended: none
+Docs updated: BUG-20260521-session-save-retry-loop-diagnosis-report.md (`0fcffc8`), BUG-20260521-session-save-retry-loop.md (this file)

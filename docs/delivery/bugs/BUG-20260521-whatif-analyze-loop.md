@@ -1,7 +1,7 @@
 # BUG-20260521-whatif-analyze-loop
 
 **Erstellt:** 2026-05-21
-**Status:** OPEN
+**Status:** DONE
 **Risiko:** P1
 **TARGET REPO:** negotiation-buddy
 **Layer:** Frontend (React useCallback / Context Identity)
@@ -93,10 +93,29 @@ was keine externe Abhängigkeit zur Laufzeit darstellt.
 - AGENTS.md warnt: "Do not refactor AnalysisContext.tsx localStorage logic without full session restore testing" — Fix in WhatIfSimulator.tsx umgeht diese Einschränkung
 
 ## Plan
-_Wird durch Template 1-DEV befüllt._
+
+Root Cause (Observed — Code gelesen, Network-Tab bestätigt):
+`runAnalysis useCallback([updateAnalysis])` in WhatIfSimulator.tsx.
+`updateAnalysis` aus AnalysisContext ist nicht memoized → neue Identität nach jedem
+AnalysisContext-Re-render → Loop. Fix: `updateAnalysis` aus Dep-Array entfernen.
 
 ## Implement
-_Wird durch Template 2-DEV befüllt._
+
+Commit: `001a3d0` (negotiation-buddy) — 2026-05-21
+Datei: `src/pages/WhatIfSimulator.tsx` — 2 Insertions, 1 Deletion
+
+```diff
+- }, [updateAnalysis]);
++ // eslint-disable-next-line react-hooks/exhaustive-deps
++ }, []); // updateAnalysis wraps setSession which has stable identity — listing it causes infinite loop
+```
 
 ## Abschluss
-_Wird durch /close-task befüllt._
+
+**Status: DONE**
+Commit: `001a3d0` (negotiation-buddy) — 2026-05-21
+Verified: `npx tsc --noEmit` exit 0 ✓
+API contract updated: no
+DB delta: none
+ADR created/amended: none
+Docs updated: BUG-20260521-whatif-analyze-loop.md, MEMORY.md (feedback_unstable_context_deps.md)

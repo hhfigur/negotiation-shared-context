@@ -1,7 +1,7 @@
 # BUG-20260521-session-reload-after-auth
 
 **Erstellt:** 2026-05-21
-**Status:** OPEN
+**Status:** DONE
 **Risiko:** P1
 **TARGET REPO:** negotiation-buddy (primary), negotiationcoach-backend (secondary)
 **Layer:** Layer 0 — Data Foundation / Session Persistence
@@ -40,10 +40,21 @@ Nach dem Abmelden und erneuten Anmelden sind die Chat-Sessions aus der vorherige
 4. Klassifiziere jeden Befund als: Observed / Inferred / Missing
 
 ## Plan
-_Wird durch Template 1-DEV befüllt._
+Diagnosis Report: `shared-context/docs/delivery/BUG-20260521-session-reload-after-auth-report.md`
+Root cause: `useSessionManager.ts:46–50` — Dependency-Array `[personaType, loadSessions]` ohne Auth-Signal.
+Nach Re-Login mit identischem Account ändert sich `personaType` nicht → Effekt feuert nicht → Sessions leer.
 
 ## Implement
-_Wird durch Template 2-DEV befüllt._
+Zwei Dateien, 4 Änderungen:
+1. `useSessionManager.ts` — `authSession?.user?.id` statt `supabase.auth.getSession()` intern (R-003)
+2. `useSessionManager.ts` — `authSession` in `useCallback`-Dep-Array + `useEffect`-Dep-Array
+3. `useSessionManager.ts` — Error-Logging: `console.error` + `toast.error` bei Lade-Fehler
+4. `Index.tsx` — `setPersona(null)` bei Logout vor early return
 
 ## Abschluss
-_Wird durch /close-task befüllt._
+
+**Status: DONE**
+Commit: `e813f42` (negotiation-buddy) — 2026-05-21
+Verified: tsc --noEmit clean ✓ | Spec-Review PASS (10/10) | Code-Quality APPROVED_WITH_DEBT
+Debt dokumentiert: (1) kein `loadError`-State für programmatischen Retry; (2) Token-Refresh triggert `loadSessions` ~1h — benign bei aktuellem Scale
+Docs updated: `shared-context/docs/delivery/BUG-20260521-session-reload-after-auth-report.md` (Diagnose)

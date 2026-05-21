@@ -1,7 +1,7 @@
 # BUG-20260521-slow-return-from-tool
 
 **Erstellt:** 2026-05-21
-**Status:** OPEN
+**Status:** DONE
 **Risiko:** P2
 **TARGET REPO:** negotiation-buddy
 **Layer:** Layer 0 — Frontend State / Performance
@@ -40,7 +40,25 @@ Nach dem Aufruf eines Tools (z. B. ZOPA-Rechner, Marktdaten) und der Rückkehr i
 4. Klassifiziere jeden Befund als: Observed / Inferred / Missing
 
 ## Plan
-_Wird durch Template 1-DEV befüllt._
+Diagnosis Report: `shared-context/docs/delivery/BUG-20260521-batna-lost-after-nav-diagnosis-report.md`
+Root cause: 14 useEffects in Index.tsx ohne Cleanup-Return. Effect Z. 318-398 startet
+2 API-Calls ohne AbortController → race conditions + stale state updates nach Navigation.
+
+## Implement
+`src/pages/Index.tsx` — AbortController zu Effect Z. 318-398:
+- `controller = new AbortController()` nach early-return guards
+- `signal: controller.signal` für beide fetch-Calls
+- AbortError-Guard in beiden catch-Blöcken
+- `return () => controller.abort()` als Cleanup
+
+## Abschluss
+
+**Status: DONE**
+Commit: `81e65d9` (negotiation-buddy) — 2026-05-21
+Verified: tsc --noEmit clean ✓ | Spec-Review PASS_WITH_NOTES | Code-Quality APPROVED_WITH_DEBT
+Debt-1: `finally` fires `setIsAnalyzingProgress(false)` even on abort (benign)
+Debt-2: `extractedInputs` stale closure in dep array (pre-existing, low severity)
+Docs: `BUG-20260521-batna-lost-after-nav-diagnosis-report.md`
 
 ## Implement
 _Wird durch Template 2-DEV befüllt._

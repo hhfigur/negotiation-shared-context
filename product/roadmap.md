@@ -20,6 +20,10 @@
   (frühestens Mitte Mai 2026). Unblockiert sobald metrics.md Baselines vorliegen.
 
 ## Next
+- NC-CONTEXT (P1): Negotiation Context Memory — robuste Extraktion + Tool-Sync
+  Phase A: one-shot Guard → retry-on-failure, Regex-Fallback für Zahlen
+  Phase B: Tool-Backwrite (ZOPA → extractedInputs)
+  Phase C: Guided Flow Erweiterung (Gegenseite-Zahlen optional abfragen)
 - AR-032: Stripe Webhook Handler (extern blockiert — wartet auf Stripe go-live)
 - NC-ONBOARDING: nach Telemetrie-Baseline-Erhebung
 

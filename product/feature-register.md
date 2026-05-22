@@ -14,6 +14,7 @@ Mapping: AR-xxx Einträge entsprechen den RFB-xxx Items im Audit-Backlog.
 ## Register
 | ID | Title | Type | Status | Affected Repos | Target Release | Notes |
 |---|---|---|---|---|---|---|
+| NC-CONTEXT | Negotiation Context Memory — kontinuierliche Extraktion + Tool-Sync | Feature | Qualified | negotiation-buddy, negotiationcoach-backend | TBD (R-2026-10 kandidiert) | Brief: product/briefs/NC-CONTEXT.md. P1: BATNA/Gegenseite one-shot extraction + Claude-abhängig. 3 Phasen: A) robuste Extraktion, B) Tool-Backwrite, C) Guided Flow. |
 | NC-PLAN-FIX | Verhandlungsplan-Trigger reparieren | Bug | In Delivery | negotiation-buddy | R-2026-09 | Brief: product/briefs/NC-PLAN-FIX.md. P1 — Plan wird nie generiert, gegenseite-Gate blockiert. |
 | NC-L2-UI | Market Data anzeigen + /api/enrich einbinden | Bug | In Delivery | negotiation-buddy, negotiationcoach-backend | R-2026-09 | Brief: product/briefs/NC-L2-UI.md. P1 — Layer-2-Daten nirgends sichtbar. |
 | NC-WAVE2 | Wave 2 Scope-Dokument erstellen | Enabler | Released | shared-context | R-2026-07 | Brief: product/briefs/NC-WAVE2.md. Released 2026-04-29, Commit 494d706. |

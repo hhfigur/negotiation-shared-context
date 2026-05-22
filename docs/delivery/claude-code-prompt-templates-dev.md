@@ -73,7 +73,14 @@ Erstelle einen Planungsvorschlag:
 1. Wahrscheinliche Fehlerursache (Dateiname + Funktion)
 2. Kleinste sichere Fix-Scope
 3. Exakt betroffene Dateien (vollständige Pfade)
-4. Seiteneffekte
+4. SIDE-EFFECT-CHECK (PFLICHT — vor jedem anderen Schritt):
+   Für jede betroffene Datei/Funktion:
+   a) grep -r "[geänderte Funktion/Export]" src/ → wer importiert/nutzt sie?
+   b) Kann die Änderung das Verhalten für andere Caller verändern? (ja/nein + Begründung)
+   c) Loop-Risiko bei useEffect/useCallback: verändert sich eine Dep durch den Effect selbst?
+   d) DB-Schema-Änderung: welche Inserts/Selects laufen auf betroffene Spalten/Tabellen?
+   e) API-Contract-Änderung: welche Frontend-Caller rufen diesen Endpoint auf?
+   → Erst wenn alle fünf Punkte beantwortet sind, weiter mit Schritt 5.
 5. Tests die danach laufen müssen
 6. Docs/Contracts die zu updaten sind
 7. Rollback-Strategie
@@ -121,6 +128,10 @@ Nach Implementierung:
   Tests ausgeführt und Ergebnis
   Docs aktualisiert
   Verbleibende Risiken
+  SIDE-EFFECT-VERIFIKATION (PFLICHT vor Commit):
+    - Alle aus Plan-Schritt 4 identifizierten Abhängigen: sind sie noch funktional?
+    - npx tsc --noEmit: 0 Fehler
+    - Render-Log-Check nach Deploy: keine neuen schema cache Errors
   Exakter Git-Commit-Befehl
 
 Schreibe Ergebnis in Abschnitt ## Implement der BUG_FILE.
@@ -170,11 +181,21 @@ Subagent-Konfiguration:
 Constraints (immer aktiv, nicht verhandelbar):
 
   Keine Logik oder Business-Regeln ins Frontend
-  Alle LLM-Calls: Railway Backend → Anthropic Claude (ADR-003)
-  Edge Functions: Gemini via Lovable AI Gateway
+  Alle LLM-Calls: Backend (Render.com) → Anthropic Claude (ADR-003)
+  Edge Functions: Gemini via Supabase AI Gateway
   Tier-Prüfungen immer serverseitig
-  Schema-Änderungen nur via Migration-Files
+  Schema-Änderungen nur via Migration-Files + supabase db push
   Layer-Abhängigkeiten: 0 → 1 → 2 → 3
+
+SIDE-EFFECT-CHECK (PFLICHT — Implementer führt aus, bevor Code geschrieben wird):
+  Für jede zu ändernde Datei/Funktion:
+  1. grep -r "[Funktion/Export]" src/ → alle Caller auflisten
+  2. Verändert die Änderung das Verhalten für ANDERE Caller? (explizit beantworten)
+  3. Loop-Risiko: verändert sich eine useEffect/useCallback-Dep durch den Effect selbst?
+  4. DB-Änderung: welche Inserts/Selects auf betroffene Tabelle/Spalte existieren?
+  5. API-Änderung: welche Frontend-Caller nutzen diesen Endpoint?
+  Ergebnis: "Side-Effect-Check: [Liste der Abhängigen] — alle geprüft, kein Regressionsrisiko"
+  Oder: "Side-Effect-Check: [Abhängiger X] könnte betroffen sein → fixe auch [X]"
 
 Nach bestandenem Code-Quality-Review:
 Schreibe Ergebnis in Abschnitt ## Implement der Brief-Datei.

@@ -1,7 +1,7 @@
-# Session Dump — 2026-05-22
+# Session Dump — 2026-05-22 (aktualisiert — zweiter Reset)
 
-Context-Reset nach einer langen Debug-Session (2 Tage).
-Enthält alle Commits seit session-dump-2026-05-21b.md.
+Context-Reset. Enthält alle Commits seit session-dump-2026-05-21b.md
+inkl. Nachträge aus der zweiten Session-Hälfte 2026-05-22.
 
 ---
 
@@ -58,64 +58,82 @@ angewendet. Render-Logs zeigten `Could not find the 'inputs' column` → erst na
 
 ---
 
+## Zusätzlich committed in zweiter Session-Hälfte (2026-05-22)
+
+### Bug geschlossen
+
+| Bug-ID | Titel | Commits | Repo |
+|---|---|---|---|
+| BUG-20260521-marktdaten-wrong-dialog | Marktdaten öffnet falschen Dialog | `298ea87` + `a566a4c` | negotiation-buddy |
+
+**Fix-Details:**
+- `SessionSidebar.tsx:101`: `route: "/strategy"` → `route: "/strategy?section=market"`
+- `StrategyGenerator.tsx`: `useLocation` + `useEffect([location.search, enriched])` → scrollt zu `id="market-data-section"`
+- Diagnosis Report: `3dbd50a` (shared-context)
+- Close-Stamp: `41b21a2` (shared-context)
+
+### Feature-Spezifikationen (Docs-only)
+
+| Dokument | Commit | Inhalt |
+|---|---|---|
+| `FEATURE-L2-CONTEXT-spec.md` | `9f12bcb` | Layer-2-Marktdaten-Kontextualisierung — Option B entschieden (Extraktion aus context_notes) |
+| `FEATURE-PLAN-MARKETDATA-spec.md` | `c9af220` | Marktdaten-Integration in Verhandlungsplan — neue `marketContext`-Sektion in PlanResponse/NegotiationPlan |
+
+### Navigation Review
+- Gestartet, dann bewusst zurückgestellt bis Weiterentwicklung beginnt
+
+---
+
 ## Offene Entscheidungen (nicht committed)
 
 | Thema | Status | Ausstehend |
 |---|---|---|
-| NC-CONTEXT Phase A | Qualified, kein Plan | Max. Re-Extraction-Count pro Session (Vorschlag: 5×) |
+| NC-CONTEXT Phase A | Qualified, kein Plan | Max. Re-Extraction-Count (Vorschlag: 5×); executedRef → Set of unfilled fields? |
 | NC-CONTEXT Phase C | Qualified | Guided Flow via Lovable oder CC? |
-| executedRef.current | Offen | Boolean → Set of unfilled fields? (eleganter) |
-| BUG-20260521-batna-lost-after-nav | OPEN | Root Cause: Claude 529 verhindert Erkennung → NC-CONTEXT Phase A löst das |
-| BUG-20260521-zopa-prefilled-values | OPEN P2 | Vorbefüllte ZOPA-Werte (eigenem Angebot) |
-| BUG-20260521-marktdaten-wrong-dialog | OPEN P2 | Routing-Bug: falscher Dialog öffnet |
+| FEATURE-L2-CONTEXT | Spec reviewed | Implementierung noch ausstehend (Schritt 0 für FEATURE-PLAN-MARKETDATA) |
+| FEATURE-PLAN-MARKETDATA | Spec reviewed | Plan-Display-Komponente = StrategyTab.tsx — Implementierung ausstehend |
+| BUG-20260521-batna-lost-after-nav | OPEN | Claude 529 verhindert Erkennung → NC-CONTEXT Phase A löst Root Cause |
+| BUG-20260521-zopa-prefilled-values | OPEN P2 | Vorbefüllte ZOPA-Werte aus vorheriger Session |
+| Navigation Review | Zurückgestellt | Wird als Dialog geführt wenn Weiterentwicklung beginnt |
 
 ---
 
 ## Nächster geplanter Schritt (exakt)
 
-**Empfehlung: P2-Bugs zuerst (schnell), dann NC-CONTEXT Phase A**
+**Empfehlung: BUG-zopa-prefilled-values, dann Feature-Implementierung in Reihenfolge**
 
-**Schritt 1 — BUG-20260521-marktdaten-wrong-dialog (P2, einfach)**
-`/bug-report` → Diagnose → Fix in `SessionSidebar.tsx`
-Symptom: Marktdaten-Tool öffnet falschen Dialog/Route
-
-**Schritt 2 — BUG-20260521-zopa-prefilled-values (P2)**
+**Schritt 1 — BUG-20260521-zopa-prefilled-values (P2)**
 `/bug-report` → Diagnose → Fix in `ZopaCalculator.tsx`
 Symptom: ZOPA-Rechner zeigt vorbefüllte Werte aus vorheriger Session
 
-**Schritt 3 — NC-CONTEXT Phase A (P1)**
-Brief: `product/briefs/NC-CONTEXT.md`
-Template 1-DEV → Plan → GO → Template 2b-DEV
-Scope: `useProgressEngine.ts` (one-shot → retry-on-failure) + Regex-Fallback
+**Schritt 2 — FEATURE-L2-CONTEXT Phase A implementieren (P1)**
+Brief: `docs/delivery/FEATURE-L2-CONTEXT-spec.md`
+Spec `9f12bcb` — Option B: Kontext-Extraktion aus context_notes in `marketContextExtractor.ts`
+Template 2b-DEV, nur negotiationcoach-backend
+
+**Schritt 3 — FEATURE-PLAN-MARKETDATA implementieren**
+Brief: `docs/delivery/FEATURE-PLAN-MARKETDATA-spec.md`
+Abhängig von Schritt 2 DONE
+5 Schritte: Backend planHelpers → EF generate-plan → Frontend apiClient + Index + StrategyTab
 
 ---
 
 ## Dateien aktuell geändert (alle committed, clean)
 
 ### negotiation-buddy (main, committed, up-to-date mit origin)
-- `src/pages/Index.tsx` — Session Guard + AbortController (967475d, b2dea9e)
-- `src/pages/WhatIfSimulator.tsx` — useCallback dep fix (001a3d0)
-- `src/hooks/useSessionManager.ts` — session_history + status filter (dc40096)
-- `src/lib/apiClient.ts` — 30s Timeout (b2dea9e)
-- `src/components/SessionSidebar.tsx` — isLoadingSessions Spinner (b2dea9e)
-- `supabase/migrations/20260522120000_add_missing_backend_columns.sql` — (1377104)
-- `CLAUDE.md` — Side-Effect-Check (43eefc7)
-- `MEMORY.md` — Session State (5fd40c7)
+- `src/components/SessionSidebar.tsx` — Marktdaten-Route fix (`298ea87`)
+- `src/pages/StrategyGenerator.tsx` — Scroll-Anker + enriched dep (`298ea87`, `a566a4c`)
+- *(Alle Fixes aus erstem Dump-Stand unverändert)*
 
 ### negotiationcoach-backend (main, committed, up-to-date mit origin)
-- `src/api/routes.ts` — inputs in DB + null-guard enrich (96ccc4d)
-- `MEMORY.md` — Session State (b7aec5e)
+- `tasks/lessons.md` — L-006 ergänzt (`d0e10af`)
+- *(Alle Fixes aus erstem Dump-Stand unverändert)*
 
 ### shared-context (main, committed, up-to-date mit origin)
-- `docs/delivery/bugs/BUG-20260521-session-save-retry-loop.md` — DONE
-- `docs/delivery/bugs/BUG-20260521-whatif-analyze-loop.md` — DONE
-- `docs/delivery/bugs/BUG-20260521-enrich-500.md` — DONE
-- `docs/delivery/BUG-20260521-session-save-retry-loop-diagnosis-report.md`
-- `docs/delivery/BUG-20260521-enrich-500-diagnosis-report.md`
-- `docs/delivery/claude-code-prompt-templates-dev.md` — Side-Effect-Check (1e22ead)
-- `product/briefs/NC-CONTEXT.md` — neu (ad12dea)
-- `product/feature-register.md` — NC-CONTEXT Qualified
-- `product/roadmap.md` — NC-CONTEXT in Next
+- `docs/delivery/bugs/BUG-20260521-marktdaten-wrong-dialog.md` — DONE (`41b21a2`)
+- `docs/delivery/BUG-20260521-marktdaten-wrong-dialog-diagnosis-report.md` (`3dbd50a`)
+- `docs/delivery/FEATURE-L2-CONTEXT-spec.md` — neu (`9f12bcb`)
+- `docs/delivery/FEATURE-PLAN-MARKETDATA-spec.md` — neu, final (`c9af220`)
 
 ---
 
@@ -123,20 +141,21 @@ Scope: `useProgressEngine.ts` (one-shot → retry-on-failure) + Regex-Fallback
 
 | Kriterium | Status | Anmerkung |
 |---|---|---|
-| Verhandlungsplan erscheint nach Chat-Flow | ✅ | effectiveProgress-Trigger gefixt (frühere Session) |
-| Market-Data-Werte im UI sichtbar | ⚠️ | enrich-500 gefixt, aber UI-Anzeige noch nicht end-to-end verifiziert |
+| Verhandlungsplan erscheint nach Chat-Flow | ✅ | effectiveProgress-Trigger gefixt |
+| Market-Data-Werte im UI sichtbar | ⚠️ | enrich-500 gefixt; end-to-end noch nicht verifiziert |
 | TypeCheck negotiation-buddy: 0 Fehler | ✅ | verifiziert nach jedem Fix |
 | Session-Save ohne Fehler | ✅ | inputs-Migration applied, session_history korrekt |
-| BATNA aus Chat erkannt | ⚠️ | Claude 529 verhindert zuverlässige Erkennung → NC-CONTEXT Phase A nötig |
-| Sessions nach Re-Login sichtbar | ✅ | BUG-session-reload-after-auth gefixt (e813f42, frühere Session) |
+| BATNA aus Chat erkannt | ⚠️ | NC-CONTEXT Phase A nötig |
+| Sessions nach Re-Login sichtbar | ✅ | e813f42 gefixt |
+| Marktdaten-Tool öffnet korrekte Sektion | ✅ | `298ea87` + `a566a4c` |
 
 ---
 
 ## Kontext für nächste Session
 
 ```
-TARGET REPO: negotiation-buddy (primär für P2-Bugs + NC-CONTEXT)
-TARGET REPO: negotiationcoach-backend (NC-CONTEXT Phase A — useProgressEngine.ts)
+TARGET REPO: negotiation-buddy (P2-Bug zopa-prefilled-values)
+TARGET REPO: negotiationcoach-backend (FEATURE-L2-CONTEXT Implementierung)
 ```
 
 Supabase: `gpllrgkuozytyrmpfwbb` (eigenes Projekt, fully migrated)
@@ -145,8 +164,10 @@ Backend: `https://negotiationcoach-backend.onrender.com` (Render.com, auto-deplo
 Frontend: `https://negotiation-buddy.onrender.com` (Render.com, auto-deploy)
 Lokale Dev: `npm run dev` (Port 8080, VITE_API_URL nicht gesetzt → Production Backend)
 
-**Wichtige Erkenntnisse aus dieser Session:**
-- Side-Effect-Check ist jetzt Pflicht (Memory + Templates + CLAUDE.md)
-- Backend-Migrations MÜSSEN im Frontend-Repo dupliziert + `supabase db push` ausgeführt werden
-- React Context-Funktionen ohne `useCallback` als useCallback/useEffect-Dep → Endlos-Loop
-- Render.com Free Tier: Cold Starts 30–60s → 30s-Timeout in apiCall schützt davor
+**Plan-Display-Komponente (geklärt in dieser Session):**
+`NegotiationPlan` aus `StrategyTab.tsx` ist der kanonische Frontend-Typ.
+Plan wird gerendert in `StrategyTab.tsx` (Haupt-View) + `StrategyDialog.tsx` (Dialog).
+`StrategyGenerator.tsx` rendert NUR AnalysisContext-Daten — nicht NegotiationPlan.
+
+**EF generate-plan Input (heute):** `{ session_id, progress_status, messages }` — kein enrichedAnalysis.
+`enriched` in Index.tsx bereits verfügbar — nur noch 1-Zeilen-Conditional für Übergabe.

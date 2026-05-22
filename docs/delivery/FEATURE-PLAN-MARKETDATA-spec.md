@@ -3,35 +3,34 @@
 
 **Erstellt:** 2026-05-22
 **Status:** PROPOSED — Review durch Delivery Controller ausstehend
+**Trigger:** Delivery Controller Entscheidung 2026-05-22
 **Voraussetzung:** FEATURE-L2-CONTEXT-spec.md committed (`9f12bcb`), Option B entschieden
-**Repos:** negotiationcoach-backend (primary), negotiation-buddy (EF + Frontend), shared-context (Docs)
 
 ---
 
-## Abschnitt 1 — IST-Analyse (Observed)
+## Abschnitt 1 — IST-Analyse
 
-### 1.1 Aktuelle PlanRequest-Struktur
+### 1.1 Aktuelle PlanRequest-Struktur (Observed)
 
-**Observed** — kein explizites `PlanRequest`-Interface im Backend-Code.
-`buildPlanSystemPrompt()` in `src/api/planHelpers.ts` nimmt lose Parameter entgegen:
+**Observed** — `docs/contracts/frontend-backend.md:73-81`:
 
 ```typescript
-// planHelpers.ts:1-6
-export function buildPlanSystemPrompt(
-  messages: { role: string; content: string }[],
-  extractedInputs: Record<string, unknown>,
-  zopaResult?: Record<string, unknown>,
-  analysis?: Record<string, unknown>,    // AnalysisResult — Layer-1-Ergebnis
-): string
+// POST /api/plan Request (Express Backend — aktiver Contract, inaktiver Pfad)
+{
+  messages?: ChatMessage[];
+  extractedInputs: ExtractedInputs;
+  zopaResult?: object;
+  analysis?: object;    // AnalysisResult (Layer 1) — kein EnrichedAnalysisResult
+}
 ```
 
-`EnrichedAnalysisResult` ist **kein Parameter** von `buildPlanSystemPrompt()`. **Missing.**
+`EnrichedAnalysisResult` (Layer 2) ist **kein Parameter** der PlanRequest-Struktur. **Missing.**
 
-Das Frontend-seitige `generatePlan()` in `src/lib/apiClient.ts:115-128` (UNUSED — zero
-active callers) hat eine etwas präzisere Signatur:
+Das `analysis`-Feld ist als `object` typisiert — kein konkreter Typ.
+Selbst wenn `EnrichedAnalysisResult` übergeben würde, wäre es strukturell nicht deklariert.
 
+**Observed** — `src/lib/apiClient.ts:115-128` (UNUSED):
 ```typescript
-// apiClient.ts:115-128
 export async function generatePlan(
   messages: { role: 'user' | 'assistant'; content: string }[],
   extractedInputs: ExtractedInputs,
@@ -40,11 +39,9 @@ export async function generatePlan(
   accessToken?: string
 ): Promise<PlanResponse>
 ```
+`enrichedAnalysis` fehlt auch hier. Dieser Pfad ist heute dead code (zero active callers).
 
-`enrichedAnalysis` fehlt auch hier. **Missing.** Die Funktion ist laut ADR-005-Kommentar der
-Migrationsziel-Pfad (RFB-004 Phase C), aber heute nicht aktiv.
-
-### 1.2 Aktuelle PlanResponse-Struktur
+### 1.2 Aktuelle PlanResponse-Struktur (Observed)
 
 **Backend** (`src/api/planHelpers.ts:69-76`):
 ```typescript
@@ -58,13 +55,295 @@ export interface PlanResponse {
 }
 ```
 
-**Frontend** (`src/lib/apiClient.ts:86-99`):
+**Frontend — kanonischer Typ** (`src/components/StrategyTab.tsx:40-56`):
 ```typescript
-interface PlanObjection {
-  objection: string;
-  response: string;
-  // DRIFT: title fehlt — Backend liefert title, Frontend-Typ ignoriert ihn
+export type NegotiationPlan = {
+  summary: string;
+  situationAnalysis: string;
+  opening: string;
+  objections: { title?: string; objection: string; response: string }[];
+  recommendations: string[];
+  nextStep: string;
+  // Legacy fallback fields (Dead Code — never populated by active paths)
+  executive_summary?: string;
+  situation_analysis?: string;
+  opening_script?: string;
+  // EF-spezifisches Zusatzfeld — nicht im Backend PlanResponse-Interface:
+  numbers?: {
+    first_offer?: string;
+    target?: string;
+    compromise_zone?: string;
+  };
+};
+```
+
+**Frontend — apiClient.ts PlanResponse** (`src/lib/apiClient.ts:92-99`):
+```typescript
+export interface PlanResponse {
+  summary: string;
+  situationAnalysis: string;
+  opening: string;
+  objections: PlanObjection[];  // { objection: string; response: string } — title fehlt
+  recommendations: string[];
+  nextStep: string;
 }
+```
+
+**Observed Drifts:**
+- `NegotiationPlan` (StrategyTab) vs. `PlanResponse` (apiClient): `numbers?` nur in `NegotiationPlan`
+- `PlanObjection.title`: in `planHelpers.ts` Pflicht, in `apiClient.ts` fehlt, in `StrategyTab` optional
+- `StrategyTab.NegotiationPlan` ist der tatsächlich gerenderte Typ — nicht `PlanResponse`
+
+**Marktdaten-Sektion:** In keiner der drei Deklarationen vorhanden. **Missing.**
+
+### 1.3 Aktiver Generierungspfad — generate-plan Edge Function (Observed)
+
+**Observed** — `supabase/functions/generate-plan/index.ts:49`:
+```typescript
+// EF Input heute:
+const { session_id, progress_status, messages } = await req.json();
+// Nicht empfangen: extractedInputs, zopaResult, analysis, enrichedAnalysis
+```
+
+**Observed** — EF Prompt-Aufbau (`generate-plan/index.ts:61-71`):
+```typescript
+const contextLines = points.map((key) => {
+  const val = progress_status[key];
+  const summary = typeof val === "object" ? val?.summary || "" : "";
+  return `${key}: ${summary}`;
+}).join("\n");
+// Prompt-Kontext: NUR progress_status-Summaries + letzte 15 Messages
+// Kein ZOPA, kein Score, KEIN Marktdaten-Block
+```
+
+**Kein Marktdaten-Kontext im Prompt. Observed.**
+
+**Typ-Alignment:** Die EF hat kein TypeScript-Interface für Input oder Output — native JSON-Deserialisierung via `await req.json()`. Das Response-Objekt (`plan`) wird inline zusammengebaut (Zeile 144-152) und entspricht näherungsweise `NegotiationPlan` inklusive `numbers`.
+
+**Observed** — Vertrag in `docs/contracts/frontend-backend.md:540-565`:
+Die EF empfängt `{ session_id?, progress_status, messages? }` und gibt `{ plan: {...} }` zurück.
+`enrichedAnalysis` ist **nicht im Contract deklariert**. **Missing.**
+
+### 1.4 Rendering in StrategyDialog.tsx und StrategyTab.tsx (Observed)
+
+**Observed** — `src/components/StrategyTab.tsx:155-330` (Plan-Rendering-Hauptkomponente):
+- Sektion 1: `summary` — Situationszusammenfassung
+- Sektion 2: `situationAnalysis` — Detailanalyse der 6 Progress-Punkte
+- Sektion 3: Zahlen/Angebote — `numbers.first_offer`, `numbers.target`, `numbers.compromise_zone`
+- Sektion 4: `opening` — Eröffnungssatz
+- Sektion 5: `objections` — Einwände & Antworten
+- Sektion 6: `recommendations` — Empfehlungen
+- Sektion 7: `nextStep` — Nächste Aktion
+
+**Kein Platzhalter für Marktdaten. Missing.**
+
+**Observed** — `src/components/StrategyDialog.tsx:57-78`: Rendert denselben Plan als Dialog-View. Nutzt `NegotiationPlan` aus `StrategyTab`.
+
+**Observed** — `src/pages/Index.tsx:876`:
+```typescript
+plan={negotiationPlan}  // NegotiationPlan | null
+```
+`negotiationPlan` wird in `StrategyTab` via `BottomBar` als Prop übergeben.
+
+**Observed** — `StrategyGenerator.tsx` rendert **nicht** `NegotiationPlan` — nur AnalysisContext-Daten (`analysis`, `enriched`, `zopaResult`). Kein Change dort nötig.
+
+### 1.5 Tier-Gate aktuell (Observed)
+
+**Observed** — `docs/contracts/frontend-backend.md:577`:
+```
+Tier Gate: Present, inactive — commented stub in `generate-plan/index.ts`.
+Uncomment `if (tier === 'free') return 403` block to enforce a paid-tier requirement.
+```
+
+**Observed:** Die EF löst Tier via JWT auf (`personaType → tier`, Zeile 44-47), nutzt ihn aber für keinen Gate. Jeder authentifizierte User kann heute einen Plan generieren. **Tier-Gate ist inaktiv.**
+
+**Implikation für Marktdaten-Integration:** Marktdaten im Plan sind Layer-2-Inhalte (kmu/profi). Das Tier-Gate muss für `marketContext` aktiviert oder neu implementiert werden. **Proposed:** `marketContext` wird nur befüllt wenn Tier `kmu` oder `profi` UND Layer-2-Daten vorhanden.
+
+---
+
+## Abschnitt 2 — Integration Design
+
+### Empfehlung: **Option A — Neue dedizierte Sektion `marketContext`**
+
+**Begründung (Proposed):**
+1. **Testbarkeit:** `marketContext: null` vs. `marketContext: {...}` ist curl-testbar.
+   Einweben in `summary`/`recommendations` wäre unsichtbar und schwer zu verifizieren.
+2. **Tier-Gate-Klarheit:** `null` = "kein Zugang" (explizites Signal an Frontend für Upgrade-Hinweis).
+   Fehlendes Feld = "Feature nicht implementiert" (andere Semantik).
+3. **Frontend-Rendering:** `StrategyTab.tsx` kann eine eigene Sektion konditionell rendern
+   und einen Upgrade-CTA zeigen wenn `marketContext === null`.
+4. **Rückwärtskompatibilität:** `marketContext?` ist optional →
+   bestehende Pfade ohne `enrichedAnalysis` brechen nicht.
+
+Option B (Einweben ohne Contract-Change) wird **abgelehnt:** Marktdaten im Plan müssen
+explizit und tier-gebunden sein — implizites Einweben macht das Tier-Gate unimplementierbar.
+
+### 2.1 Prompt-Design (Option A)
+
+**Proposed Erweiterung der EF und `buildPlanSystemPrompt()`:**
+
+```
+// Marktdaten-Block — nur eingefügt wenn enrichedAnalysis vorhanden
+// UND market_data_source !== 'none':
+
+## Marktdaten-Kontext (kmu/profi)
+Marktmedian: {market_median}€
+Marktspanne: {market_range_min}€ – {market_range_max}€
+Reality Score: {reality_score}% ({über/unter/auf Höhe des} Marktmedians)
+Markteinordnung: {market_context_summary}
+Datenquelle: {market_data_source}
+
+Füge dem JSON-Output eine "marketContext"-Sektion hinzu:
+"marketContext": {
+  "market_position": "1 Satz: Position des Ziels relativ zum Median",
+  "market_range_summary": "1-2 Sätze: Marktspanne + Kontext",
+  "reality_assessment": "1-2 Sätze: Ist die Forderung marktgerecht?",
+  "data_source": "{market_data_source}"
+}
+```
+
+**Fallback wenn kein `enrichedAnalysis` oder `market_data_source === 'none'`:**
+```
+Keine Marktdaten verfügbar. Setze "marketContext": null im JSON-Output.
+Halluziniere keine Marktwerte.
+```
+
+**Konkretes Beispiel — Gehalt Senior SWE München:**
+
+*Prompt-Block mit Marktdaten:*
+```
+## Marktdaten-Kontext (kmu/profi)
+Marktmedian: 88.000€
+Marktspanne: 72.000€ – 105.000€
+Reality Score: +5,9% (leicht über dem Marktmedian)
+Markteinordnung: Senior Software Engineer, SaaS, München, 200 MA — Spanne 78–105k€ p.a.
+Datenquelle: knowledge_graph
+```
+
+*Erwartetes Claude-Output:*
+```json
+"marketContext": {
+  "market_position": "Ihr Ziel von 44.000€ liegt 50% unter dem Marktmedian von 88.000€ für Senior SWE in München.",
+  "market_range_summary": "Typische Vergütung für Ihre Position: 72.000–105.000€ Jahresbrutto. Ihr aktuelles Gehalt und Ihr Ziel liegen deutlich darunter.",
+  "reality_assessment": "Der Markt rechtfertigt eine Forderung von 75.000–88.000€. Ihre Verhandlungsposition ist stärker als gedacht.",
+  "data_source": "knowledge_graph"
+}
+```
+
+### 2.2 Tier-Gate-Design (Proposed)
+
+**Proposed:** Tier-Gate sitzt im **Request-Aufbau** (Index.tsx) — nicht im Prompt-Builder.
+
+```typescript
+// Index.tsx — erweiterter generatePlan-Call (Proposed)
+body: JSON.stringify({
+  session_id: activeSessionId,
+  progress_status: effectiveProgress,
+  messages: messages.slice(-15).map(...),
+  // enrichedAnalysis nur wenn kmu/profi UND Daten vorhanden:
+  ...(enriched
+    && enriched.market_data_source !== 'none'
+    && (tier === 'kmu' || tier === 'profi')
+    ? { enrichedAnalysis: enriched }
+    : {}),
+})
+```
+
+Der **Prompt-Builder** prüft nur ob `enrichedAnalysis` übergeben wurde:
+- `enrichedAnalysis` vorhanden + `market_data_source !== 'none'` → Marktdaten-Block
+- Sonst → Fallback-Block ("marketContext: null")
+
+**Begründung:** Tier ist bereits im Frontend bekannt (aus JWT via useAnalysis/useAuth).
+Redundante Backend-Prüfung ist optional — das bestehende `/api/enrich`-Gate
+(`requireTier('kmu')`) stellt bereits sicher, dass `enriched` nur für kmu/profi befüllt ist.
+
+**Observed** — `enriched: EnrichedData | null` ist bereits in `useAnalysis()` verfügbar
+und in `Index.tsx:78` destrukturiert. Das Conditional braucht nur einen `tier`-Check.
+
+### 2.3 Abhängigkeit zu FEATURE-L2-CONTEXT-spec.md
+
+**Status: ENTSCHIEDEN** — FEATURE-L2-CONTEXT-spec.md committed `9f12bcb`, Option B gewählt.
+
+**Felder aus `EnrichedAnalysisResult` die in den Plan-Prompt übergeben werden:**
+```typescript
+enriched.market_median         // Pflicht — Kern-Marktdatum
+enriched.market_range_min      // Pflicht — Spanne
+enriched.market_range_max      // Pflicht — Spanne
+enriched.reality_score         // Pflicht — Positionierung
+enriched.market_context_summary // Optional — AI-generierte Einordnung
+enriched.market_data_source    // Pflicht — Quellen-Transparenz
+```
+
+**Inferred:** Nach FEATURE-L2-CONTEXT-Implementierung (Option B: Kontext-Extraktion
+aus `context_notes`) werden diese Felder präziser und kontext-spezifischer befüllt.
+Die Plan-Marktdaten werden dadurch automatisch qualitativ hochwertiger — kein weiterer
+Code-Change in FEATURE-PLAN-MARKETDATA nötig.
+
+---
+
+## Abschnitt 3 — Contract-Änderungen
+
+### 3.1 PlanRequest-Erweiterung (Proposed)
+
+```typescript
+// Proposed — neue PlanRequest-Struktur (Backend + EF)
+interface PlanRequest {
+  messages?: ChatMessage[];
+  extractedInputs: ExtractedInputs;
+  zopaResult?: object;
+  analysis?: object;               // AnalysisResult (Layer 1) — unverändert
+  enrichedAnalysis?: EnrichedAnalysisResult;  // NEU — optional, rückwärtskompatibel
+}
+```
+
+**Rückwärtskompatibel:** `optional` → Callers ohne `enrichedAnalysis` brechen nicht.
+
+**Import:** `EnrichedAnalysisResult` aus `src/types/index.ts` (negotiationcoach-backend)
+bzw. als lokaler Typ in `src/lib/apiClient.ts` (negotiation-buddy, kein shared package).
+
+### 3.2 PlanResponse-Erweiterung (Option A) — alle drei Deklarationen
+
+**Neues Interface:**
+```typescript
+// Proposed — neu in planHelpers.ts oder types.ts
+interface MarketContextSection {
+  market_position: string;       // "Ihr Ziel liegt X% über/unter dem Marktmedian."
+  market_range_summary: string;  // "Typische Spanne: 72–105k€ für diese Position."
+  reality_assessment: string;    // "Die Forderung ist marktgerecht/aggressiv/..."
+  data_source: 'web_search' | 'knowledge_graph' | 'none';
+}
+```
+
+**Backend — `src/api/planHelpers.ts` (Proposed):**
+```typescript
+export interface PlanResponse {
+  summary: string;
+  situationAnalysis: string;
+  opening: string;
+  objections: Array<{ title: string; objection: string; response: string }>;
+  recommendations: string[];
+  nextStep: string;
+  marketContext?: MarketContextSection | null;  // NEU
+}
+```
+
+**Frontend — `src/components/StrategyTab.tsx:NegotiationPlan` (Proposed):**
+```typescript
+export type NegotiationPlan = {
+  summary: string;
+  situationAnalysis: string;
+  opening: string;
+  objections: { title?: string; objection: string; response: string }[];
+  recommendations: string[];
+  nextStep: string;
+  numbers?: { first_offer?: string; target?: string; compromise_zone?: string };
+  marketContext?: MarketContextSection | null;  // NEU
+  // Legacy fields unverändert...
+};
+```
+
+**Frontend — `src/lib/apiClient.ts:PlanResponse` (Proposed):**
+```typescript
 export interface PlanResponse {
   summary: string;
   situationAnalysis: string;
@@ -72,467 +351,258 @@ export interface PlanResponse {
   objections: PlanObjection[];
   recommendations: string[];
   nextStep: string;
+  marketContext?: MarketContextSection | null;  // NEU
 }
 ```
 
-**Observed Drift:** `PlanObjection.title` ist im Backend-Typ vorhanden, im Frontend-Typ nicht
-deklariert. Pre-existing Drift, kein Blocker für dieses Feature.
+**Warum kein shared package:** Observed — kein shared package in dieser Architektur.
+Typ wird in beiden Repos separat deklariert. Vorhandener Präzedenzfall: `PlanResponse`
+existiert bereits in zwei Repos unabhängig (documented in frontend-backend.md:101).
 
-**Marktdaten-Sektion:** In keiner der beiden Deklarationen vorhanden. **Missing.**
+### 3.3 generate-plan Edge Function Contract (Proposed)
 
-**Edge Function Response** (`supabase/functions/generate-plan/index.ts:144-152`):
+**Delta Request:**
+```
+Vorher: { session_id?, progress_status, messages? }
+Nachher: { session_id?, progress_status, messages?, enrichedAnalysis?: EnrichedAnalysisResult }
+```
+
+**Delta Response:**
+```
+Vorher:  { plan: { summary, situationAnalysis, opening, objections, recommendations, nextStep, numbers? } }
+Nachher: { plan: { ..., marketContext?: MarketContextSection | null } }
+```
+
+**Rückwärtskompatibilität:** Alle neuen Felder optional — Clients ohne `enrichedAnalysis`
+erhalten `marketContext: null`.
+
+### 3.4 frontend-backend.md Update-Anforderungen
+
+**POST /api/plan (Express Backend — kanonisch, ADR-005):**
+
+Delta Request — hinzufügen:
 ```typescript
-const plan = {
-  summary: rawPlan.summary || rawPlan.executive_summary || "",
-  situationAnalysis: rawPlan.situationAnalysis || rawPlan.situation_analysis || "",
-  opening: rawPlan.opening || rawPlan.opening_script || "",
-  objections: rawPlan.objections || [],
-  recommendations: rawPlan.recommendations || [],
-  nextStep: rawPlan.nextStep || "",
-  numbers: rawPlan.numbers || {},   // Zusatzfeld — nicht in PlanResponse Backend-Typ
+enrichedAnalysis?: EnrichedAnalysisResult;  // optional — Layer 2 Output für Marktdaten-Sektion
+```
+
+Delta Response — hinzufügen:
+```typescript
+marketContext?: {
+  market_position: string;
+  market_range_summary: string;
+  reality_assessment: string;
+  data_source: 'web_search' | 'knowledge_graph' | 'none';
+} | null;
+// null wenn Tier < kmu oder market_data_source === 'none'
+```
+
+**POST /functions/v1/generate-plan (Edge Function — aktiver Pfad):**
+
+Delta Request — hinzufügen:
+```typescript
+enrichedAnalysis?: {
+  market_median: number;
+  market_range_min: number;
+  market_range_max: number;
+  reality_score: number;
+  market_context_summary?: string;
+  market_data_source: 'web_search' | 'knowledge_graph' | 'none';
 };
 ```
 
-`numbers` ist ein Edge-Function-spezifisches Zusatzfeld das weder im Backend- noch im
-Frontend-PlanResponse-Interface deklariert ist. **Observed Drift (pre-existing).**
-
-### 1.3 Aktiver Generierungspfad (generate-plan Edge Function)
-
-**Observed** — `src/pages/Index.tsx:441-473`:
-
-```typescript
-// Index.tsx:445-457 — aktiver Plan-Generierungsaufruf
-const resp = await fetch(
-  `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-plan`,
-  {
-    method: "POST",
-    headers: { Authorization: `Bearer ${token ?? VITE_SUPABASE_PUBLISHABLE_KEY}` },
-    body: JSON.stringify({
-      session_id: activeSessionId,
-      progress_status: effectiveProgress,
-      messages: messages.map((m) => ({ role: m.role, content: m.content })),
-      // enriched ist NICHT enthalten obwohl es in useAnalysis() verfügbar ist
-    }),
-  }
-);
-```
-
-Die Edge Function empfängt heute (`generate-plan/index.ts:49`):
-```typescript
-const { session_id, progress_status, messages } = await req.json();
-```
-
-**Nicht empfangen:** `extractedInputs`, `zopaResult`, `analysis`, `enrichedAnalysis`. **Missing.**
-
-**Observed — Prompt-Aufbau in generate-plan/index.ts (kein Marktdaten-Kontext):**
-
-```typescript
-// generate-plan/index.ts:62-66 — aktueller Kontext-Aufbau
-const contextLines = points.map((key) => {
-  const val = progress_status[key];
-  const summary = typeof val === "object" ? val?.summary || "" : "";
-  return `${key}: ${summary}`;
-}).join("\n");
-```
-
-Der Prompt nutzt ausschliesslich `progress_status`-Felder und die letzten 15 Chat-Messages.
-Kein Marktdaten-Kontext. **Kein Marktdaten-Block im Prompt vorhanden. Missing.**
-
-### 1.4 Rendering in StrategyGenerator.tsx
-
-**Observed** — `StrategyGenerator.tsx` rendert **nicht** die `PlanResponse`. Es liest
-ausschliesslich aus `AnalysisContext`:
-
-| Sektion | Datenquelle | Rendering |
-|---|---|---|
-| ZOPA-Ergebnis | `zopaResult` aus AnalysisContext | Card mit ZOPA-Range, Nash, Score |
-| Ausgangslage | `displayInputs` (inputs \|\| extractedInputs) | Card mit Zahlen |
-| Markt-Vergleich | `enriched.reality_score` | Progress-Bar |
-| Marktlage | `enriched.*` | Card mit Median, Range, Summary |
-| Empfehlungen | `analysis.recommendations` | Liste |
-| Strategie-Score | `analysis.strategy_score` | Card mit Score-Tiers |
-
-**Kein Platzhalter für Plan-spezifische Marktdaten.** `PlanResponse` wird in
-`StrategyGenerator.tsx` nicht importiert oder genutzt. **Observed.**
-
-**Inferred:** Die `PlanResponse` (aus `negotiationPlan` State) wird in einer anderen
-Komponente gerendert — wahrscheinlich `StrategyDialog.tsx` oder `StrategyTab.tsx`.
-Die Marktdaten-Erweiterung muss dort ansetzen, nicht in `StrategyGenerator.tsx`.
-
-### 1.5 Datenpfad EnrichedAnalysisResult → Frontend heute
-
-**Observed** — `AnalysisContext.tsx:27`:
-```typescript
-enriched: EnrichedData | null;
-```
-
-`EnrichedData` wird aus `@/lib/types` importiert. **Inferred:** `EnrichedData` entspricht
-`EnrichedAnalysisResult` aus dem Backend (selbe Felder: `market_median`, `reality_score`,
-`market_data_source`, etc.) — zwei separate Typ-Deklarationen ohne Shared-Package.
-
-**Observed** — `AnalysisContext.tsx:177,187`:
-```typescript
-// setResult() und setAnalysisResult() akzeptieren enriched:
-enriched: e ?? null,
-```
-
-**Observed** — `Index.tsx:78`:
-```typescript
-const { ..., enriched, ... } = useAnalysis();
-```
-
-`enriched` ist im Index.tsx-Scope verfügbar. **Observed.**
-
-**Observed GAP** — `Index.tsx:453-457`: `enriched` wird im `generatePlan`-Aufruf
-NICHT in den Request-Body aufgenommen. Die Daten sind vorhanden — sie werden nur
-nicht weitergeleitet. **Kein Blocker — einfach behebbar (1-2 Zeilen).**
+Delta Response — `plan`-Objekt um `marketContext` erweitern (wie oben).
 
 ---
 
-## Abschnitt 2 — Entschiedene Integrationsstrategie
+## Abschnitt 4 — Frontend-Integration
 
-### 2.1 Gewählte Integrationsstrategie — neue optionale Sektion `marketContext`
+### 4.1 Datenpfad zu generate-plan (Observed)
 
-**Begründung für neue explizite Sektion trotz Option-B-Analogie (Proposed):**
+```
+/api/enrich Response
+  → setAnalysisResult(sessionId, analysis, enrichedData)  [ZopaCalculator.tsx]
+  → AnalysisContext.enriched: EnrichedData | null          [Observed]
+  → Index.tsx: const { enriched } = useAnalysis()          [Observed, Zeile 78]
+  → Index.tsx: generatePlan() closure                       [Zeile 441-473]
+     → aktuell: enriched NICHT übergeben                   [Observed GAP]
+     → proposed: enrichedAnalysis: enriched (conditional)
+```
 
-Option B in FEATURE-L2-CONTEXT war: "Kontext intern extrahieren, kein API-Contract-Change".
-Für den Verhandlungsplan gilt eine andere Abwägung:
+**Observed:** `enriched` ist in Index.tsx im Scope und bereits für die Marktdaten-Card
+(Zeile 841-850) genutzt. Es ist **kein neues State-Feld** nötig — nur Weitergabe.
 
-1. **Testbarkeit:** Eine explizite `marketContext`-Sektion im Plan ist curl-testbar und
-   reviewbar. Implizites Einweben in `recommendations` wäre unsichtbar.
-2. **Tier-Gate:** Null-Signal muss explizit möglich sein — `marketContext: null` sagt
-   "keine Marktdaten" eindeutig, `marketContext: undefined` (Feld fehlt) sagt
-   "Feature nicht implementiert". Der Unterschied ist semantic.
-3. **Frontend-Rendering:** StrategyDialog/StrategyTab muss wissen ob Marktdaten vorhanden
-   sind um eine eigene Sektion zu rendern oder einen Upgrade-Hinweis zu zeigen.
-4. **Rückwärtskompatibilität:** `marketContext?: MarketContextSection | null` ist optional →
-   bestehende Code-Pfade ohne `enrichedAnalysis` brechen nicht.
+### 4.2 generatePlan()-Erweiterung in Index.tsx und apiClient.ts (Proposed)
 
-**Proposed Interface:**
-
+**Index.tsx — Fetch-Call (aktiver Pfad, Proposed):**
 ```typescript
-// Neu — in planHelpers.ts oder types/index.ts
-interface MarketContextSection {
-  market_position_summary: string;
-  // z.B. "Ihr Ziel liegt 5,9% über dem Marktmedian für Senior SWE in München."
-  market_range_summary: string;
-  // z.B. "Typische Spanne: 78.000–105.000€ Jahresbrutto für diese Position."
-  reality_assessment: string;
-  // z.B. "Ihre Forderung ist für Senior-Level mit 5J Erfahrung im SaaS-Markt realistisch."
-  data_source: 'web_search' | 'knowledge_graph' | 'none';
-}
+// Tier prüfen vor Übergabe (enriched ist nur für kmu/profi befüllt,
+// da /api/enrich requireTier('kmu') hat — defensives Conditional):
+const marketData = enriched?.market_data_source !== 'none' ? enriched : null;
 
-// Erweitertes PlanResponse
-interface PlanResponse {
-  summary: string;
-  situationAnalysis: string;
-  opening: string;
-  objections: Array<{ title: string; objection: string; response: string }>;
-  recommendations: string[];
-  nextStep: string;
-  marketContext?: MarketContextSection | null;
-  // Optional: rückwärtskompatibel mit Code ohne enrichedAnalysis
-  // Nullable: explizit "keine Marktdaten" vs. "Feld nicht vorhanden"
-}
-```
-
-**Warum `optional AND nullable`:**
-- `undefined` (Feld fehlt): Backend hat Feature noch nicht implementiert oder
-  kein `enrichedAnalysis` übergeben → UI rendert nichts, kein Upgrade-Hinweis
-- `null` (Feld explizit gesetzt): Backend hat geprüft, Tier reicht nicht oder
-  market_data_source === 'none' → UI kann Upgrade-Hinweis zeigen
-
-### 2.2 Erweitertes PlanRequest
-
-**Proposed:**
-
-```typescript
-// planHelpers.ts — Parameter-Erweiterung
-interface PlanRequest {
-  messages?: ChatMessage[];
-  extractedInputs: ExtractedInputs;
-  zopaResult?: object;
-  analysis?: object;
-  enrichedAnalysis?: EnrichedAnalysisResult;  // NEU — optional, rückwärtskompatibel
-}
-```
-
-**Begründung für optional:** Plan wird auch ohne vorherigen Enrich-Call generiert —
-z. B. für free/privat-Tier oder wenn Enrich fehlschlägt. `enrichedAnalysis: undefined`
-bedeutet `marketContext: null` im Response.
-
-### 2.3 Prompt-Design — Marktdaten-Block
-
-**Proposed Erweiterung von `buildPlanSystemPrompt()` und EF-Prompt:**
-
-```
-// Wird eingefügt wenn enrichedAnalysis vorhanden UND market_data_source !== 'none':
-
-## Marktdaten-Kontext (kmu/profi-Tier)
-Marktmedian: {market_median}€
-Marktspanne: {market_range_min}€ – {market_range_max}€
-Reality Score: {reality_score}% ({über/unter/im Bereich des} Marktmedians)
-Markteinordnung: {market_context_summary}
-Datenquelle: {market_data_source}
-
-Ergänze deine Antwort um eine "marketContext"-Sektion im JSON:
-"marketContext": {
-  "market_position_summary": "1 präziser Satz: Wie liegt das Ziel (own_target) zum Marktmedian?",
-  "market_range_summary": "1 Satz: Typische Marktspanne für diesen Kontext.",
-  "reality_assessment": "1-2 Sätze: Ist die Forderung realistisch gemessen am Markt?",
-  "data_source": "{market_data_source}"
-}
-```
-
-**Fallback wenn kein enrichedAnalysis oder market_data_source === 'none':**
-
-```
-// Im Prompt:
-Keine Marktdaten verfügbar. Setze "marketContext": null im JSON-Output.
-Halluziniere keine Marktwerte.
-```
-
-**Konkretes Beispiel — Gehalt Senior SWE:**
-
-*Prompt mit Marktdaten:*
-```
-## Marktdaten-Kontext (kmu/profi-Tier)
-Marktmedian: 88.000€
-Marktspanne: 72.000€ – 105.000€
-Reality Score: +5,9% (über dem Marktmedian)
-Markteinordnung: Senior SWE in SaaS-Unternehmen mit 200 MA in München
-  liegen typischerweise zwischen 78.000 und 105.000€ Jahresbrutto.
-  Ihr Ziel von 44.000€ liegt deutlich unter dem Marktmedian.
-Datenquelle: knowledge_graph
-```
-
-*Erwartetes Claude-Output:*
-```json
-"marketContext": {
-  "market_position_summary":
-    "Ihr Zielgehalt von 44.000€ liegt 50% unter dem Marktmedian von 88.000€ für Senior Software Engineer in München.",
-  "market_range_summary":
-    "Die typische Vergütungsspanne für Ihre Position beträgt 72.000–105.000€ Jahresbrutto.",
-  "reality_assessment":
-    "Ihr aktuelles Gehalt von 40.000€ und das Ziel von 44.000€ liegen weit unter dem Markt. Das stärkt Ihre Verhandlungsposition erheblich — der Markt rechtfertigt eine Forderung von mindestens 75.000€.",
-  "data_source": "knowledge_graph"
-}
-```
-
-### 2.4 Tier-Gate-Design
-
-**Proposed — Tier-Gate sitzt im Request-Aufbau (Index.tsx), nicht im Prompt-Builder:**
-
-```typescript
-// Index.tsx — generatePlan-Aufruf (Proposed)
 body: JSON.stringify({
   session_id: activeSessionId,
   progress_status: effectiveProgress,
-  messages: messages.map(...),
-  // enrichedAnalysis nur wenn Tier kmu/profi UND Daten vorhanden:
-  ...(enriched && enriched.market_data_source !== 'none' && isKmuOrProfi
-    ? { enrichedAnalysis: enriched }
-    : {}),
+  messages: messages.slice(-15).map((m) => ({ role: m.role, content: m.content })),
+  ...(marketData ? { enrichedAnalysis: marketData } : {}),
 })
 ```
 
-Der **Prompt-Builder** prüft nur ob `enrichedAnalysis` übergeben wurde — keine Tier-Logik
-im Backend. Die Tier-Prüfung bleibt im Frontend (Caller-seitig), wie bei bestehenden
-Tier-Gates im Chat-Path.
+**apiClient.ts generatePlan() (Migrationsziel-Pfad, Proposed):**
+```typescript
+export async function generatePlan(
+  messages: ChatMessage[],
+  extractedInputs: ExtractedInputs,
+  zopaResult?: ZopaToolResult | null,
+  analysis?: AnalysisResult | null,
+  enrichedAnalysis?: EnrichedAnalysisResult | null,  // NEU
+  accessToken?: string
+): Promise<PlanResponse>
+```
 
-**Begründung:** Die Tier-Prüfung ist redundant mit dem bestehenden `/api/enrich`-Gate
-(`requireTier('kmu')`). Wenn `enrichedAnalysis` vorhanden ist, hat die Tier-Prüfung
-bereits stattgefunden. Doppelte Prüfung im Backend ist optional (defensive Programmierung),
-aber kein Muss für MVP.
+### 4.3 StrategyTab.tsx Rendering (Proposed — Option A)
+
+**Neue Sektion nach Sektion 7 (nextStep), vor oder nach Empfehlungen:**
+
+```tsx
+// Proposed — neue Sektion in StrategyTab.tsx
+{plan.marketContext !== undefined && (
+  <section>
+    <h3>Markteinordnung</h3>
+    {plan.marketContext === null ? (
+      // Tier-Gate UI: Upgrade-Hinweis für privat/free
+      <UpgradeHint feature="Marktdaten" requiredTier="kmu" />
+    ) : (
+      <MarketContextCard context={plan.marketContext} />
+    )}
+  </section>
+)}
+// marketContext === undefined → kein Feature implementiert → Sektion nicht anzeigen
+```
+
+**ADR-001 Hinweis:** Frontend-Gate ist UI-only — primäres Gate ist das Server-seitige Conditional
+beim Aufbau des Prompts (enrichedAnalysis wird nur für kmu/profi übergeben). Das Frontend zeigt
+`null` als Upgrade-Hinweis, verlässt sich aber auf das Backend als autoritären Gate.
+
+### 4.4 UX-Verhalten bei fehlenden Marktdaten (Proposed)
+
+| Fall | `enrichedAnalysis` übergeben? | `marketContext` in Response | UX |
+|---|---|---|---|
+| Tier `privat`/`free` | Nein | `null` | Sektion "Markteinordnung" mit Upgrade-Hinweis sichtbar |
+| Tier `kmu`/`profi`, Layer 2 noch nicht aufgerufen | Nein (`enriched === null`) | `null` | Gleicher Upgrade-Hinweis ODER kein Hinweis (TBD — offene Entscheidung) |
+| Tier `kmu`/`profi`, Layer 2 aufgerufen, market_data_source = 'none' | Nein (Conditional) | `null` | Gleicher Hinweis |
+| Tier `kmu`/`profi`, Layer 2 erfolgreich | Ja | `{ market_position, ... }` | Marktdaten-Sektion vollständig sichtbar |
+| Feature nicht deployed (alt) | — | `undefined` (Feld fehlt) | Sektion komplett ausgeblendet |
+
+**Offene Entscheidung:** Fall 2 — soll ein kmu-User der noch keinen Enrich-Call gemacht hat,
+einen Upgrade-Hinweis sehen (verwirrend) oder gar keinen Hinweis (Marktdaten-Sektion komplett hidden)?
+**Empfehlung (Proposed):** Kein Hinweis wenn `marketContext === null` und `enriched === null` —
+Plan-Generierung ohne Layer 2 ist der normale privat/free-Pfad. Upgrade-Hinweis nur wenn
+Tier < kmu (explizites Feature-Gate-Signal).
 
 ---
 
-## Abschnitt 3 — Betroffene Artefakte
+## Abschnitt 5 — Impact Assessment
 
-### 3.1 negotiationcoach-backend
+### 5.1 Backend (negotiationcoach-backend)
 
-**`src/api/planHelpers.ts`**
-- `buildPlanSystemPrompt()`: Parameter `enrichedAnalysis?: EnrichedAnalysisResult` hinzufügen
-- Marktdaten-Block in Prompt einweben (Abschnitt 2.3)
-- `parsePlanResponse()`: `marketContext` aus Claude-Response extrahieren,
-  `null` als expliziter Fallback wenn nicht vorhanden
-- `PlanResponse` Interface: `marketContext?: MarketContextSection | null` hinzufügen
-- `MarketContextSection` Interface: neu definieren
-- **Änderungsumfang: ~40 Zeilen**
+| Datei | Änderung | Scope |
+|---|---|---|
+| `src/api/planHelpers.ts` | `buildPlanSystemPrompt()` um `enrichedAnalysis?` erweitern, Marktdaten-Block einweben; `parsePlanResponse()` um `marketContext` erweitern | ~40 Zeilen |
+| `src/api/routes.ts` | `enrichedAnalysis` aus Request-Body lesen, an `buildPlanSystemPrompt()` übergeben | ~5 Zeilen |
+| Neues Interface `MarketContextSection` | In `planHelpers.ts` oder neuem `src/lib/planTypes.ts` | ~10 Zeilen |
+| **Gesamt** | 3 Dateien, ~55 Zeilen | — |
 
-**`src/lib/types.ts` (negotiationcoach-backend)**
-- Kein `PlanRequest`-Interface vorhanden — kein Change nötig
-- `EnrichedAnalysisResult` wird bereits in `src/types/index.ts` exportiert — kein neues Interface
+### 5.2 Edge Function (negotiation-buddy/supabase/functions/generate-plan)
 
-**`src/api/routes.ts`** (POST /api/plan Handler)
-- `enrichedAnalysis` aus Request-Body lesen
-- An `buildPlanSystemPrompt()` weitergeben
-- **Änderungsumfang: ~5 Zeilen**
+| Datei | Änderung | Scope |
+|---|---|---|
+| `generate-plan/index.ts` | Input-Parsing um `enrichedAnalysis?` erweitern; Prompt-Aufbau um Marktdaten-Block; Response-Parsing um `marketContext` | ~50 Zeilen |
 
-### 3.2 negotiation-buddy — Edge Function (aktiver Pfad)
+**Observed** — Tier ist in der EF bereits verfügbar (Zeile 44-47, `tier`-Variable).
+**Proposed:** Kein Aktivieren des kommentierten Tier-Gate-Stubs für Plan-Generierung.
+Marktdaten-Gate sitzt im Prompt (enrichedAnalysis-Conditional) — kein 403 für privat-Tier.
 
-**`supabase/functions/generate-plan/index.ts`**
+**ADR-005-Implikation (Proposed):**
+ADR-005 sagt: EF ist temporär, Express Backend ist kanonisch. Änderungen an der EF
+sind akzeptabel für MVP, da:
+1. Der Express-Pfad (`/api/plan`) heute inaktiv ist (zero active callers)
+2. Die EF-Änderung ist defensiv und rückwärtskompatibel
+3. Bei Migration zu Express (RFB-004 Phase C) wird die EF-Änderung retired —
+   aber `planHelpers.ts`-Erweiterung bleibt und wird dann aktiv
 
-**Observed:** Heute empfängt die EF: `{ session_id, progress_status, messages }`.
-Plan-Prompt nutzt nur `progress_status`-Summaries und letzte 15 Messages.
+**Kein neues ADR erforderlich** — Änderung liegt innerhalb des bestehenden ADR-005-Rahmens
+("EF ist temporary, änderbar bis Migration").
 
-**Proposed Änderungen:**
+### 5.3 Frontend (negotiation-buddy)
 
-1. Input-Typ erweitern: `enrichedAnalysis?: EnrichedAnalysisResult` aus Body lesen
-2. Marktdaten-Block analog zu `buildPlanSystemPrompt()` in den Claude-Prompt einbauen
-   (wenn `enrichedAnalysis` vorhanden und `market_data_source !== 'none'`)
-3. Response-Parsing: `marketContext` aus `rawPlan` extrahieren, Fallback `null`
-4. `plan`-Objekt um `marketContext` ergänzen
+| Datei | Änderung | Scope |
+|---|---|---|
+| `src/lib/apiClient.ts` | `generatePlan()` Signatur + `PlanResponse` Typ + `MarketContextSection` Interface | ~20 Zeilen |
+| `src/pages/Index.tsx` | `enrichedAnalysis` conditional in Fetch-Call übergeben | ~8 Zeilen |
+| `src/components/StrategyTab.tsx` | `NegotiationPlan` Typ + neue Rendering-Sektion | ~40 Zeilen |
+| `src/components/StrategyDialog.tsx` | `marketContext`-Sektion in Dialog-View | ~20 Zeilen |
+| **Gesamt** | 4 Dateien, ~88 Zeilen | — |
 
-**ADR-005-Hinweis (Observed):** Die EF ist der "temporäre Pfad" — `apiClient.ts:generatePlan()`
-ist der Migrations-Ziel-Pfad (RFB-004 Phase C). Die EF-Änderung ist notwendig weil der
-Backend-Pfad heute inactive ist. Wenn RFB-004 Phase C implemented wird, ist die EF zu
-retire — die EF-Änderung hat dann begrenzte Lebensdauer.
+**Kein neues State-Feld in AnalysisContext erforderlich** — `enriched` ist bereits vorhanden.
 
-**Änderungsumfang: ~50 Zeilen**
-
-### 3.3 negotiation-buddy — Frontend
-
-**`src/lib/apiClient.ts`**
-- `generatePlan()` (UNUSED, ADR-005 Migrationsziel): Parameter `enrichedAnalysis?` hinzufügen
-- `PlanResponse` Frontend-Typ: `marketContext?: MarketContextSection | null` hinzufügen
-- `MarketContextSection` Interface lokal definieren (kein shared package vorhanden)
-- `PlanObjection` Drift (pre-existing): `title?: string` hinzufügen — optional, nicht blockierend
-- **Änderungsumfang: ~20 Zeilen**
-
-**`src/pages/Index.tsx`**
-- `enriched` aus `useAnalysis()` wird bereits destrukturiert (Zeile 78) — **Observed, kein neues Feld nötig**
-- Im `generatePlan`-Fetch-Call: `enrichedAnalysis: enriched` conditional hinzufügen
-- Tier-Gate Prüfung vor Übergabe (Abschnitt 2.4)
-- **Änderungsumfang: ~8 Zeilen**
-
-**`src/pages/StrategyGenerator.tsx`**
-- **Observed:** StrategyGenerator rendert keine PlanResponse. Kein Change hier nötig.
-- `enriched` aus AnalysisContext wird bereits gerendert (Marktlage-Card, reality_score)
-- **Änderungsumfang: 0 Zeilen (kein Change erforderlich)**
-
-**Plan-Display-Komponente (StrategyDialog.tsx oder StrategyTab.tsx — zu verifizieren)**
-- **Inferred:** `negotiationPlan` State wird in einer dieser Komponenten gerendert
-- Neue Sektion "Markteinordnung" wenn `negotiationPlan.marketContext !== null`
-- Tier-Gate Upgrade-Hinweis wenn `marketContext === null` und Tier < kmu
-- Position: nach ZOPA & Strategie-Score, vor Empfehlungen
-- **Änderungsumfang: ~40 Zeilen — Datei muss vor Implementierung verifiziert werden**
-
-### 3.4 shared-context
-
-**`docs/contracts/frontend-backend.md`**
-- POST /api/plan: Request-Body um `enrichedAnalysis?` ergänzen
-- POST /api/plan: Response-Shape um `marketContext?` ergänzen
-- POST /functions/v1/generate-plan: analog
-- **Änderungsumfang: ~30 Zeilen**
-
-**Kein ADR erforderlich.** Option-B-Analogie: keine neue Systemgrenze, kein neues
-externes System. Erweiterung bestehender Interfaces innerhalb etablierter Pfade.
-
-### 3.5 Supabase
+### 5.4 Supabase
 
 **Kein Schema-Change.**
-`negotiation_sessions.layer2_result` (JSONB) enthält bereits `EnrichedAnalysisResult`.
-`progress_status._plan` (JSONB, gesetzt von generate-plan EF Zeile 163-165) wird um
-`marketContext` erweitert — JSONB-Spalte ist schema-agnostisch, kein Migration nötig.
+`negotiation_sessions.layer2_result` (JSONB) enthält `EnrichedAnalysisResult` bereits.
+`negotiation_sessions.progress_status._plan` (JSONB) wird um `marketContext` erweitert —
+JSONB ist schema-agnostisch, keine Migration nötig.
+
+### 5.5 ADR-Bedarf
+
+**Kein neues ADR.** Begründung (Proposed):
+- Keine neue Systemgrenze
+- Kein neues externes System
+- EF-Änderung innerhalb ADR-005-Rahmen
+- Interface-Erweiterung ohne Contract-Breaking-Change
+
+**Benötigte Docs-Updates nach Implementierung:**
+- `docs/contracts/frontend-backend.md` — Request/Response Delta (Abschnitt 3.4)
+- Optional: `docs/service-catalog.md` — `buildPlanSystemPrompt()` Signatur
 
 ---
 
-## Abschnitt 4 — Offene Abhängigkeiten
+## Abschnitt 6 — Delivery-Plan (Proposed)
 
-### 4.1 EnrichedAnalysisResult in AnalysisContext (Observed — kein Blocker)
-
-**Observed:** `enriched: EnrichedData | null` ist in AnalysisContext vorhanden.
-`enriched` wird in Index.tsx destrukturiert und ist im `generatePlan`-Scope verfügbar.
-
-**Observed GAP:** Im `generatePlan`-Fetch-Call wird `enriched` nicht übergeben.
-Das ist ein **1-Zeilen-Fix** — kein struktureller Blocker.
-
-**Nicht Missing, nicht Blocked.** Die Abhängigkeit ist erfüllt — nur der Weiterleitungs-Code
-fehlt (Abschnitt 3.3, Index.tsx).
-
-### 4.2 Aufruf-Reihenfolge im UI
-
-**Observed:** Heute triggert `useProgressEngine.ts` `generatePlan()` wenn alle 6
-Progress-Punkte completed sind (`effectiveProgress` alle `true`). Die Reihenfolge
-`/api/analyze` → `/api/enrich` → `generatePlan()` ist heute **nicht erzwungen**.
-
-**Observed:** `/api/enrich` wird aus `ZopaCalculator.tsx` nach der ZOPA-Berechnung
-aufgerufen — nicht automatisch nach `/api/analyze`. Ein Nutzer kann `generatePlan()`
-ohne vorherigen Enrich-Call erreichen.
-
-**Inferred:** In diesem Fall ist `enriched === null` in AnalysisContext →
-`enrichedAnalysis` wird nicht übergeben → `marketContext: null` im Response.
-Das ist **korrektes Verhalten** — kein Blocker. Der Plan wird generiert, nur ohne
-Marktdaten-Sektion.
-
-**Proposed:** Keine Änderung der Aufruf-Reihenfolge nötig. Das `enriched`-Conditional
-in Index.tsx (Abschnitt 2.4) handelt beide Fälle korrekt:
-- `enriched !== null`: Plan mit Marktdaten
-- `enriched === null`: Plan ohne Marktdaten (marketContext: null)
-
-### 4.3 Plan-Display-Komponente (zu verifizieren vor Implementierung)
-
-**Inferred:** `negotiationPlan` State aus `useProgressEngine` wird in einer Komponente
-gerendert die aktuell noch nicht identifiziert ist. **Muss vor Schritt 4 (Abschnitt 5)
-verifiziert werden.**
-
-Kandidaten: `StrategyTab.tsx`, `StrategyDialog.tsx`, `BottomBar.tsx`.
-
-**Blocking für Schritt 4:** Die Rendering-Komponente muss bekannt sein bevor
-`marketContext` dort hinzugefügt werden kann.
-
----
-
-## Abschnitt 5 — Delivery-Sequenz (Proposed)
-
-| Schritt | Beschreibung | Repo | Abhängig von | Scope | Template |
+| Schritt | Beschreibung | Repo | Abhängig von | Dateien | Template |
 |---|---|---|---|---|---|
-| 0 | FEATURE-L2-CONTEXT implementieren | negotiationcoach-backend | DONE (Spec committed) | 4–5 Dateien | 2b-DEV |
-| 1 | Plan-Display-Komponente identifizieren | negotiation-buddy | — | read-only | Investigate |
-| 2 | Backend: planHelpers.ts + MarketContextSection | negotiationcoach-backend | Schritt 0 DONE | ~40 Zeilen | 2b-DEV |
-| 3 | Backend: routes.ts enrichedAnalysis durchreichen | negotiationcoach-backend | Schritt 2 | ~5 Zeilen | 2b-DEV |
-| 4 | EF: generate-plan/index.ts erweitern | negotiation-buddy | Schritt 2 | ~50 Zeilen | 2b-DEV |
-| 5 | Frontend: apiClient.ts + Index.tsx enrichedAnalysis übergeben | negotiation-buddy | Schritt 4 | ~28 Zeilen | 2b-DEV |
-| 6 | Frontend: Plan-Display-Komponente um marketContext erweitern | negotiation-buddy | Schritt 1 + 5 | ~40 Zeilen | 2b-DEV |
-| 7 | Contract-Docs Update | shared-context | Schritt 6 DONE | ~30 Zeilen | 2-DEV (Docs) |
-
-**Schritt 0 ist Voraussetzung:** Ohne FEATURE-L2-CONTEXT liefert `enrichedAnalysis`
-generische Marktdaten ohne Kontext → die Plan-Marktdaten wären so unspezifisch wie heute.
-
-**Schritt 1 ist Voraussetzung für Schritt 6:** Plan-Display-Komponente muss bekannt sein.
+| 0 | FEATURE-L2-CONTEXT implementieren | negotiationcoach-backend | **Voraussetzung** (Spec `9f12bcb`) | 4–5 | 2b-DEV |
+| 1 | Dieses Dokument reviewed + GO | shared-context | Schritt 0 DONE | — | — |
+| 2 | Backend: `MarketContextSection` + `PlanResponse`-Erweiterung + `planHelpers.ts` | negotiationcoach-backend | Schritt 1 | ~3 | 2b-DEV |
+| 3 | Backend: `routes.ts` enrichedAnalysis durchreichen | negotiationcoach-backend | Schritt 2 | 1 | 2b-DEV |
+| 4 | EF: `generate-plan/index.ts` erweitern | negotiation-buddy | Schritt 2 | 1 | 2b-DEV |
+| 5 | Frontend: `apiClient.ts` + `Index.tsx` enrichedAnalysis übergeben | negotiation-buddy | Schritt 4 | 2 | 2b-DEV |
+| 6 | Frontend: `StrategyTab.tsx` + `StrategyDialog.tsx` Rendering | negotiation-buddy | Schritt 5 | 2 | 2b-DEV |
+| 7 | Integration-Test: alle Tier-Kombinationen + beide Plan-Pfade | beide | Schritt 6 | smoke test | Template 1-DEV |
+| 8 | Contract-Docs Update | shared-context | Schritt 7 DONE | 1–2 | 2-DEV (Docs) |
 
 **Acceptance Criteria (global):**
 
 ```
-[ ] npx tsc --noEmit clean — backend + frontend, 0 Fehler
+[ ] npx tsc --noEmit — negotiationcoach-backend: 0 Fehler
+[ ] npx tsc --noEmit — negotiation-buddy: 0 Fehler
 
-[ ] curl POST /functions/v1/generate-plan mit enrichedAnalysis:
-    {
-      "session_id": "...",
-      "progress_status": {...},
-      "messages": [...],
-      "enrichedAnalysis": {
-        "market_median": 88000,
-        "market_range_min": 72000,
-        "market_range_max": 105000,
-        "reality_score": 5.9,
-        "market_context_summary": "Senior SWE, SaaS, München",
-        "market_data_source": "knowledge_graph"
-      }
-    }
-    → Response: plan.marketContext.market_position_summary !== ""
-    → Response: plan.marketContext.data_source === "knowledge_graph"
+[ ] curl POST /functions/v1/generate-plan mit enrichedAnalysis (kmu-Tier):
+    → plan.marketContext.market_position !== ""
+    → plan.marketContext.data_source === "knowledge_graph"
 
-[ ] curl POST /functions/v1/generate-plan OHNE enrichedAnalysis:
-    → Response: plan.marketContext === null
+[ ] curl POST /functions/v1/generate-plan ohne enrichedAnalysis (privat-Tier):
+    → plan.marketContext === null
 
 [ ] curl POST /functions/v1/generate-plan mit enrichedAnalysis.market_data_source === "none":
-    → Response: plan.marketContext === null
+    → plan.marketContext === null
 
-[ ] Layer-1-Tests grün (Regression)
-[ ] Output-Nachweis im Report (beide curl Response Bodies)
+[ ] Layer-1-Tests grün (Regression — planHelpers.ts parsePlanResponse)
+[ ] Output-Nachweis: beide curl Response Bodies im Report dokumentiert
 ```
+
+**Zwei-Location-Closure je Schritt:**
+- Impl-Commit in Target-Repo
+- Docs-Stamp in shared-context (`docs/delivery/bugs/` oder Spec-Update)
 
 ---
 
@@ -540,8 +610,7 @@ generische Marktdaten ohne Kontext → die Plan-Marktdaten wären so unspezifisc
 
 | Entscheidung | Optionen | Empfehlung |
 |---|---|---|
-| Tier-Gate Ort | Frontend (Index.tsx) vs. Backend (planHelpers.ts) | **Frontend** — Analogie zu bestehenden Tier-Gates |
-| EF-Lebensdauer | EF ändern (ADR-005: temporär) vs. EF überspringen | **EF ändern** — Backend-Pfad heute inactive |
-| PlanObjection Drift | Sofort fixen (title hinzufügen) vs. separater Task | **Separater Task** — pre-existing, kein Blocker |
-| Plan-Display-Komponente | Zu identifizieren vor Implementierung | **Schritt 1 zuerst** |
-| marketContext Upgrade-Hinweis | Im Plan anzeigen wenn null + Tier < kmu | **Ja** — Conversion-Pfad für kmu-Upgrade |
+| Tier-Gate Ort | Frontend (Index.tsx) vs. Backend | **Frontend** — Tier bereits bekannt, enriched nur für kmu/profi befüllt |
+| UX bei kmu + kein Enrich | Upgrade-Hinweis vs. kein Hinweis | **Kein Hinweis** — Plan ohne Marktdaten ist normaler Fall |
+| `NegotiationPlan` vs. `PlanResponse` Drift | Sofort vereinheitlichen vs. separater Task | **Separater Task** — pre-existing, kein Blocker |
+| Schritt 0 (L2-CONTEXT) als Voraussetzung | Strikt vs. mit generischen Marktdaten beginnen | **Strikt** — ohne Kontext sind Marktdaten im Plan unbrauchbar |

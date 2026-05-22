@@ -1,7 +1,7 @@
 # BUG-20260521-marktdaten-wrong-dialog
 
 **Erstellt:** 2026-05-21
-**Status:** OPEN
+**Status:** DONE
 **Risiko:** P2
 **TARGET REPO:** negotiation-buddy
 **Layer:** Layer 4 — UI/Frontend (kein Backend-Bezug)
@@ -44,10 +44,32 @@ Zusätzlich beobachtet: Die Berechnung des Strategie-Score selbst erscheint fehl
 - BUG-20260521-strategy-score-calc (ggf. Folge-Bug dieses Routing-Fehlers)
 
 ## Plan
-_Wird durch Template 1-DEV befüllt._
+
+Diagnosis Report: `docs/delivery/BUG-20260521-marktdaten-wrong-dialog-diagnosis-report.md` (`3dbd50a`)
+
+Root Cause (Observed): Copy-Paste-Fehler in `SessionSidebar.tsx:101` —
+`route: "/strategy"` für Marktdaten identisch zum Strategie-Score-Eintrag.
+Fix: route → `"/strategy?section=market"` + `useLocation`-basierter Scroll-Anker
+in `StrategyGenerator.tsx`. BUG-05b (Strategie-Score-Berechnung) geschlossen — kein separater Bug.
 
 ## Implement
-_Wird durch Template 2-DEV befüllt._
+
+Commits:
+- `298ea87` — SessionSidebar.tsx: route fix + StrategyGenerator.tsx: scroll anchor initial
+- `a566a4c` — StrategyGenerator.tsx: `enriched` zu useEffect-Deps hinzugefügt (Quality-Fix)
+
+Änderungen:
+- `src/components/SessionSidebar.tsx:101`: `route: "/strategy"` → `route: "/strategy?section=market"`
+- `src/pages/StrategyGenerator.tsx`: `useLocation` import, `useRef<HTMLDivElement>`, `useEffect([location.search, enriched])`, `id="market-data-section"`
+
+Reviews: Spec-Review PASS_WITH_NOTES | Code-Quality APPROVED_WITH_DEBT (enriched dep → behoben)
 
 ## Abschluss
-_Wird durch /close-task befüllt._
+
+**Status: DONE**
+Commit: `298ea87` + `a566a4c` (negotiation-buddy) — 2026-05-22
+Verified: `npx tsc --noEmit` exit 0 ✓
+API contract updated: no
+DB delta: none
+ADR created/amended: none
+Docs updated: BUG-20260521-marktdaten-wrong-dialog-diagnosis-report.md (`3dbd50a`)

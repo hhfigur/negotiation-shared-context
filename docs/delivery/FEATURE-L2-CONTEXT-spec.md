@@ -2,7 +2,8 @@
 ## Kontextualisierung von Marktdaten in Layer 2
 
 **Erstellt:** 2026-05-22
-**Status:** PROPOSED — Review durch Delivery Controller ausstehend
+**Status:** DONE — implementiert 2026-05-26 (Option B, negotiationcoach-backend)
+**Letzte Implementation-Commits:** a6e2af6 → 114ea06 → 925f13b → 1b63e1a → 22e00f0 → bdb790d → 49c4fd1 → cf361b6
 **Trigger:** Delivery Controller Entscheidung 2026-05-22
 **Repos:** negotiationcoach-backend (primary), shared-context (Docs)
 **Empfehlung:** Option B (Kontext-Extraktion aus context_notes — kein API-Contract-Change)

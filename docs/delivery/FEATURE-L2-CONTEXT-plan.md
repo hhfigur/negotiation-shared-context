@@ -2,7 +2,7 @@
 
 **Feature:** Layer 2 Marktdaten-Kontextualisierung via context_notes
 **Strategy:** Option B — Kontext-Extraktion via Claude Pre-Processing
-**Status:** PLAN — Awaiting GO Decision
+**Status:** DONE — implementiert 2026-05-26
 **Spec:** `docs/delivery/FEATURE-L2-CONTEXT-spec.md` (9f12bcb)
 **Impact Check:** PASSED — LOW risk, keine protected files, kein Contract-Change
 **Plan erstellt:** 2026-05-26

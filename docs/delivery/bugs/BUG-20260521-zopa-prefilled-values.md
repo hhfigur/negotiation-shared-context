@@ -46,5 +46,15 @@ _Wird durch Template 1-DEV befüllt._
 ## Implement
 _Wird durch Template 2-DEV befüllt._
 
+## Implement
+
+**Fix:** Neue Action `clearExtractedInputs()` in `AnalysisContext.tsx` — setzt `extractedInputs: null`
+direkt ohne `??`-Merge-Logik. Aufgerufen in `handleNewSession`, `handleSelectSession`,
+`handleUseCaseStart` in `Index.tsx`. Alter 11-Felder-null-Literal in `handleNewSession` entfernt.
+
 ## Abschluss
-_Wird durch /close-task befüllt._
+
+**Status: DONE**
+Commit: `3d0cb31` (negotiation-buddy) — 2026-05-26
+Verified: tsc --noEmit clean ✓ | Spec-Review 10/10 PASS ✓ | Code-Quality APPROVED_WITH_DEBT (pre-existing) ✓
+Docs updated: shared-context/docs/delivery/BUG-20260521-zopa-prefilled-values-diagnosis-report.md

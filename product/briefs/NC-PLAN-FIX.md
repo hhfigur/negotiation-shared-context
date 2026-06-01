@@ -1,6 +1,6 @@
 # Brief: NC-PLAN-FIX — Verhandlungsplan-Trigger reparieren
 
-**Status:** In Delivery
+**Status:** Released
 **Release:** R-2026-09
 **Typ:** Bug
 **Priorität:** P1 — Kernfunktion nicht nutzbar

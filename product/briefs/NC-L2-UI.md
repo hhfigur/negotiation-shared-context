@@ -1,6 +1,6 @@
 # Brief: NC-L2-UI — Market Data anzeigen + /api/enrich einbinden
 
-**Status:** In Delivery
+**Status:** Released
 **Release:** R-2026-09
 **Typ:** Bug / Missing Feature
 **Priorität:** P1 — Layer-2-Mehrwert komplett unsichtbar

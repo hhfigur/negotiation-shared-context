@@ -128,7 +128,14 @@ Nach "Was ist Ihr Mindestgehalt?" eine optionale Frage:
 
 ## Open Decisions
 
-- Phase A-1: Wie oft maximal re-extrahieren pro Session? (Vorschlag: max. 5×, dann aufgeben)
-- Phase C-1: Guided Flow-Erweiterung Lovable-seitig oder CC? (Lovable bevorzugt für UI)
-- Soll `executedRef.current` durch ein Set von "ausgefüllten Feldern" ersetzt werden?
-  (Extraktion nur wenn konkrete Felder noch fehlen — eleganter als reiner Boolean)
+- Phase C-1: Guided Flow-Erweiterung → FEATURE-GUIDED-CONTEXT (separates Item)
+
+---
+
+**Status: DONE** (Phase A + B)
+Commit: `1b2977a` (negotiation-buddy) — 2026-06-03
+Verified: tsc --noEmit clean ✓ | AC-1–5 alle erfüllt (Code-Analyse + TypeCheck)
+API contract updated: no
+DB delta: none
+ADR created/amended: none
+Docs updated: product/feature-register.md (In Delivery → Released), product/briefs/NC-CONTEXT.md

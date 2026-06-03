@@ -4,7 +4,7 @@
 R-2026-09
 
 ## Release status
-Planned
+Released — Review: product/release-reviews/R-2026-09.md
 
 ## Release goal
 Kernfunktionen reparieren: Verhandlungsplan-Trigger und Market-Data-Anzeige.

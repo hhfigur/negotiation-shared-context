@@ -110,5 +110,14 @@ Baseline nach 14 Tagen: wie oft wird Layer 2 genutzt?
 | Lovable-Deployment für Frontend | Bekannt |
 | ADR erforderlich? | Nein — bestehender Endpunkt |
 
-**Offene Entscheidung:** Wo genau werden Marktdaten angezeigt?
-Strategy-Tab? Fortschritts-Panel? Eigene "Marktlage"-Card? → Entscheid vor GO.
+**Entschieden:** Market-Data-Card in Index.tsx (bereits vorhanden, jetzt befüllt).
+
+---
+
+**Status: DONE**
+Commit: `8a5b38d` (negotiationcoach-backend) + `f276041` (negotiation-buddy) — 2026-06-02
+Verified: tsc --noEmit clean ✓ (both repos) | backend chat-flow path in routes.ts ✓
+API contract updated: yes — docs/contracts/frontend-backend.md (inputs optional, chat-flow path documented)
+DB delta: none
+ADR created/amended: none
+Docs updated: product/briefs/NC-L2-UI.md, product/feature-register.md, docs/contracts/frontend-backend.md

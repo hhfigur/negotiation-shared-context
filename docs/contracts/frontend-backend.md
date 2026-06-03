@@ -11,13 +11,13 @@ This document defines the contracts between the React SPA (`negotiation-buddy`) 
 
 | Channel | From | To | Protocol | Auth |
 |---------|------|----|----------|------|
-| Railway REST API | Browser | Railway (negotiationcoach-backend) | HTTPS + JSON | `Authorization: Bearer <JWT>` |
+| Backend API | Browser | Express Backend (Render.com) (negotiationcoach-backend) | HTTPS + JSON | `Authorization: Bearer <JWT>` |
 | Supabase Edge Function /chat | Browser | Supabase Edge | HTTPS + SSE | `Authorization: Bearer <anon_key>` |
 | Supabase JS SDK | Browser | Supabase PostgreSQL | HTTPS | Anon key + RLS |
 | Supabase Edge Function /generate-plan | Browser | Supabase Edge | HTTPS + JSON | `Authorization: Bearer <JWT>` (user token) — RFB-033 |
 
 **Note (Observed):** Two different Authorization schemes are used:
-- Railway calls: user's JWT (access_token from `supabase.auth.getSession()`)
+- Backend API calls: user's JWT (access_token from `supabase.auth.getSession()`)
 - Edge Function calls: Supabase anon/publishable key (not user JWT)
 **Partial fix (RFB-033, 2026-04-11):** `generate-plan` now requires user JWT.
 `/chat` EF still uses anon key. Three other EF calls in Index.tsx (lines 287,
@@ -25,9 +25,9 @@ This document defines the contracts between the React SPA (`negotiation-buddy`) 
 
 ---
 
-## 2. Railway REST API
+## 2. Backend REST API
 
-**Base URL:** `VITE_API_URL` env var, falling back to `https://negotiationcoach-backend-production.up.railway.app` (hardcoded in `src/lib/apiClient.ts`)
+**Base URL:** `VITE_API_URL` env var, falling back to `https://negotiationcoach-backend.onrender.com` (hardcoded in `src/lib/apiClient.ts`)
 
 **Client:** `src/lib/apiClient.ts`
 
@@ -103,7 +103,7 @@ both repos. They are currently aligned but not enforced by a shared schema.
 
 ### Legacy fields (deprecated — frontend only)
 The following fields exist in `StrategyDialog.tsx NegotiationPlan` interface
-as optional fallbacks. They are never populated by either the Railway backend
+as optional fallbacks. They are never populated by either the Express backend
 or the Edge Function. They are dead code candidates.
 
 | Field | Status |
@@ -114,11 +114,11 @@ or the Edge Function. They are dead code candidates.
 | `numbers?` | Dead — legacy fallback |
 
 ### Active architectural gap
-The frontend does NOT currently call `POST /api/plan` on Railway.
+The frontend does NOT currently call `POST /api/plan` on Express backend.
 `StrategyDialog` receives plan data as a prop from `Index.tsx` via `BottomBar`,
-sourced from a Supabase Edge Function. The Railway endpoint is deployed but
-unused. Decision required before Release 1: deprecate Railway `/api/plan` or
-migrate Edge Function call to Railway.
+sourced from a Supabase Edge Function. The backend endpoint is deployed but
+unused. Decision required before Release 1: deprecate backend `/api/plan` or
+migrate Edge Function call to Express backend.
 
 ---
 
@@ -168,13 +168,19 @@ migrate Edge Function call to Railway.
 
 **Purpose:** Layer 2 market data enrichment — adds market median, reality score, context
 
+**Called from:** `Index.tsx` useEffect after `negotiationPlan` is set (NC-L2-UI, f276041)
+
 **Request:**
 ```typescript
 {
-  sessionId: string;               // from /api/analyze response
-  inputs: NegotiationInputs;       // same as /api/analyze
+  sessionId: string;               // from /api/analyze response or chat-flow session
+  region?: string;                 // optional region hint
+  inputs?: NegotiationInputs;      // optional — required only on chat-flow path where layer1_result is null
 }
 ```
+
+**Chat-flow path (NC-L2-UI):** If the session has no `layer1_result` (chat flow, no `/api/analyze` called),
+`inputs` must be provided. Backend runs Layer 2 directly with a minimal L1 placeholder.
 
 **Response:**
 ```typescript
@@ -370,7 +376,7 @@ title.length > 40 ? title.slice(0, 37) + '...' : title
 ```typescript
 {
   session: negotiation_sessions_row,  // full DB row; persona_type stored as DB enum value
-  resolvedTier: Tier                  // RFB-007-B — server-canonical Railway Tier derived
+  resolvedTier: Tier                  // RFB-007-B — server-canonical backend Tier derived
                                       // from persona_type via personaTypeToTier()
 }
 ```
@@ -450,7 +456,7 @@ title.length > 40 ? title.slice(0, 37) + '...' : title
 | 500 | `SESSION_UPDATE_ERROR` | Supabase update failure on PATCH /sessions/:id |
 | 500 | `MESSAGE_SAVE_ERROR` | Supabase count or insert failure on POST /sessions/:id/messages |
 
-> **RFB-004-C DONE 2026-04-10:** `useSessionManager.ts` token retrieval migrated to `useAuth()`. Structured error toasts wired per error code. Write path fully Railway-owned.
+> **RFB-004-C DONE 2026-04-10:** `useSessionManager.ts` token retrieval migrated to `useAuth()`. Structured error toasts wired per error code. Write path fully backend-owned.
 
 > **Security note:** `SESSION_NOT_FOUND` is returned for both "not found" and "wrong owner" — this is intentional. Returning 403 for wrong-owner would reveal that the session ID is valid. Differs from team endpoints where `FORBIDDEN` (403) is explicit because admin identity is distinct from resource ownership.
 
@@ -460,7 +466,7 @@ title.length > 40 ? title.slice(0, 37) + '...' : title
 
 > Status: BLOCKED — see RFB-004 Phase B
 
-Phase B migrates `useSessionManager.ts` (negotiation-buddy) from direct Supabase SDK writes to Railway API calls for session and message persistence. Phase A (Railway endpoints) is complete.
+Phase B migrates `useSessionManager.ts` (negotiation-buddy) from direct Supabase SDK writes to Backend API calls for session and message persistence. Phase A (Backend API endpoints) is complete.
 
 **Phase B blockers:** None — RFB-030 (RLS) and RFB-031 (table name fix `2c51cb4`) both closed. Phase B ready to proceed.
 
@@ -528,7 +534,7 @@ vollständig implementiert. Fallback free/Guest-Mode architektonisch korrekt —
 Minor open: auth.getUser error-Logging fehlt (Observability, kein Blocker).
 
 **VG-07 Decision (2026-04-09 — ADR-004):**
-The Edge Function `/functions/v1/chat` is confirmed as the canonical chat path for **ALL** tiers. Railway `/api/chat` is NOT a frontend chat endpoint.
+The Edge Function `/functions/v1/chat` is confirmed as the canonical chat path for **ALL** tiers. Backend `/api/chat` is NOT a frontend chat endpoint.
 
 ---
 
@@ -599,7 +605,7 @@ Now: JWT required, tier resolved from `user_profiles`, both DB writes ownership-
 | `ChatMessage` | `src/lib/types.ts` | `src/lib/types.ts` | Maintained in parallel |
 | `NegotiationType` | `src/lib/types.ts` | `src/types/index.ts` | Consistent enum values |
 | `Tier` | Not defined in frontend | `'free' \| 'privat' \| 'kmu' \| 'profi'` | **Drift** — frontend uses persona_type instead |
-| `subscription_tier` DB enum | ~~`free \| starter \| professional \| expert \| team`~~ → `free \| privat \| kmu \| profi` | `free \| privat \| kmu \| profi` | ✅ **RESOLVED RFB-036 `a28d28c` 2026-04-16** — DB enum now aligned to Railway Tier values per ADR-006-tier-mapping.md |
+| `subscription_tier` DB enum | ~~`free \| starter \| professional \| expert \| team`~~ → `free \| privat \| kmu \| profi` | `free \| privat \| kmu \| profi` | ✅ **RESOLVED RFB-036 `a28d28c` 2026-04-16** — DB enum now aligned to backend Tier values per ADR-006-tier-mapping.md |
 | `persona_type` DB enum | `'pro' \| 'kmu' \| 'private'` | Mapped via `personaTypeToTier()` in `src/utils/tierUtils.ts` | **Partial resolution (RFB-007 Step B)** — wired at `POST /api/sessions`; EF boundary pending Step C (VG-06) |
 | Edge Function inputs | ~~`user_goal / user_walkaway`~~ | `own_target / own_minimum` | ~~**CRITICAL DRIFT**~~ **RESOLVED — ADR-007-A 2026-04-21.** `_shared/engine/` retired. EF-Schema-Konflikt obsolet. Verified 2026-04-30. |
 
@@ -609,7 +615,7 @@ Now: JWT required, tier resolved from `user_profiles`, both DB writes ownership-
 
 **File:** `src/utils/tierUtils.ts` — added RFB-007 Step A (2026-04-09)
 
-| DB `persona_type` | Railway `Tier` |
+| DB `persona_type` | Backend `Tier` |
 |---|---|
 | `'pro'` | `'profi'` |
 | `'kmu'` | `'kmu'` |
@@ -625,7 +631,7 @@ Now: JWT required, tier resolved from `user_profiles`, both DB writes ownership-
 
 ## 5. Error Contract
 
-**Railway errors follow AppError shape:**
+**Backend errors follow AppError shape:**
 ```typescript
 {
   error: {
@@ -648,7 +654,7 @@ Example:
   }
 }
 ```
-Routes covered: `/api/analyze`, `/api/chat`, `/api/plan`, `/api/enrich`, `/api/analyze-full`
+Routes covered: Backend `/api/analyze`, `/api/chat`, `/api/plan`, `/api/enrich`, `/api/analyze-full`
 
 **Frontend error handling:** Each page/hook independently catches errors and displays a toast. No centralized error boundary. Pattern repeated in 4+ locations (redundancy R-002 in frontend audit).
 
@@ -670,8 +676,8 @@ Routes covered: `/api/analyze`, `/api/chat`, `/api/plan`, `/api/enrich`, `/api/a
 | ID | Violation | Impact |
 |----|-----------|--------|
 | CON-01 | ~~`subscription_tier` always "free" in Edge Function chat request~~ **RESOLVED RFB-009 `d90d5c0`** — tier now resolved server-side via JWT; `subscription_tier` in body ignored | — |
-| CON-02 | persona_type enum (pro/kmu/private) mapped via `personaTypeToTier()` — **PARTIAL RESOLVED RFB-007 Step B `6ba5710`** | Wired at Railway `POST /api/sessions` boundary; EF boundary (Step C) pending VG-06 |
-| CON-03 | Edge Function `negotiate` has completely different NegotiationInputs schema than Railway `/api/analyze` | Parallel analysis paths produce incomparable results |
+| CON-02 | persona_type enum (pro/kmu/private) mapped via `personaTypeToTier()` — **PARTIAL RESOLVED RFB-007 Step B `6ba5710`** | Wired at Backend `POST /api/sessions` boundary; EF boundary (Step C) pending VG-06 |
+| CON-03 | Edge Function `negotiate` has completely different NegotiationInputs schema than Backend `/api/analyze` | Parallel analysis paths produce incomparable results |
 | CON-04 | Types maintained in parallel (no shared package) — frontend and backend can silently drift | Runtime errors on schema mismatch |
-| CON-05 | Railway URL hardcoded in apiClient.ts as production URL | `VITE_API_URL` env var ignored if not set — dev vs prod confusion |
-| CON-06 | Railway authMiddleware never returns 401 | Frontend receives 200 even on invalid/expired token |
+| CON-05 | Render.com URL hardcoded in apiClient.ts as production URL | `VITE_API_URL` env var ignored if not set — dev vs prod confusion |
+| CON-06 | backend authMiddleware never returns 401 | Frontend receives 200 even on invalid/expired token |

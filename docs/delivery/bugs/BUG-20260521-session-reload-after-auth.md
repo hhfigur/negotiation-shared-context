@@ -53,7 +53,7 @@ Zwei Dateien, 4 Änderungen:
 
 ## Abschluss
 
-**Status: DONE**
+**Status:** DONE
 Commit: `e813f42` (negotiation-buddy) — 2026-05-21
 Verified: tsc --noEmit clean ✓ | Spec-Review PASS (10/10) | Code-Quality APPROVED_WITH_DEBT
 Debt dokumentiert: (1) kein `loadError`-State für programmatischen Retry; (2) Token-Refresh triggert `loadSessions` ~1h — benign bei aktuellem Scale

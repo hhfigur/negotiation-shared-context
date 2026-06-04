@@ -66,7 +66,7 @@ Reviews: Spec-Review PASS_WITH_NOTES | Code-Quality APPROVED_WITH_DEBT (enriched
 
 ## Abschluss
 
-**Status: DONE**
+**Status:** DONE
 Commit: `298ea87` + `a566a4c` (negotiation-buddy) — 2026-05-22
 Verified: `npx tsc --noEmit` exit 0 ✓
 API contract updated: no

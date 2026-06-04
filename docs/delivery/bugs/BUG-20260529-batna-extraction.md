@@ -83,6 +83,7 @@ dann erst Fix-Prompt.
 - ARCH02 — Chat-Extraktion Spezifikation
 
 ## Plan
+> Diagnose-Report: docs/delivery/BUG-BATNA-EXTRACTION-diagnosis-report.md
 
 _Wird durch Diagnose-Prompt + Template 1-DEV befüllt._
 

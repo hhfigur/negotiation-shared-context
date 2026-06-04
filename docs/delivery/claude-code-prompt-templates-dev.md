@@ -137,7 +137,7 @@ Nach Implementierung:
 Schreibe Ergebnis in Abschnitt ## Implement der BUG_FILE.
 Setze Status in BUG_FILE auf IN PROGRESS.
 Committe BUG_FILE: git add [BUG_FILE] && git commit -m "docs(bugs): [Bug-ID] implement-ergebnis hinzugefügt"
-STOP. Warte auf /close-task.
+STOP. Warte auf /close-task-dev.
 ```
 
 ---
@@ -201,7 +201,7 @@ Nach bestandenem Code-Quality-Review:
 Schreibe Ergebnis in Abschnitt ## Implement der Brief-Datei.
 Setze Status in Brief-Datei auf IN PROGRESS.
 git add [BRIEF_FILE] && git commit -m "docs(briefs): [Item-ID] implement-ergebnis hinzugefügt"
-STOP. Warte auf /close-task.
+STOP. Warte auf /close-task-dev.
 ```
 
 ---

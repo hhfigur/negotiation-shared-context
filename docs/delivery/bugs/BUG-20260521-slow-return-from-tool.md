@@ -53,7 +53,7 @@ Root cause: 14 useEffects in Index.tsx ohne Cleanup-Return. Effect Z. 318-398 st
 
 ## Abschluss
 
-**Status: DONE**
+**Status:** DONE
 Commit: `81e65d9` (negotiation-buddy) — 2026-05-21
 Verified: tsc --noEmit clean ✓ | Spec-Review PASS_WITH_NOTES | Code-Quality APPROVED_WITH_DEBT
 Debt-1: `finally` fires `setIsAnalyzingProgress(false)` even on abort (benign)

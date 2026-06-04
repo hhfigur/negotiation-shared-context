@@ -46,6 +46,8 @@ Ein im Chat eingegebenes BATNA wird korrekt erkannt und im Fortschritts-Indikato
 - BUG-20260521-zopa-prefilled-values (gleiche Ursache: AnalysisContext-Persistenz)
 
 ## Plan
+> Diagnose-Report: docs/delivery/BUG-20260521-batna-lost-after-nav-diagnosis-report.md
+
 _Wird durch Template 1-DEV befüllt._
 
 ## Implement

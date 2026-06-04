@@ -109,7 +109,7 @@ Debt dokumentiert (nicht blockierend):
 
 ## Abschluss
 
-**Status: DONE**
+**Status:** DONE
 Commit: `967475d` (negotiation-buddy) — 2026-05-21
 Verified: `npx tsc --noEmit` exit 0 ✓ | Spec-Review: PASS_WITH_NOTES | Code-Quality: APPROVED_WITH_DEBT
 API contract updated: no

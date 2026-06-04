@@ -41,7 +41,7 @@ If `shared-context` is not readable, HALT — report "shared-context not accessi
 
 Determine which file contains the item:
 - If ITEM_ID starts with `RFB-`: use `shared-context/docs/audits/refactor-backlog.md`
-- If ITEM_ID starts with `NC-` or any other prefix: use `shared-context/docs/delivery/wave2-scope.md`
+- If ITEM_ID starts with `NC-` or any other prefix: use `shared-context/product/feature-register.md`
 
 Read the identified file in full.
 
@@ -146,11 +146,11 @@ Output the exact commands to commit. Do NOT commit automatically — wait for us
 # Stage the backlog file that was stamped:
 git add shared-context/docs/audits/refactor-backlog.md        # if RFB- item
 # OR:
-git add shared-context/docs/delivery/wave2-scope.md           # if NC- or other item
+git add shared-context/product/feature-register.md            # if NC- or other item
 
 # Stage any docs that were updated in this task:
 # git add shared-context/docs/api-catalog.md                  # if API contract updated
-# git add shared-context/docs/adr/ADR-XXX.md                  # if ADR created/amended
+# git add shared-context/docs/decision-log/ADR-XXX.md         # if ADR created/amended
 
 git commit -m "docs(backlog): close <ITEM_ID> — <short title> <COMMIT>"
 ```

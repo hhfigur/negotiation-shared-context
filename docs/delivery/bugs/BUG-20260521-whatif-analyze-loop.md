@@ -112,7 +112,7 @@ Datei: `src/pages/WhatIfSimulator.tsx` — 2 Insertions, 1 Deletion
 
 ## Abschluss
 
-**Status: DONE**
+**Status:** DONE
 Commit: `001a3d0` (negotiation-buddy) — 2026-05-21
 Verified: `npx tsc --noEmit` exit 0 ✓
 API contract updated: no

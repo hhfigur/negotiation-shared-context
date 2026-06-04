@@ -41,6 +41,8 @@ Beim Aufruf des ZOPA-Rechners sind Felder bereits mit Werten befüllt, obwohl de
 - RFB-039 (Context lost on navigation) — möglicherweise gleiche Ursache
 
 ## Plan
+> Diagnose-Report: docs/delivery/BUG-20260521-zopa-prefilled-values-diagnosis-report.md
+
 _Wird durch Template 1-DEV befüllt._
 
 ## Implement
@@ -54,7 +56,7 @@ direkt ohne `??`-Merge-Logik. Aufgerufen in `handleNewSession`, `handleSelectSes
 
 ## Abschluss
 
-**Status: DONE**
+**Status:** DONE
 Commit: `3d0cb31` (negotiation-buddy) — 2026-05-26
 Verified: tsc --noEmit clean ✓ | Spec-Review 10/10 PASS ✓ | Code-Quality APPROVED_WITH_DEBT (pre-existing) ✓
 Docs updated: shared-context/docs/delivery/BUG-20260521-zopa-prefilled-values-diagnosis-report.md

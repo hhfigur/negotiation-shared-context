@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -E \"\\\\.\\(tsx?|jsx?\\)$\")",
+      "Bash(npx tsc --noEmit)",
+      "Bash(npx tsc --noEmit 2>&1)"
+    ],
+    "additionalDirectories": [
+      "/Users/maikfigur/app-workspace/shared-context/.claude/skills"
+    ]
+  }
+}

@@ -34,7 +34,7 @@ If not found: **HALT — report "ITEM_ID not found in backlog".**
 
 ### Step C — Check for existing DONE stamp in entry body
 
-Scan the entry body for `**Status: DONE**`.
+Scan the entry body for `**Status:** DONE`.
 If already present: **HALT — report "Entry body already stamped DONE. Skipping."**
 
 ### Step D — Stamp the entry body
@@ -42,7 +42,7 @@ If already present: **HALT — report "Entry body already stamped DONE. Skipping
 Append this exact block to the end of the entry body (before the next `---`):
 
 ```
-**Status: DONE**
+**Status:** DONE
 Commit: `<COMMIT>` (<REPO>) — <DATE>
 Verified: <one-line summary of what was confirmed clean, e.g. "tsc --noEmit clean ✓ | grep confirms 0 references ✓">
 Docs updated: <list docs updated, or "none">
@@ -225,7 +225,7 @@ Status: DONE / BLOCKED BY: [reason]
 
 Expected entry body stamp appended:
 ```
-**Status: DONE**
+**Status:** DONE
 Commit: `056e672` (negotiation-buddy) — 2026-04-01
 Verified: tsc --noEmit clean ✓ | useToast imports → 0 remaining ✓
 Docs updated: docs/redundancy-register.md (R-007 Resolved)

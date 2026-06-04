@@ -25,3 +25,9 @@ Usage: `/pm-prepare-delivery <ITEM-ID>`
 - acceptance criteria must be concrete and verifiable
 - if telemetry cannot be measured, document the gap explicitly
 - do not start delivery on items with open blocking decisions
+
+---
+**OUTPUT-SIGNAL:**
+> DELIVERY BRIEF READY — [NC-ID] — [DATUM]
+> Brief: product/briefs/[NC-ID].md
+> Warte auf Bestätigung vom User bevor Status auf "In Delivery" gesetzt wird.

@@ -20,3 +20,9 @@ Run once before a new release cycle to establish a clean baseline.
 - do not change status without evidence
 - mark UNKNOWN where status cannot be determined
 - do not infer release approval from code completion
+
+---
+**OUTPUT-SIGNAL:**
+> NORMALIZE COMPLETE — [DATUM]
+> Vorgeschlagene Korrekturen: [Anzahl]
+> Warte auf Bestätigung vom User bevor Änderungen geschrieben werden.

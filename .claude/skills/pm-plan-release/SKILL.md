@@ -21,3 +21,9 @@ Define or update the scope for the next release.
 - respect Layer dependency order
 - no item in scope without a brief (or brief creation as part of this release)
 - mark open decisions explicitly
+
+---
+**OUTPUT-SIGNAL:**
+> RELEASE PLAN READY — [RELEASE-ID] — [DATUM]
+> Scope: [Anzahl Items]
+> Warte auf GO vom User bevor current.md aktualisiert wird.

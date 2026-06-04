@@ -105,6 +105,7 @@ Spezifiziert via `CC-GR-01`. Installiert in `.claude/skills/` beider Repos.
 | ID | Slash-Command | Wann verwenden | Verhalten | Status |
 |---|---|---|---|---|
 | WFL-01 | `/session-start`     | Beginn jeder Claude-Code-Session             | Lädt CLAUDE.md, AGENTS.md, Tasks                 | Observed — SKILL.md vorhanden (shared-context)                      |
+| WFL-01b | `/session-end`      | Am Ende jeder Session                        | MEMORY.md, Lessons-Check, Session-Dump           | Observed — SKILL.md vorhanden (shared-context)                      |
 | WFL-02 | `/impact-check`      | Vor Änderung mit shared state / API / DB     | Prüft Cross-Repo-Auswirkungen                    | Observed — SKILL.md vorhanden (shared-context)                      |
 | WFL-03 | `/contract-check`    | Vor Merge/Ship mit API-Contract-Änderungen   | Prüft api-catalog, db-map, Types                 | Observed — SKILL.md vorhanden (shared-context)                      |
 | WFL-04 | `/cleanup-audit`     | Bei Dead-Code/Debt-Untersuchung              | Read-only, kein Code                             | Observed — SKILL.md vorhanden (shared-context)                      |
@@ -213,6 +214,7 @@ shared-context/docs/
 
 .claude/skills/ (shared-context)
 ├── session-start/SKILL.md              ✅ Observed — Phase 2
+├── session-end/SKILL.md                ✅ Observed — Phase 3b
 ├── bug-fix/SKILL.md                    ✅ Observed — Phase 2
 ├── feature-plan/SKILL.md               ✅ Observed — Phase 2
 ├── feature-implement/SKILL.md          ✅ Observed — Phase 2
@@ -239,3 +241,4 @@ shared-context/docs/
 | 2026-04-18 | 1.1 | Vollständige Neustrukturierung — 42 Artefakte, 6 Gruppen, Redundanz- und Lückenanalyse, Delivery-Controller-Kontext |
 | 2026-06-04 | 1.2 | Phase-2-Skills: session-start, bug-fix, feature-plan, feature-implement, release-check, adr-create — PM-Skills repariert (OUTPUT-SIGNAL, Brief-Update) — uninstallierte Skills markiert |
 | 2026-06-04 | 1.3 | Phase-3-Skills: impact-check, contract-check, cleanup-audit installiert — Wiki-Zählung korrigiert |
+| 2026-06-04 | 1.4 | session-end Skill hinzugefügt |

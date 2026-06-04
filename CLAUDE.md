@@ -61,6 +61,7 @@ Skills laufen immer im Kontext des aktiven TARGET REPO:
 | Skill            | Cross-Repo-Verhalten                                              |
 |------------------|-------------------------------------------------------------------|
 | `/session-start` | Lädt shared-context-Kontext + TARGET REPO CLAUDE.md + AGENTS.md  |
+| `/session-end`   | Am Ende jeder Session — MEMORY.md, Lessons-Check, Session-Dump   |
 | `/impact-check`  | Prüft Auswirkungen auf ALLE drei Repos, nicht nur TARGET REPO     |
 | `/contract-check`| Prüft shared-context/docs/contracts/ gegen TARGET REPO           |
 | `/cleanup-audit` | Read-only — läuft im TARGET REPO, schreibt nach shared-context/  |

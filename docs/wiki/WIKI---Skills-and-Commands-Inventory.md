@@ -24,10 +24,10 @@ von Aufgaben, beim Skill-Reuse und bei der Lückenerkennung.
 | Governance Skills | 7 | 7 | 0 | 0 |
 | Delivery Skills | 7 | 6 | 0 | 1 |
 | Execution Skills (Prompts) | 9 | 4 | 5 | 0 |
-| Workflow Skills (Repo-Ebene) | 5 | 5* | 0 | 0 |
+| Workflow Skills (Repo-Ebene) | 15 | 15 | 0 | 0 |
 | Controller / Tower Assets | 8 | 6 | 1 | 1 |
 | Knowledge Skills | 6 | 6 | 0 | 0 |
-| **Gesamt** | **42** | **34** | **6** | **2** |
+| **Gesamt** | **52** | **50** | **6** | **0** |
 
 *Observed als spezifiziert. Installation in `.claude/skills/` — Inferred, nicht
 verified ohne aktiven Repo-Zugriff.
@@ -105,9 +105,9 @@ Spezifiziert via `CC-GR-01`. Installiert in `.claude/skills/` beider Repos.
 | ID | Slash-Command | Wann verwenden | Verhalten | Status |
 |---|---|---|---|---|
 | WFL-01 | `/session-start`     | Beginn jeder Claude-Code-Session             | Lädt CLAUDE.md, AGENTS.md, Tasks                 | Observed — SKILL.md vorhanden (shared-context)                      |
-| WFL-02 | `/impact-check`      | Vor Änderung mit shared state / API / DB     | Prüft Cross-Repo-Auswirkungen                    | ⚠️ noch nicht installiert — Skill geplant                           |
-| WFL-03 | `/contract-check`    | Vor Merge/Ship mit API-Contract-Änderungen   | Prüft api-catalog, db-map, Types                 | ⚠️ noch nicht installiert — Skill geplant                           |
-| WFL-04 | `/cleanup-audit`     | Bei Dead-Code/Debt-Untersuchung              | Read-only, kein Code                             | ⚠️ noch nicht installiert — Skill geplant                           |
+| WFL-02 | `/impact-check`      | Vor Änderung mit shared state / API / DB     | Prüft Cross-Repo-Auswirkungen                    | Observed — SKILL.md vorhanden (shared-context)                      |
+| WFL-03 | `/contract-check`    | Vor Merge/Ship mit API-Contract-Änderungen   | Prüft api-catalog, db-map, Types                 | Observed — SKILL.md vorhanden (shared-context)                      |
+| WFL-04 | `/cleanup-audit`     | Bei Dead-Code/Debt-Untersuchung              | Read-only, kein Code                             | Observed — SKILL.md vorhanden (shared-context)                      |
 | WFL-05 | `/close-task`        | Vor Task-Markierung als DONE                 | TypeCheck, Tests, Docs, Commit                   | Observed — ✅ repariert 2026-06-04 — Status-Format-Fix              |
 | WFL-06 | `/bug-fix`           | Bug-Fix-Workflow                             | Diagnose-First, Lessons-Pflicht                  | Observed — SKILL.md vorhanden (shared-context)                      |
 | WFL-07 | `/feature-plan`      | Vor jeder Feature-Implementierung            | Impact, ADR-Check, Template 1-DEV                | Observed — SKILL.md vorhanden (shared-context)                      |
@@ -224,9 +224,9 @@ shared-context/docs/
 ├── pm-prepare-delivery/SKILL.md        ✅ Observed — repariert 2026-06-04
 ├── pm-release-review/SKILL.md          ✅ Observed — repariert 2026-06-04
 ├── pm-sync-status/SKILL.md             ✅ Observed — repariert 2026-06-04
-├── impact-check/SKILL.md               ⚠️ nicht installiert — Skill geplant
-├── contract-check/SKILL.md             ⚠️ nicht installiert — Skill geplant
-└── cleanup-audit/SKILL.md              ⚠️ nicht installiert — Skill geplant
+├── impact-check/SKILL.md               ✅ Observed — Phase 3
+├── contract-check/SKILL.md             ✅ Observed — Phase 3
+└── cleanup-audit/SKILL.md              ✅ Observed — Phase 3
 ```
 
 ---
@@ -238,3 +238,4 @@ shared-context/docs/
 | 2026-04-17 | 1.0 | Erstversion — Skills A–J, Prompt-Templates, Hooks, Tool-Routing, Rule-Files |
 | 2026-04-18 | 1.1 | Vollständige Neustrukturierung — 42 Artefakte, 6 Gruppen, Redundanz- und Lückenanalyse, Delivery-Controller-Kontext |
 | 2026-06-04 | 1.2 | Phase-2-Skills: session-start, bug-fix, feature-plan, feature-implement, release-check, adr-create — PM-Skills repariert (OUTPUT-SIGNAL, Brief-Update) — uninstallierte Skills markiert |
+| 2026-06-04 | 1.3 | Phase-3-Skills: impact-check, contract-check, cleanup-audit installiert — Wiki-Zählung korrigiert |

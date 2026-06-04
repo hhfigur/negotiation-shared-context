@@ -1,0 +1,14 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "../negotiationcoach-backend"
+		},
+		{
+			"path": "../negotiation-buddy"
+		}
+	],
+	"settings": {}
+}

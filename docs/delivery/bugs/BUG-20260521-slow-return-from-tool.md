@@ -54,14 +54,23 @@ Root cause: 14 useEffects in Index.tsx ohne Cleanup-Return. Effect Z. 318-398 st
 ## Abschluss
 
 **Status:** DONE
-Commit: `81e65d9` (negotiation-buddy) — 2026-05-21
+Commit: `81e65d9` (negotiation-buddy) — 2026-05-21 (original fix)
 Verified: tsc --noEmit clean ✓ | Spec-Review PASS_WITH_NOTES | Code-Quality APPROVED_WITH_DEBT
 Debt-1: `finally` fires `setIsAnalyzingProgress(false)` even on abort (benign)
 Debt-2: `extractedInputs` stale closure in dep array (pre-existing, low severity)
 Docs: `BUG-20260521-batna-lost-after-nav-diagnosis-report.md`
 
-## Implement
-_Wird durch Template 2-DEV befüllt._
+## Regression — 2026-06-04
+
+**Ursache:** `d1485f7` (perf: auto-restore last active session) enthielt einen Effect-Ordering-Bug.
+Effect 1 (`setLastActiveSessionId`) und Effect 2 (auto-restore) feuerten im selben Render-Zyklus.
+Effect 1 (zuerst deklariert) überschrieb `_lastActiveSessionId` auf `null`, bevor Effect 2 sie lesen konnte.
+Auto-Restore feuerte nie → User musste manuell klicken → `handleSelectSession` → `summarize-session` → 3–10s Freeze.
+
+**Fix:** `5436ad5` (negotiation-buddy) — 2026-06-04
+`lastActiveIdAtMount = useRef(_lastActiveSessionId)` bei Component-Init (vor allen Effects).
+Effect 2 liest `lastActiveIdAtMount.current` statt `_lastActiveSessionId`.
+tsc --noEmit clean ✓
 
 ## Abschluss
 _Wird durch /close-task befüllt._

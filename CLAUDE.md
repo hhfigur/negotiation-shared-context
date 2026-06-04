@@ -70,7 +70,7 @@ Skills laufen immer im Kontext des aktiven TARGET REPO:
 
 Unabhängig von TARGET REPO gelten diese Regeln in jeder Session:
 - Keine Logik oder Business-Regeln ins Frontend (negotiation-buddy)
-- Alle LLM-Calls: Railway Backend → Anthropic Claude (ADR-003)
+- Alle LLM-Calls: Express backend → Anthropic Claude (ADR-003)
 - Edge Functions: Gemini via Lovable AI Gateway — kein Anthropic in EF
 - Keine direkten Supabase-Calls aus Frontend-Komponenten
 - Tier-Prüfungen immer serverseitig (RLS)

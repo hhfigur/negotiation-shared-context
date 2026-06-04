@@ -8,12 +8,12 @@
 ## North Star
 | Name | Definition | Baseline | Target | Source | Status |
 |---|---|---:|---:|---|---|
-| Vollständige Analysen pro Monat | Sessions mit isComplete=true und Layer-1-Ergebnis | UNKNOWN | TBD | Railway logs | Draft |
+| Vollständige Analysen pro Monat | Sessions mit isComplete=true und Layer-1-Ergebnis | UNKNOWN | TBD | Render.com logs | Draft |
 
 ## Primary release metrics
 | Metric | Why it matters | Baseline | Target | Source | Owner |
 |---|---|---:|---:|---|---|
-| Layer-2-Fehlerrate | Market Data broken = kein KMU-Wert | UNKNOWN | <5% | Railway logs | Backend |
+| Layer-2-Fehlerrate | Market Data broken = kein KMU-Wert | UNKNOWN | <5% | Render.com logs | Backend |
 | realityScore Genauigkeit | Kernversprechen Layer 2 | UNKNOWN | TBD | manual review | Product |
 
 ## Guardrails

@@ -78,7 +78,7 @@ Kein Anthropic in EF. Modell-Auswahl bleibt im Gemini-Spektrum. ✅
 
 ## Non-Goals
 
-- Tier-Enforcement im Railway-Backend (bereits via requireTier Middleware)
+- Tier-Enforcement im Express backend (bereits via requireTier Middleware)
 - Stripe-Integration oder Abo-Verwaltung
 - Änderungen an anderen EFs (generate-plan, analyze-progress etc.)
 - Hard-Block für unauthenticated Requests (Guest-Mode bleibt offen)

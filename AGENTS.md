@@ -20,7 +20,7 @@ shared-context/
     ├── audits/
     │   └── current-state-report.md Full finding registry (CRIT/HIGH/MED/LOW)
     └── decision-log/
-        ├── ADR-001-system-boundaries.md   Where code belongs (browser vs Railway vs Supabase)
+        ├── ADR-001-system-boundaries.md   Where code belongs (browser vs Render.com vs Supabase)
         └── ADR-002-data-ownership.md      Who writes which tables, write path rules
 ```
 
@@ -41,7 +41,7 @@ Every finding is marked as one of:
 
 ## System in One Paragraph
 
-NegotiationCoach AI is a React SPA (`negotiation-buddy`) backed by two services: a Railway Express API (`negotiationcoach-backend`) for LLM orchestration and analysis, and Supabase for auth, storage, and streaming Edge Functions. The analysis engine implements ZOPA, Nash Bargaining, and Monte Carlo simulation in TypeScript. Market data enrichment adds benchmarks for kmu/profi tier users. The frontend has significant historical direct-Supabase-write patterns (sessions, messages, teams) that predate the Railway API and represent the primary architectural debt.
+NegotiationCoach AI is a React SPA (`negotiation-buddy`) backed by two services: an Express Backend (Render.com) (`negotiationcoach-backend`) for LLM orchestration and analysis, and Supabase for auth, storage, and streaming Edge Functions. The analysis engine implements ZOPA, Nash Bargaining, and Monte Carlo simulation in TypeScript. Market data enrichment adds benchmarks for kmu/profi tier users. The frontend has significant historical direct-Supabase-write patterns (sessions, messages, teams) that predate the Backend API and represent the primary architectural debt.
 
 ---
 
@@ -49,14 +49,14 @@ NegotiationCoach AI is a React SPA (`negotiation-buddy`) backed by two services:
 
 | ID | Severity | Summary |
 |----|----------|---------|
-| CRIT-01 | Critical | Layer 1 algorithms duplicated in Railway AND Supabase Edge Function with incompatible schemas |
+| CRIT-01 | Critical | Layer 1 algorithms duplicated in Backend Layer 1 AND Supabase Edge Function with incompatible schemas |
 | CRIT-02 | Critical | Team admin check is frontend React code only — no server-side enforcement verified |
-| CRIT-03 | Critical | Railway authMiddleware never returns 401 — all endpoints publicly accessible |
+| CRIT-03 | Critical | backend authMiddleware never returns 401 — all endpoints publicly accessible |
 | HIGH-01 | High | Frontend writes negotiation_sessions, session_messages, teams directly (no API mediation) |
 | HIGH-02 | High | Message saves are fire-and-forget — silent data loss possible |
-| HIGH-03 | High | Three incompatible tier systems: Railway, Supabase persona_type, Edge Function hardcoded "free" |
+| HIGH-03 | High | Three incompatible tier systems: backend tier, Supabase persona_type, Edge Function hardcoded "free" |
 | MED-01 | Medium | modelRouter bypassed in /api/chat and /api/plan — cost optimization and tier routing absent |
-| MED-02 | Medium | CORS wildcard header overrides allowlist in Railway backend |
+| MED-02 | Medium | CORS wildcard header overrides allowlist in Express backend |
 
 Full details: `docs/audits/current-state-report.md`
 
@@ -82,7 +82,7 @@ Full details: `docs/audits/current-state-report.md`
 | Repo | Path | Role |
 |------|------|------|
 | Frontend | `/Users/maikfigur/app-workspace/negotiation-buddy/` | React SPA, Supabase Edge Functions |
-| Backend | `/Users/maikfigur/app-workspace/negotiationcoach-backend/` | Railway Express API, Layer 1/2 algorithms |
+| Backend | `/Users/maikfigur/app-workspace/negotiationcoach-backend/` | Express Backend (Render.com), Layer 1/2 algorithms |
 | Shared context | `/Users/maikfigur/app-workspace/shared-context/` | This repo — documentation only |
 
 ---

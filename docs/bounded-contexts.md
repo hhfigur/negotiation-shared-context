@@ -15,7 +15,7 @@ The system contains six meaningful bounded contexts. Each context has a canonica
 
 **Canonical Owner:** Supabase Auth
 **Primary Datastore:** Supabase Auth schema (not PostgreSQL tables)
-**Business Logic Owner:** Supabase + Railway middleware
+**Business Logic Owner:** Supabase + Express backend middleware
 
 ### Write Path
 - Sign-up / sign-in / password reset → `supabase.auth.*` calls from frontend `useAuth.tsx`
@@ -24,14 +24,14 @@ The system contains six meaningful bounded contexts. Each context has a canonica
 
 ### Read Path
 - Frontend: `useAuth().user` from `onAuthStateChange` listener
-- Railway backend: `supabase.auth.getUser(token)` in `authMiddleware.ts`
+- Express backend: `supabase.auth.getUser(token)` in `authMiddleware.ts`
 - Edge Functions: Supabase JWT verification (built-in)
 
 ### Sync / Projection Rule
-JWT carries tier as `user.user_metadata.tier` or `user.app_metadata.tier`. Railway reads this on every request. No caching.
+JWT carries tier as `user.user_metadata.tier` or `user.app_metadata.tier`. Express backend reads this on every request. No caching.
 
 ### Auth / Permission Owner
-Supabase Auth (issuance) + Railway `authMiddleware` (validation)
+Supabase Auth (issuance) + backend `authMiddleware` (validation)
 
 ### Violations / Ambiguities
 - **RESOLVED 2026-04-03 — fd68e1e:** 401 enforced for missing/invalid tokens. `AUTH_REQUIRED=false` provides explicit dev bypass. Default tier for tokens with no metadata: `'free'`.
@@ -42,7 +42,7 @@ Supabase Auth (issuance) + Railway `authMiddleware` (validation)
 
 ## BC-02 · Negotiation Analysis Engine
 
-**Canonical Owner:** Railway backend (`negotiationcoach-backend`)
+**Canonical Owner:** Express backend (`negotiationcoach-backend`)
 **Primary Datastore:** `negotiation_sessions` table (layer1_result, layer2_result columns)
 **Business Logic Owner:** `src/layer1/` (algorithms), `src/layer2/` (enrichment)
 
@@ -58,13 +58,13 @@ Supabase Auth (issuance) + Railway `authMiddleware` (validation)
 Analysis results are computed on-demand. The `negotiation_sessions` record is created at `/api/analyze` and updated (layer2_result) at `/api/enrich`. AnalysisContext mirrors the last result in localStorage.
 
 ### Auth / Permission Owner
-Railway `authMiddleware` + `requireTier('kmu')` gate on `/api/enrich`
+backend `authMiddleware` + `requireTier('kmu')` gate on `/api/enrich`
 
 ### Violations / Ambiguities
 - ~~**CRITICAL:** Layer 1 algorithms duplicated in `src/layer1/` and `supabase/functions/_shared/engine/` with incompatible schemas.~~
   **RESOLVED — CRIT-01: ADR-007-A 2026-04-21.** `_shared/engine/` retired (leer, 0 Dateien, Observed 2026-04-30).
-  Eine kanonische Layer-1-Implementierung: `negotiationcoach-backend/src/layer1/` (Railway).
-  `negotiate/index.ts` delegiert via HTTP an Railway `/api/analyze` — kein lokaler Layer-1-Code.
+  Eine kanonische Layer-1-Implementierung: `negotiationcoach-backend/src/layer1/` (Backend).
+  `negotiate/index.ts` delegiert via HTTP an Backend `/api/analyze` — kein lokaler Layer-1-Code.
 - **Observed:** Tests in `tests/layer1/` reference the Edge Function schema (stale). Tests are broken and should not be trusted.
 
 ---
@@ -73,13 +73,13 @@ Railway `authMiddleware` + `requireTier('kmu')` gate on `/api/enrich`
 
 **Canonical Owner:** Supabase Edge Function `/chat`
 **Primary Datastore:** `session_history` table
-**Business Logic Owner:** Shared — Edge Function (streaming, tag extraction) + `chatHelpers.ts` in Railway (fallback, non-streaming)
+**Business Logic Owner:** Shared — Edge Function (streaming, tag extraction) + `chatHelpers.ts` in Express backend (fallback, non-streaming)
 
 ### Write Path
 - Frontend `useChat.ts` → SSE POST to `supabase/functions/v1/chat` → streams tokens back
-- `negotiation_sessions` INSERT → `POST /api/sessions` (Railway) — MIGRATED RFB-004-B `2415f72`
-- `negotiation_sessions` UPDATE → `PATCH /api/sessions/:id` (Railway) — MIGRATED RFB-004-B `2415f72`
-- `session_history` INSERT → `POST /api/sessions/:id/messages` (Railway) — MIGRATED RFB-004-B `2415f72`
+- `negotiation_sessions` INSERT → `POST /api/sessions` (Express backend) — MIGRATED RFB-004-B `2415f72`
+- `negotiation_sessions` UPDATE → `PATCH /api/sessions/:id` (Express backend) — MIGRATED RFB-004-B `2415f72`
+- `session_history` INSERT → `POST /api/sessions/:id/messages` (Express backend) — MIGRATED RFB-004-B `2415f72`
 
 > **RFB-004-C DONE 2026-04-10:** Token retrieval in `useSessionManager.ts` now uses `useAuth()` exclusively for all three write paths. Boundary-violation fully resolved.
 
@@ -95,23 +95,23 @@ Railway `authMiddleware` + `requireTier('kmu')` gate on `/api/enrich`
 Supabase anon key (for Edge Function call), Supabase RLS (inferred via `owns_session()` function in DB schema)
 
 ### Violations / Ambiguities
-- **PHASE A + B + C COMPLETE (RFB-004)** — Railway endpoints live (`2c51cb4`). `useSessionManager.ts` migrated to Railway API calls (`2415f72`, 2026-04-08). Direct Supabase SDK writes retired. Business rules (title truncation, 50-message limit, ownership) enforced server-side only. RFB-004-C DONE 2026-04-16 (`243c02d`) — BEFORE INSERT trigger enforces max 50 messages atomically at DB layer.
-- **Observed:** Railway also has a `/api/chat` endpoint (non-streaming fallback) using a hardcoded `claude-haiku` model, not `modelRouter`. The relationship between this fallback and the Edge Function primary path is undocumented.
-- **Inferred:** The Railway `/api/chat` is the original implementation; the Edge Function `/chat` is a later addition. The fallback may be dead code.
+- **PHASE A + B + C COMPLETE (RFB-004)** — Backend API endpoints live (`2c51cb4`). `useSessionManager.ts` migrated to Backend API calls (`2415f72`, 2026-04-08). Direct Supabase SDK writes retired. Business rules (title truncation, 50-message limit, ownership) enforced server-side only. RFB-004-C DONE 2026-04-16 (`243c02d`) — BEFORE INSERT trigger enforces max 50 messages atomically at DB layer.
+- **Observed:** Express backend also has a `/api/chat` endpoint (non-streaming fallback) using a hardcoded `claude-haiku` model, not `modelRouter`. The relationship between this fallback and the Edge Function primary path is undocumented.
+- **Inferred:** The Backend `/api/chat` is the original implementation; the Edge Function `/chat` is a later addition. The fallback may be dead code.
 
 ---
 
 ## BC-04 · Market Intelligence
 
-**Canonical Owner:** Railway backend Layer 2 (`src/layer2/`)
+**Canonical Owner:** Express backend Layer 2 (`src/layer2/`)
 **Primary Datastore:** `knowledge_graph` table (7-day TTL cache)
 **Business Logic Owner:** `marketDataResolver.ts`, `webSearch.ts`, `knowledgeGraph.ts`
 
 ### Write Path
-- Railway Layer 2 → `webSearch.ts` (Claude tool_use with training-data market values) → `knowledge_graph` INSERT with `valid_until = now() + 7 days`
+- Backend Layer 2 → `webSearch.ts` (Claude tool_use with training-data market values) → `knowledge_graph` INSERT with `valid_until = now() + 7 days`
 
 ### Read Path
-- Railway Layer 2 → `knowledge_graph` SELECT WHERE `valid_until > now()` → cache hit returns cached data
+- Backend Layer 2 → `knowledge_graph` SELECT WHERE `valid_until > now()` → cache hit returns cached data
 - Cache miss → `webSearch.ts` → store → return
 
 ### Sync / Projection Rule
@@ -128,17 +128,17 @@ Tier gate: privat/free receive no market data. kmu/profi access Layer 2 enrichme
 
 ## BC-05 · Team Management
 
-**Canonical Owner:** Railway backend (team CRUD endpoints) — Phase A + B complete; RLS enforced at DB layer
+**Canonical Owner:** Express backend (team CRUD endpoints) — Phase A + B complete; RLS enforced at DB layer
 **Primary Datastore:** `teams`, `team_members`, `team_training_tasks` tables
-**Business Logic Owner:** Railway backend (Phase A complete — commit 0b10d9c)
+**Business Logic Owner:** Express backend (Phase A complete — commit 0b10d9c)
 
-### Write Path (Phase A complete — Railway endpoints live)
+### Write Path (Phase A complete — Backend API endpoints live)
 - `POST /api/teams` — Team erstellen, Aufrufer wird admin_user_id
 - `POST /api/teams/:id/members` — Mitglied hinzufügen (admin only)
 - `DELETE /api/teams/:id/members/:userId` — Mitglied entfernen (admin only)
 - `PATCH /api/teams/:id/tasks/:taskId` — Task aktualisieren (admin only)
-- Phase B complete (2026-04-08): TeamDashboard.tsx migrated to Railway API via useTeamApi hook.
-- W3 (task creation) remains on Supabase SDK — Phase C dependency (no Railway endpoint yet).
+- Phase B complete (2026-04-08): TeamDashboard.tsx migrated to Backend API via useTeamApi hook.
+- W3 (task creation) remains on Supabase SDK — Phase C dependency (no backend endpoint yet).
 - `POST /api/teams/:id/tasks` — Task erstellen (admin only) — endpoint live commit 6021665; frontend migration pending (Lovable Phase C)
 
 ### Read Path
@@ -179,7 +179,7 @@ Supabase RLS (inferred — user_profiles likely scoped to `auth.uid()`)
 
 ### Violations / Ambiguities
 - **RESOLVED 2026-04-03 — RFB-012:** `on_auth_user_created` trigger created on `auth.users`. `handle_new_user()` inserts a default `user_profiles` row (persona_type='private', subscription_tier='free', experience_level=1) on every new sign-up. Backfill not required — 4 existing rows already present.
-- **PARTIAL RESOLVED (RFB-007-B `6ba5710` 2026-04-10):** `persona_type` → `Tier` mapping now applied at Railway session creation boundary (`sessionRoutes.ts POST /api/sessions`). `resolvedTier` returned in 201 response. DB enum values unchanged. Step C (EF boundary) pending VG-06.
+- **PARTIAL RESOLVED (RFB-007-B `6ba5710` 2026-04-10):** `persona_type` → `Tier` mapping now applied at backend session creation boundary (`sessionRoutes.ts POST /api/sessions`). `resolvedTier` returned in 201 response. DB enum values unchanged. Step C (EF boundary) pending VG-06.
 - ~~**Observed:** `subscription_tier` sent in chat persona is hardcoded as `"free"` in `useChat.ts`. Actual user tier is not propagated to the Edge Function.~~ **RESOLVED — RFB-009 `d90d5c0` 2026-04-10.** `useChat.ts` now sends live JWT; Edge Function resolves tier server-side via `supabase.auth.getUser()` + `user_profiles` lookup. `subscription_tier` in request body ignored.
 
 ---
@@ -190,7 +190,7 @@ Supabase RLS (inferred — user_profiles likely scoped to `auth.uid()`)
 |-------|------------------|----------------|
 | Two incompatible NegotiationInputs type schemas | BC-02, BC-03 | Observed |
 | Two incompatible tier enumerations | BC-01, BC-02, BC-06 | Observed |
-| Frontend directly writes to DB in BC-03, BC-05, BC-06 without Railway mediation | BC-03, BC-05, BC-06 | Observed |
+| Frontend directly writes to DB in BC-03, BC-05, BC-06 without Backend API mediation | BC-03, BC-05, BC-06 | Observed |
 | ~~Team admin authorization frontend-only~~ **RLS enforced at DB layer — RFB-002** | BC-05 | Resolved |
 | Knowledge candidate pipeline broken (extracted, never submitted) | BC-03, BC-04 | Observed |
 | ~~`subscription_tier` in chat hardcoded "free"~~ **RESOLVED RFB-009 `d90d5c0`** | BC-01, BC-03 | Resolved |

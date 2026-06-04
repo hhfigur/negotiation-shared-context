@@ -22,7 +22,7 @@ Browser
                                │ JWT (Bearer token)
               ┌────────────────┼────────────────────────┐
               ▼                ▼                         ▼
-    Railway Express       Supabase SDK            Supabase Edge
+    Express Backend       Supabase SDK            Supabase Edge
     authMiddleware        (anon key)              Functions
     (validates JWT)       (for direct DB          (JWT-validated
                           writes from frontend)    by runtime)
@@ -32,16 +32,16 @@ Browser
 
 ## 2. Token Flow
 
-### 2.1 Browser-to-Railway
+### 2.1 Browser-to-Backend
 - Frontend obtains JWT access token via `supabase.auth.getSession().data.session.access_token`
-- Sends as `Authorization: Bearer <token>` header to Railway API
-- Railway validates token via `supabase.auth.getUser(token)` in `authMiddleware.ts`
+- Sends as `Authorization: Bearer <token>` header to Backend API
+- Express backend validates token via `supabase.auth.getUser(token)` in `authMiddleware.ts`
 
 **JWT Tier Immutability (Confirmed 2026-04-09 — RFB-010):**
-`app_metadata.tier` and `user_metadata.tier` are **never written after signup**. No Stripe webhook handler exists in either repo; `stripe` npm package is not installed. The tier embedded in the JWT at login time never changes regardless of subscription changes. Consequence: Stripe upgrades/downgrades have no effect on Railway tier enforcement. Implementation deferred as RFB-032.
+`app_metadata.tier` and `user_metadata.tier` are **never written after signup**. No Stripe webhook handler exists in either repo; `stripe` npm package is not installed. The tier embedded in the JWT at login time never changes regardless of subscription changes. Consequence: Stripe upgrades/downgrades have no effect on backend tier enforcement. Implementation deferred as RFB-032.
 
 **subscription_tier DB column (Updated 2026-04-16 — RFB-036 `a28d28c`):**
-`user_profiles.subscription_tier` now uses Railway Tier values directly: `free | privat | kmu | profi`. Old scaffold values (`starter`, `professional`, `expert`, `team`) have been renamed/merged via migration. RFB-032 (Stripe webhook) is now unblocked — webhook will write Railway values directly to `subscription_tier`.
+`user_profiles.subscription_tier` now uses Tier values directly: `free | privat | kmu | profi`. Old scaffold values (`starter`, `professional`, `expert`, `team`) have been renamed/merged via migration. RFB-032 (Stripe webhook) is now unblocked — webhook will write backend tier values directly to `subscription_tier`.
 
 **Duplication (Observed):** Token fetching via `supabase.auth.getSession()` is repeated in at least 6 files:
 - `useSessionManager.ts`
@@ -57,7 +57,7 @@ No central `getToken()` accessor exists in `useAuth.tsx`.
 - Supabase client initialized with **anon key** (VITE_SUPABASE_PUBLISHABLE_KEY)
 - Auth session in localStorage provides user context to Supabase JS SDK
 - RLS policies on Supabase tables filter results by `auth.uid()`
-- Direct writes from browser are subject to RLS only (no Railway validation layer)
+- Direct writes from browser are subject to RLS only (no backend validation layer)
 
 ### 2.3 Browser-to-Edge-Function
 - `useChat.ts` calls Supabase Edge Function `/functions/v1/chat` with the anon key as Authorization header
@@ -70,7 +70,7 @@ Session DB ops filtered by `user_id`. Tier gate present, inactive (commented stu
 
 ---
 
-## 3. Railway Backend: Auth Middleware
+## 3. Express Backend: Auth Middleware
 
 **File:** `src/api/middleware.ts`
 **Status:** AUTH-01 RESOLVED — fd68e1e — 2026-04-03
@@ -95,7 +95,7 @@ Request received
 
 ## 4. Tier Hierarchy & Feature Gates
 
-### 4.1 Tier Hierarchy (Railway)
+### 4.1 Tier Hierarchy (Backend)
 ```
 free (0) < privat (1) < kmu (2) < profi (3)
 ```
@@ -131,8 +131,8 @@ free (0) < privat (1) < kmu (2) < profi (3)
 
 ## 5. Database Access Control
 
-### 5.1 Railway Backend (SERVICE_ROLE_KEY)
-**Observed:** All Railway Supabase queries use `SUPABASE_SERVICE_KEY` which **bypasses RLS**. Access control is enforced in code:
+### 5.1 Express Backend (SERVICE_ROLE_KEY)
+**Observed:** All Express backend Supabase queries use `SUPABASE_SERVICE_KEY` which **bypasses RLS**. Access control is enforced in code:
 - All session reads/writes include `.eq('user_id', req.user.id)` or `.eq('user_id', userId)`
 - Risk: If `req.user.id` resolves to `'anonymous'` (the fallback), sessions for anonymous users could collide or be exposed if the user_id check is omitted
 
@@ -156,14 +156,14 @@ free (0) < privat (1) < kmu (2) < profi (3)
 
 | ID | Violation | Severity | Classification |
 |----|-----------|----------|----------------|
-| AUTH-01 | Railway authMiddleware never rejects — no 401 enforced | Critical | **Resolved** — fd68e1e 2026-04-03 |
+| AUTH-01 | backend authMiddleware never rejects — no 401 enforced | Critical | **Resolved** — fd68e1e 2026-04-03 |
 | AUTH-02 | Team admin check is React UI code only — no server-side enforcement verified | Critical | Observed |
 | AUTH-03 | Frontend direct DB writes to teams/team_members bypass all API auth layers | High | Observed |
 | AUTH-04 | Token fetching duplicated in 6 frontend files — no centralized accessor | Medium | Observed |
 | AUTH-05 | modelRouter bypassed in /api/chat and /api/plan | Medium | Resolved — fixed in feat(rfb-011) 60848db; selectModel() wired into both handlers
 | AUTH-06 | ~~subscription_tier hardcoded as "free" in Edge Function chat persona~~ | Medium | **Resolved — RFB-009 `d90d5c0` 2026-04-10.** Tier now propagated via JWT; enforced server-side in Edge Function via `supabase.auth.getUser()` + `user_profiles` lookup. |
-| AUTH-07 | CORS wildcard header overrides allowlist in Railway backend | Medium | Resolved — fixed in `fix(rfb-005)`: wildcard middleware removed, `ngrok-skip-browser-warning` moved to `cors()` `allowedHeaders` |
-| AUTH-08 | Railway anon fallback assigns 'privat' tier — free-tier users get privat access without a token | Low | **Resolved** — fd68e1e 2026-04-03. Default tier for valid tokens with no metadata changed to 'free'. Pre-flight: both production users had tier set in user_metadata before deploy. |
+| AUTH-07 | CORS wildcard header overrides allowlist in Express backend | Medium | Resolved — fixed in `fix(rfb-005)`: wildcard middleware removed, `ngrok-skip-browser-warning` moved to `cors()` `allowedHeaders` |
+| AUTH-08 | Express backend anon fallback assigns 'privat' tier — free-tier users get privat access without a token | Low | **Resolved** — fd68e1e 2026-04-03. Default tier for valid tokens with no metadata changed to 'free'. Pre-flight: both production users had tier set in user_metadata before deploy. |
 | AUTH-09 | Edge Function `generate-plan` had no JWT validation, no tier gate, no `user_id` filter on DB writes — any caller with `LOVABLE_API_KEY` could invoke it (VG-06-A) | High | **Resolved — RFB-033 2026-04-11.** JWT guard via `supabase.auth.getUser()`, tier resolved from `user_profiles`, `.eq("user_id")` ownership filters on both SELECT and UPDATE. Tier gate added as commented stub. |
 
 ---
@@ -184,8 +184,8 @@ HaveIBeenPwned integration uses k-anonymity (SHA-1 prefix only). Silent failure 
 | Priority | Action | Affected Component |
 |----------|--------|-------------------|
 | P0 | Verify and harden Supabase RLS on teams/team_members | Supabase migrations |
-| P0 | Return 401 from Railway authMiddleware on invalid/missing token | middleware.ts |
-| P1 | Move team CRUD to Railway API endpoints with server-side admin validation | New Railway routes |
+| P0 | Return 401 from backend authMiddleware on invalid/missing token | middleware.ts |
+| P1 | Move team CRUD to Backend API endpoints with server-side admin validation | New backend routes |
 | P1 | Centralize token accessor in useAuth.tsx | Frontend |
 | P2 | Integrate modelRouter into /api/chat and /api/plan | chatHelpers.ts, planHelpers.ts, routes.ts |
 | P2 | Fix CORS: remove wildcard header or apply after allowlist check | routes.ts |

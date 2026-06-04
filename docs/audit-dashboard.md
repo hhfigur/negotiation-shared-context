@@ -43,7 +43,7 @@
 | ID | Severity | Summary |
 |----|----------|---------|
 | CRIT-01 | Critical | Dual Layer 1 implementations with incompatible type schemas (`own_target` vs `user_goal`) |
-| CRIT-03 | Critical | `authMiddleware` never returns 401 — Railway is fully public |
+| CRIT-03 | Critical | `authMiddleware` never returns 401 — backend is fully public |
 | HIGH-01 | High | Model router (`selectModel()`) not used by `/api/chat` or `/api/plan` endpoints |
 | A03 | High | Wildcard CORS header (`*`) overrides allowlist — accepts all origins |
 | A04 | High | No rate limiting on Claude API calls — cost exposure risk |
@@ -90,7 +90,7 @@
 | ID | Severity | Summary |
 |----|----------|---------|
 | CRIT-02 | Critical | Team admin authorization is UI-only — no verified RLS enforcement on `teams` / `team_members` |
-| HIGH-01 | High | Direct Supabase SDK writes from browser for 6 tables (sessions, messages, teams, profile) without Railway mediation |
+| HIGH-01 | High | Direct Supabase SDK writes from browser for 6 tables (sessions, messages, teams, profile) without Backend API mediation |
 | HIGH-02 | High | Session message persistence is fire-and-forget; failures silently lost |
 | F-003 | Medium | `AnalysisContext` persists to localStorage with no TTL, schema version, or logout-clear |
 | F-004 | Medium | Knowledge candidates accumulate in localStorage without cleanup |
@@ -140,8 +140,8 @@
 | Three incompatible `Tier` type definitions | backend + frontend + edge functions | CRIT-04 |
 | JWT token fetching duplicated in 6+ frontend files | frontend | HIGH-03 |
 | Model router implemented but unused by LLM endpoints | backend | HIGH-01 |
-| Two competing chat paths (Railway `/api/chat` vs Edge Function `/chat`) | both | ADR-001 |
-| Direct DB writes from browser bypass Railway business logic | frontend + backend | HIGH-01 |
+| Two competing chat paths (Backend `/api/chat` vs Edge Function `/chat`) | both | ADR-001 |
+| Direct DB writes from browser bypass Express backend business logic | frontend + backend | HIGH-01 |
 
 ### Blockers
 
@@ -261,7 +261,7 @@ These files capture the state of the Lovable IDE's project knowledge so that:
 ### Blockers
 
 - No CI/CD lint or type-check gate exists in either repo
-- Production deployment (Railway) is currently running without auth enforcement
+- Production deployment (Render.com) is currently running without auth enforcement
 - P0 guardrails require careful staging to avoid breaking the anonymous dev-mode fallback
 
 ### Next Step

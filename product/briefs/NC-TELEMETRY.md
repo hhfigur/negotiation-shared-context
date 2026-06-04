@@ -48,7 +48,7 @@ Basistelemetrie für die wichtigsten Produktentscheidungen:
 
 ## Affected Repos
 
-- `negotiationcoach-backend` (Railway: Logging-Endpunkte oder Render-Logs)
+- `negotiationcoach-backend` (Render.com: Logging-Endpunkte oder Render-Logs)
 - `negotiation-buddy` (Frontend: Event-Tracking)
 - `shared-context` (Metriken-Update: `product/metrics.md`)
 
@@ -58,7 +58,7 @@ Basistelemetrie für die wichtigsten Produktentscheidungen:
 
 **Minimal-Scope (empfohlen für Kickoff):**
 
-1. **Railway-Logs strukturieren** (negotiationcoach-backend):
+1. **Render.com logs strukturieren** (negotiationcoach-backend):
    - POST /api/analyze → Log: `{tier, negotiation_type, layer2_used, success}`
    - POST /api/chat (input extraction) → Log: `{tier, inputs_complete}`
 

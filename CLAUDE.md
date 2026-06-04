@@ -61,9 +61,9 @@ Skills laufen immer im Kontext des aktiven TARGET REPO:
 | Skill            | Cross-Repo-Verhalten                                              |
 |------------------|-------------------------------------------------------------------|
 | `/session-start` | Lädt shared-context-Kontext + TARGET REPO CLAUDE.md + AGENTS.md  |
-| `/impact-check`  | Prüft Auswirkungen auf ALLE drei Repos, nicht nur TARGET REPO     |
-| `/contract-check`| Prüft shared-context/docs/contracts/ gegen TARGET REPO           |
-| `/cleanup-audit` | Read-only — läuft im TARGET REPO, schreibt nach shared-context/  |
+| `/impact-check`  | ⚠️ noch nicht installiert — Skill geplant                         |
+| `/contract-check`| ⚠️ noch nicht installiert — Skill geplant                         |
+| `/cleanup-audit` | ⚠️ noch nicht installiert — Skill geplant                         |
 | `/close-task`    | Commit-Verifikation im TARGET REPO + Docs-Update in shared-context|
 
 ### Architekturregeln (nicht verhandelbar, immer aktiv)
@@ -76,6 +76,7 @@ Unabhängig von TARGET REPO gelten diese Regeln in jeder Session:
 - Tier-Prüfungen immer serverseitig (RLS)
 - Schema-Änderungen nur via Migration-Files, nie Supabase Dashboard
 - Neue DB-Tabellen brauchen RLS-Policy bei Erstellung
-- Cross-Repo-Änderungen nur nach `/impact-check`
+- Cross-Repo-Änderungen nur nach manuellem Impact-Check
+  (alle drei Repos, API-Vertrag, Supabase) — /impact-check Skill noch nicht installiert
 - Layer-Abhängigkeiten: 0 → 1 → 2 → 3 (nie überspringen)
 - Bis ADR-007 entschieden: keine neue Logik in Edge Function engine path

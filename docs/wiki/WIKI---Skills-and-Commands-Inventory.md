@@ -1,7 +1,7 @@
 # Skills & Commands Inventory — NegotiationCoach AI
 
 > **Status:** Aktiv | **Typ:** Knowledge | **Version:** 1.1
-> **Erstellt:** 2026-04-18 | **Basis:** Delivery-Controller-Session 2026-04-18
+> **Erstellt:** 2026-04-18 | **Aktualisiert:** 2026-06-04 | **Basis:** Delivery-Controller-Session 2026-04-18
 > **Zielpfad:** `shared-context/docs/wiki/WIKI---Skills-and-Commands-Inventory.md`
 
 ---
@@ -104,14 +104,29 @@ Spezifiziert via `CC-GR-01`. Installiert in `.claude/skills/` beider Repos.
 
 | ID | Slash-Command | Wann verwenden | Verhalten | Status |
 |---|---|---|---|---|
-| WFL-01 | `/session-start` | Beginn jeder Claude-Code-Session | Lädt CLAUDE.md, AGENTS.md, Tasks | Inferred installiert |
-| WFL-02 | `/impact-check` | Vor Änderung mit shared state / API / DB | Prüft Cross-Repo-Auswirkungen | Inferred installiert |
-| WFL-03 | `/contract-check` | Vor Merge/Ship mit API-Contract-Änderungen | Prüft api-catalog, db-map, Types | Inferred installiert |
-| WFL-04 | `/cleanup-audit` | Bei Dead-Code/Debt-Untersuchung | Read-only, kein Code | Inferred installiert |
-| WFL-05 | `/close-task` | Vor Task-Markierung als DONE | TypeCheck, Tests, Docs, Commit | Observed — SKILL.md vorhanden |
+| WFL-01 | `/session-start`     | Beginn jeder Claude-Code-Session             | Lädt CLAUDE.md, AGENTS.md, Tasks                 | Observed — SKILL.md vorhanden (shared-context)                      |
+| WFL-02 | `/impact-check`      | Vor Änderung mit shared state / API / DB     | Prüft Cross-Repo-Auswirkungen                    | ⚠️ noch nicht installiert — Skill geplant                           |
+| WFL-03 | `/contract-check`    | Vor Merge/Ship mit API-Contract-Änderungen   | Prüft api-catalog, db-map, Types                 | ⚠️ noch nicht installiert — Skill geplant                           |
+| WFL-04 | `/cleanup-audit`     | Bei Dead-Code/Debt-Untersuchung              | Read-only, kein Code                             | ⚠️ noch nicht installiert — Skill geplant                           |
+| WFL-05 | `/close-task`        | Vor Task-Markierung als DONE                 | TypeCheck, Tests, Docs, Commit                   | Observed — ✅ repariert 2026-06-04 — Status-Format-Fix              |
+| WFL-06 | `/bug-fix`           | Bug-Fix-Workflow                             | Diagnose-First, Lessons-Pflicht                  | Observed — SKILL.md vorhanden (shared-context)                      |
+| WFL-07 | `/feature-plan`      | Vor jeder Feature-Implementierung            | Impact, ADR-Check, Template 1-DEV                | Observed — SKILL.md vorhanden (shared-context)                      |
+| WFL-08 | `/feature-implement` | Nach GO aus /feature-plan                    | Template 2b-DEV, TypeCheck, close-task-dev       | Observed — SKILL.md vorhanden (shared-context)                      |
+| WFL-09 | `/release-check`     | Vor jedem Release                            | Release-Gate-Prüfung                             | Observed — SKILL.md vorhanden (shared-context)                      |
+| WFL-10 | `/adr-create`        | Vor ADR-pflichtiger Implementierung          | ADR-Template, Optionen, Decision                 | Observed — SKILL.md vorhanden (shared-context)                      |
+
+### PM Skills (shared-context)
+
+| ID | Slash-Command | Wann verwenden | Verhalten | Status |
+|---|---|---|---|---|
+| PM-01 | `/pm-normalize-state`  | Vor neuem Release-Zyklus           | Sync feature-register mit Repos        | Observed — ✅ repariert 2026-06-04 — OUTPUT-SIGNAL Block          |
+| PM-02 | `/pm-plan-release`     | Release-Scope definieren           | Roadmap → current.md Proposal          | Observed — ✅ repariert 2026-06-04 — OUTPUT-SIGNAL Block          |
+| PM-03 | `/pm-prepare-delivery` | Vor Delivery-Start                 | Brief erstellen/updaten                | Observed — ✅ repariert 2026-06-04 — OUTPUT-SIGNAL Block          |
+| PM-04 | `/pm-release-review`   | Nach Release-Verifikation          | Post-Release-Review erstellen          | Observed — ✅ repariert 2026-06-04 — OUTPUT-SIGNAL Block          |
+| PM-05 | `/pm-sync-status`      | Nach Delivery/QA                   | Status in feature-register + Brief     | Observed — ✅ repariert 2026-06-04 — Brief-Update Pflichtschritt  |
 
 **Verifikation:** Bei nächster Claude-Code-Session `/session-start` aufrufen und
-prüfen, ob alle 5 Skills geladen werden. Falls nicht: `CC-GR-01` erneut ausführen.
+prüfen, ob alle Skills geladen werden. Falls nicht: SKILL.md-Pfad prüfen.
 
 ---
 
@@ -196,12 +211,22 @@ shared-context/docs/
     ├── scenario-marketplace.md          ❌ Wave-2-Step-8
     └── pdf-export.md                    ❌ Wave-2-Step-8
 
-.claude/skills/ (beide Repos)
-├── session-start/SKILL.md              Inferred
-├── impact-check/SKILL.md               Inferred
-├── contract-check/SKILL.md             Inferred
-├── cleanup-audit/SKILL.md              Inferred
-└── close-task/SKILL.md                 Observed (vorhanden)
+.claude/skills/ (shared-context)
+├── session-start/SKILL.md              ✅ Observed — Phase 2
+├── bug-fix/SKILL.md                    ✅ Observed — Phase 2
+├── feature-plan/SKILL.md               ✅ Observed — Phase 2
+├── feature-implement/SKILL.md          ✅ Observed — Phase 2
+├── release-check/SKILL.md              ✅ Observed — Phase 2
+├── adr-create/SKILL.md                 ✅ Observed — Phase 2
+├── close-task/SKILL.md                 ✅ Observed — repariert 2026-06-04
+├── pm-normalize-state/SKILL.md         ✅ Observed — repariert 2026-06-04
+├── pm-plan-release/SKILL.md            ✅ Observed — repariert 2026-06-04
+├── pm-prepare-delivery/SKILL.md        ✅ Observed — repariert 2026-06-04
+├── pm-release-review/SKILL.md          ✅ Observed — repariert 2026-06-04
+├── pm-sync-status/SKILL.md             ✅ Observed — repariert 2026-06-04
+├── impact-check/SKILL.md               ⚠️ nicht installiert — Skill geplant
+├── contract-check/SKILL.md             ⚠️ nicht installiert — Skill geplant
+└── cleanup-audit/SKILL.md              ⚠️ nicht installiert — Skill geplant
 ```
 
 ---
@@ -212,3 +237,4 @@ shared-context/docs/
 |---|---|---|
 | 2026-04-17 | 1.0 | Erstversion — Skills A–J, Prompt-Templates, Hooks, Tool-Routing, Rule-Files |
 | 2026-04-18 | 1.1 | Vollständige Neustrukturierung — 42 Artefakte, 6 Gruppen, Redundanz- und Lückenanalyse, Delivery-Controller-Kontext |
+| 2026-06-04 | 1.2 | Phase-2-Skills: session-start, bug-fix, feature-plan, feature-implement, release-check, adr-create — PM-Skills repariert (OUTPUT-SIGNAL, Brief-Update) — uninstallierte Skills markiert |

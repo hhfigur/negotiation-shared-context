@@ -67,10 +67,24 @@ Effect 1 (`setLastActiveSessionId`) und Effect 2 (auto-restore) feuerten im selb
 Effect 1 (zuerst deklariert) überschrieb `_lastActiveSessionId` auf `null`, bevor Effect 2 sie lesen konnte.
 Auto-Restore feuerte nie → User musste manuell klicken → `handleSelectSession` → `summarize-session` → 3–10s Freeze.
 
-**Fix:** `5436ad5` (negotiation-buddy) — 2026-06-04
+**Fix 1:** `5436ad5` (negotiation-buddy) — 2026-06-04
 `lastActiveIdAtMount = useRef(_lastActiveSessionId)` bei Component-Init (vor allen Effects).
 Effect 2 liest `lastActiveIdAtMount.current` statt `_lastActiveSessionId`.
+
+**Regression 2 — 2026-06-05 — verbleibender Delay (~550ms)**
+Ursache: `loadSessions` servierte `_sessionCache` erst NACH dem Supabase-DB-Query.
+- `hasFreshCache` Bedingung war mit `>= 0` immer true → Spinner nie gesetzt
+- ABER `setSessions` wurde trotzdem erst nach dem DB-Round-Trip (200–500ms) aufgerufen
+- `useState`-Initializer für sessions konnte den Cache nie nutzen (auth async → `currentUserId = null` bei Mount)
+- Auto-Restore wartete auf `sessions.length > 0`, das erst nach dem DB-Query kam
+
+**Fix 2:** `22414cd` (negotiation-buddy) — 2026-06-05
+`loadSessions`: `setSessions(_sessionCache)` + `setIsLoadingSessions(false)` sofort wenn `hasFreshCache`.
+DB-Query läuft als stiller Background-Refresh. Delay: ~50ms statt ~550ms.
 tsc --noEmit clean ✓
 
 ## Abschluss
-_Wird durch /close-task befüllt._
+
+**Status:** DONE
+Commits: `5436ad5` + `22414cd` (negotiation-buddy)
+Verified: tsc --noEmit clean ✓ | beide Fixes deployed via Render.com auto-deploy

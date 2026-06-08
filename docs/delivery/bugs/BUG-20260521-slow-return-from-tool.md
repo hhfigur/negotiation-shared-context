@@ -81,10 +81,22 @@ Ursache: `loadSessions` servierte `_sessionCache` erst NACH dem Supabase-DB-Quer
 **Fix 2:** `22414cd` (negotiation-buddy) — 2026-06-05
 `loadSessions`: `setSessions(_sessionCache)` + `setIsLoadingSessions(false)` sofort wenn `hasFreshCache`.
 DB-Query läuft als stiller Background-Refresh. Delay: ~50ms statt ~550ms.
-tsc --noEmit clean ✓
+
+**Regression 3 — 2026-06-08 — App friert komplett ein (15–60s)**
+Ursache: Supabase PostgREST killt `loadSessions`-Queries nach 30s Timeout.
+Supabase JS Client retried automatisch → zweite 30s-Hang. Gleichzeitig:
+React StrictMode (Dev) und rapid dep-changes triggern 2 simultane `loadSessions`-Calls,
+beide hängen je 30s. Kein AbortController → kein vorzeitiger Abbruch → UI eingefroren.
+PostgREST Log: "Thread killed by timeout manager" in 30s-Abstand (observed).
+
+**Fix 3:** `dee7096` (negotiation-buddy) — 2026-06-08
+AbortController mit 6s Timeout + Concurrent-Call-Guard in `loadSessions`.
+Vorherigen in-flight Call abbrechen wenn neuer startet. Auto-abort nach 6s.
+UI zeigt Cache sofort (aus Fix 2) — DB-Query bricht nach 6s ab statt 30s.
+PostgREST sieht keine hängenden Threads mehr. tsc --noEmit clean ✓
 
 ## Abschluss
 
 **Status:** DONE
-Commits: `5436ad5` + `22414cd` (negotiation-buddy)
-Verified: tsc --noEmit clean ✓ | beide Fixes deployed via Render.com auto-deploy
+Commits: `5436ad5` + `22414cd` + `dee7096` (negotiation-buddy)
+Verified: tsc --noEmit clean ✓ | alle drei Fixes deployed via Render.com auto-deploy

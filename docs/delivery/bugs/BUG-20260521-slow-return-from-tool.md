@@ -100,3 +100,64 @@ PostgREST sieht keine hängenden Threads mehr. tsc --noEmit clean ✓
 **Status:** DONE
 Commits: `5436ad5` + `22414cd` + `dee7096` (negotiation-buddy)
 Verified: tsc --noEmit clean ✓ | alle drei Fixes deployed via Render.com auto-deploy
+
+---
+
+## Infrastruktur-Grundursache — 2026-06-08
+
+Nach den drei Frontend-Regressionsfixes blieb die Verzögerung in Produktion
+bestehen (~15s, App eingefroren). MCP-Diagnose (nach Korrektur des falschen
+`project_ref` und Re-Auth) ergab die eigentliche Grundursache:
+
+**Fehlender Index:** `negotiation_sessions` hatte keinen Index auf
+`(user_id, status, updated_at)`. Jede `loadSessions`-Query führte einen
+Sequential Scan mit Per-Row-RLS-Auswertung durch — PostgREST killt Threads
+nach 30s ("Thread killed by timeout manager"), der Supabase JS Client
+retried automatisch → zweite 30s-Hänger (erklärt die exakt 30s auseinander
+liegenden Fehlerpaare in den Logs).
+
+**Tabellengröße:** `negotiation_sessions` hatte zum Diagnosezeitpunkt
+1.130 Zeilen — **1.126 davon für einen einzigen User** (hhfigur@gmx.net,
+das eigene Test-Konto). Ohne Index degradiert die Performance mit
+wachsender Tabellengröße — das erklärt, warum der "gefixte" Bug nach
+einigen Wochen zurückkam (Tabelle wuchs über die Schwelle, ab der
+Sequential Scans den 30s-Timeout überschreiten).
+
+**Migration:** `20260608120000_add_negotiation_sessions_index.sql`
+```sql
+CREATE INDEX IF NOT EXISTS idx_negotiation_sessions_user_status_updated
+  ON public.negotiation_sessions (user_id, status, updated_at DESC);
+```
+Verifiziert via `EXPLAIN ANALYZE`: Query-Zeit für den betroffenen User sank
+von Sequential-Scan-Timeout auf **5,2ms** (Index Scan, 1.126 Zeilen).
+
+Commit: migration in `negotiation-buddy` (in `7686703` enthalten),
+`supabase db push` gegen Projekt `gpllrgkuozytyrmpfwbb` ausgeführt.
+
+---
+
+## Folge-Bug entdeckt — BUG-20260608-empty-session-accumulation
+
+Bei der Analyse der 1.126 Sessions des Test-Accounts: **1.115 davon waren
+leere Platzhalter mit Titel "Neue Verhandlung"** (1.112 ganz ohne
+Nachrichten), **985 davon an einem einzigen Tag (2026-06-03, 15:27–17:49 Uhr)**
+erstellt — in Bursts von 5–10 innerhalb von Sekunden, mit Pausen von
+20–75 Minuten dazwischen (~1 Session alle 9s im Schnitt über 2,5h).
+
+**Root Cause:** `createSession` wird beim ersten Senden einer Nachricht
+aufgerufen — bevor irgendeine Antwort vorliegt. Während des UI-Freezes
+(siehe oben) wirkten Sende-Versuche wie "nichts passiert" → User versuchte
+es erneut (ggf. über "Neue Verhandlung"-Button, der `sessionCreatedForConvo`
+zurücksetzt) → jeder Versuch erzeugte eine neue leere DB-Zeile → Tabelle
+wuchs → Queries wurden langsamer → noch mehr Retry-Versuche. Ein
+sich selbst verstärkender Teufelskreis.
+
+**Fix (2026-06-08):** `POST /sessions` in `negotiationcoach-backend` —
+Reuse-Logik: kürzlich erstellte (≤10 Min) leere Session wird wiederverwendet
+statt eine neue Zeile anzulegen; zusätzlich 3s-Cooldown als Race-Condition-
+Backstop gegen parallele Retry-Requests.
+Commit: `d3edf36` (negotiationcoach-backend).
+
+**Cleanup durchgeführt:** 1.112 leere Sessions gelöscht, 5 älteste reale
+Sessions archiviert (Test-Account von 1.126 auf 9 aktive Sessions reduziert
+— unter dem neuen `SESSION_LIMIT = 10`).

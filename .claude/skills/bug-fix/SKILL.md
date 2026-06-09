@@ -53,8 +53,73 @@ Format:
 **Empfohlener Fix-Scope:** [Minimal — nur was nötig ist]
 
 STOP — zeige mir den Diagnose-Report. Warte auf GO vom User.
+→ Bei GO: weiter mit Phase 1.5 (Laufzeit-Evidenz-Gate) — kein Fix-Prompt ohne Laufzeit-Evidenz.
 
-## Phase 3 — Fix (nur nach GO)
+## Phase 1.5 — Laufzeit-Evidenz-Gate (Pflicht vor Fix-Freigabe)
+
+**Zweck:** Hypothesen aus Phase 2 müssen durch beobachtbares Laufzeitverhalten
+bestätigt werden, bevor ein Fix-Prompt ausgegeben wird.
+TypeScript-Compilation-Erfolg (`npx tsc --noEmit`) ist kein Laufzeitbeweis.
+
+### Gate-Bedingung
+
+Mindestens EINE der folgenden Evidenzquellen muss dokumentiert sein:
+
+- [ ] **Tatsächlicher Laufzeit-Output dokumentiert** — curl-Aufruf,
+      Test-Script oder manuelle Ausführung mit konkreten Inputs und konkretem Output
+- [ ] **Supabase `get_logs` oder `execute_sql` Output ausgewertet** — falls
+      DB-Pfad, RLS oder Supabase-Tabelle betroffen
+- [ ] **Fehler-Pfad isoliert** — konkrete Zeile / konkreter Funktionsaufruf
+      mit beobachtetem Fehlverhalten benannt — Beweis, nicht Inferenz
+- [ ] **Abweichung dokumentiert** — erwarteter vs. tatsächlicher Output,
+      Zeile für Zeile
+
+### Klassifizierungsregel
+
+Jede Aussage über Fehlerursachen muss mit einem dieser Labels versehen sein:
+
+| Label | Bedeutung |
+|-------|-----------|
+| **Observed** | Direkt aus Laufzeit-Output |
+| **Inferred** | Aus Code-Lesen erschlossen — kein Laufzeitbeweis |
+| **Missing** | Information fehlt für Bestätigung |
+
+**`Inferred` allein ist kein ausreichender Grund für einen Fix-Prompt.**
+
+### Wenn kein Gate erfüllt → Logging-Instruktionen ausgeben
+
+Status der Hypothese: **Inferred** (nicht Confirmed). Kein Fix-Prompt.
+
+Stattdessen: temporäre Debug-Logs einfügen — markiert mit `// DEBUG-TEMP`.
+Diese werden **nicht** committed.
+
+**Debugging-Instruktions-Template:**
+
+```
+Datei/Funktion: [aus Phase 2 Hypothese — konkret benennen]
+
+Logging-Ziele:
+1. Welcher Branch / Pfad tatsächlich ausgeführt wird
+2. Tatsächliche Werte der relevanten Variablen an der Verdachtsstelle
+3. Ob ein Error geworfen und still geschluckt wird
+
+Ausführen mit diesen Inputs: [aus Phase 2 Diagnose-Report befüllen]
+
+Nach Logging → Output dokumentieren → Phase 1.5 Gate erneut prüfen.
+```
+
+### Wenn Gate erfüllt → Evidenz-Report erstellen
+
+```
+# Evidenz-Report — [BUG-ID]
+**Evidenzquelle:** [welche der vier Quellen oben]
+**Tatsächlicher Output:** [wörtlich — nicht paraphrasiert]
+**Bestätigte Fehlerursache:** [Observed — Label zwingend]
+```
+
+STOP — Evidenz-Report zeigen. Warte auf GO für Fix-Prompt.
+
+## Phase 3 — Fix (nur nach Evidenz-GO aus Phase 1.5)
 
 - Minimaler Fix — nur was die Diagnose als Ursache identifiziert hat
 - Keine opportunistischen Verbesserungen

@@ -200,4 +200,7 @@ liest `alternatives` bereits korrekt (Option B bestätigt).
 
 ---
 
-## Status: GO erteilt (2026-06-10) — Phase 3 durchgeführt
+## Status: GO erteilt (2026-06-10) — Phase 3 durchgeführt + deployed
+
+EF `chat` deployed via Supabase MCP — version 6, status ACTIVE,
+project `gpllrgkuozytyrmpfwbb`, verify_jwt: false (unverändert, ADR-004-konform).

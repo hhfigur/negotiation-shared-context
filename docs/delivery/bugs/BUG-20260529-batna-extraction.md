@@ -1,7 +1,7 @@
 # BUG-20260529-batna-extraction
 
 **Erstellt:** 2026-05-29
-**Status:** OPEN
+**Status:** DONE
 **Risiko:** P1
 **TARGET REPO:** negotiation-buddy (primary), negotiationcoach-backend (secondary)
 **Layer:** Layer 0 (extractedInputs Persistenz) / BC-03 (Chat & Input Extraction)
@@ -93,4 +93,28 @@ _Wird durch Template 2-DEV befüllt — erst nach Diagnose-Report._
 
 ## Abschluss
 
-_Wird durch /close-task befüllt._
+**Datum:** 2026-06-10
+**Root Cause (Observed via curl-Replikation):** Die Supabase EF `chat` (`mode: 'extract'`)
+nutzte ein naives `content.replace(/```json\s*/g,"").replace(/```\s*/g,"").trim()` +
+`JSON.parse()`. Claude (Haiku 4.5) folgt der Anweisung "Antworte NUR mit validem JSON"
+nicht zuverlässig — bei früh-/generischen Konversationen antwortet Claude im normalen
+Coaching-Ton (Prosa) mit einem eingebetteten ` ```json ` Block. Die naive Logik entfernte
+nur die Fence-Marker, ließ die umgebende Prosa aber stehen → `JSON.parse` auf
+Prosa+JSON+Prosa wirft → Catch-Fallback `{details:null, goal:null, counterpart:null,
+alternatives:null}` (oder in anderen Fällen literal `{}`) → `data.extracted.alternatives`
+immer `null`/`undefined` → NC-CONTEXT A (Index.tsx) konnte `batna_description` nie setzen,
+selbst wenn der Nutzer eine BATNA explizit genannt hatte.
+
+**Fix:** `negotiation-buddy/supabase/functions/chat/index.ts`, extract-mode Parsing auf
+3-stufiges Regex-Fallback umgestellt (analog zu `chatHelpers.ts::parseChatResponse` im
+Backend):
+1. JSON aus ` ```json ... ``` ` Block extrahieren — auch wenn von Prosa umgeben
+2. Fallback: `{...}`-Objekt mit `"alternatives"`-Feld, auch ohne Fence
+3. Fallback: irgendein `{...}`-Objekt
+4. Ergebnis immer mit `{details:null, goal:null, counterpart:null, alternatives:null}`
+   gemerged → konsistentes Schema
+
+**Diagnose-Report:** docs/delivery/bugs/BUG-BATNA-combined-diagnosis-report.md
+**Verifikation:** curl-Replikation des EF-Calls (Anthropic API, gleiches Modell/Prompt)
+zeigte das Prosa+JSON-Antwortmuster reproduzierbar (Observed). `npx tsc --noEmit` clean.
+**Verwandt:** BUG-20260521-batna-lost-after-nav (UI-Symptom dieses Bugs — mitgefixt).

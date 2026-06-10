@@ -1,7 +1,7 @@
 # BUG-20260521-batna-lost-after-nav
 
 **Erstellt:** 2026-05-21
-**Status:** OPEN
+**Status:** DONE
 **Risiko:** P1
 **TARGET REPO:** negotiation-buddy (primary), negotiationcoach-backend (secondary — Persistenz-Pfad)
 **Layer:** Layer 0 — Session Persistence / Layer 1 — extractedInputs
@@ -54,4 +54,14 @@ _Wird durch Template 1-DEV befüllt._
 _Wird durch Template 2-DEV befüllt._
 
 ## Abschluss
-_Wird durch /close-task befüllt._
+
+**Datum:** 2026-06-10
+**Root Cause:** UI-Symptom von BUG-20260529 — `extractedInputs.batna_description` wurde nie persistiert,
+weil die NC-CONTEXT-A-Extraktion (Supabase EF `chat`, `mode: extract`) leer/fehlerhaft zurückkam.
+`progressStatus` (ephemeral, lokaler State) zeigte BATNA korrekt an, ging aber bei Remount nach
+Navigation verloren. `contextDerivedProgress` (persistiert) blieb leer → BATNA "verschwand".
+
+**Fix:** Mit BUG-20260529 zusammen gefixt — siehe dort. Kein eigenständiger Code-Change in diesem Bug.
+
+**Diagnose-Report:** docs/delivery/bugs/BUG-BATNA-combined-diagnosis-report.md
+**Verifikation:** Laufzeit-Evidenz (curl-Replikation des EF-Calls) + tsc clean. Siehe BUG-20260529.

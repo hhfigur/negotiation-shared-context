@@ -2075,6 +2075,64 @@ currently specify session-history access per tier.
 
 ---
 
+### RFB-048
+
+**Title:** Duplicate "Neue Verhandlung" sessions from /api/analyze(-full) debounced tool calls — BUG-20260608-analyze-burst
+
+**Repo:** `negotiationcoach-backend` + `negotiation-buddy`
+
+**Category:** `bug`
+
+**Priority:** P1
+
+**Evidence (Observed):**
+`/api/analyze` and `/api/analyze-full` in `routes.ts` inserted a fresh
+`negotiation_sessions` row on every call, omitting `title`/`persona_type`/`status`
+so the DB defaults applied (`'Neue Verhandlung'` / `'private'` / `'active'`). This
+is the same insert-without-reuse anti-pattern as BUG-20260608 (fixed in
+`sessionRoutes.ts` — RFB-004), but via a completely separate, unguarded code path
+with zero trace instrumentation. Trigger: `WhatIfSimulator.tsx`'s debounced
+`useEffect` fires `POST /api/analyze` automatically on every 500ms slider change.
+Symptom: bursts of 4–11 empty "Neue Verhandlung" rows (including pairs 50µs apart)
+in `negotiation_sessions`, all status=active, appearing as ghost chats in the sidebar.
+
+**Root cause confirmed via:**
+- DB timestamps from user's Network-tab `loadSessions` response (two bursts: 16:26 and
+  16:38 UTC 2026-06-08, confirmed same-day via direct Supabase query)
+- Migration file comment `20260515120000_align_negotiation_sessions_schema.sql` stating
+  "Backend routes.ts inserts: user_id, negotiation_id, layer1_result, layer2_result"
+  (confirmed DB-default fingerprint in routes.ts inserts)
+
+**Risk:** High. Accumulates empty rows in `negotiation_sessions` → grows table →
+slower `loadSessions` queries → repeats the index-miss spiral from BUG-20260521 (#6 in
+`project_key_discoveries.md`). Also causes ghost chats in the session sidebar (UX).
+
+**Canonical Owner:**
+- `negotiationcoach-backend` — `src/api/routes.ts` (upsertAnalysisSession helper)
+- `negotiation-buddy` — `src/hooks/useSessionManager.ts` (sidebar filter)
+
+**Recommended Action:**
+1. Add `upsertAnalysisSession()` to `routes.ts` — reuse most recent scratch row
+   (no `negotiation_id`, zero `session_history` messages, 2-min window) instead
+   of always inserting
+2. Filter `loadSessions` query: `.is('layer1_result', null)` to hide rows the
+   analyze pipeline ever touched from the user's session sidebar
+3. Gate `SESSION_CREATE_TRACE` diagnostic log behind an env var (default off)
+
+**Depends On:** none
+
+**Status:** OPEN
+
+**Status: DONE**
+Commit: `a2196d1` + `26d1588` (negotiationcoach-backend) + `3b714e9` (negotiation-buddy) — 2026-06-09
+Verified: tsc --noEmit clean ✓ (both repos) | live test: 5 rapid /api/analyze calls → identical sessionId returned, exactly 1 DB row created ✓ | 39 ghost rows cleaned up ✓
+API contract updated: no
+DB delta: none
+ADR created/amended: none
+Docs updated: memory/project_key_discoveries.md #8, memory/feedback_search_sibling_occurrences.md
+
+---
+
 ## Active Blockers
 
 ### AB-001
@@ -2163,6 +2221,7 @@ re-verified — their production behaviour was untested before this fix.
 | RFB-045 | Layer-2 Error-Isolation, Zod-Validation, Unit-Mismatch-Fix (Bug-1–5) — ✅ DONE `2f01bd9` | P1 | backend | bug |
 | RFB-046 | Add loadError state to useSessionManager — enable retry UX for failed session loads | P3 | frontend | boundary-violation |
 | RFB-047 | Investigate personaType gate — session invisibility for free-tier accounts | P2 | frontend | contract-gap |
+| RFB-048 | Duplicate sessions from /api/analyze(-full) debounced tool calls — ✅ DONE `a2196d1` | P1 | backend + frontend | bug |
 | AB-001 | Railway SUPABASE_URL placeholder fixed — ✅ DONE 2026-04-08 | P0 | infrastructure | infrastructure |
 
 ---

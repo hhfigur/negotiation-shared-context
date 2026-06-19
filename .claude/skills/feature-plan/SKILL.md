@@ -59,6 +59,28 @@ Beantworte für jede Dimension:
 | Tier-Gates | ... | ... |
 | shared-context Docs | ... | ... |
 
+## Schritt 4b — Konsequenz-Triage (Blast Radius)
+
+Prüfe für die geplante Änderung:
+
+| # | Frage | Antwort |
+|---|---|---|
+| 1 | Wer ruft die betroffene Funktion/Komponente/Endpoint sonst noch auf? | ... |
+| 2 | Ändert sich Rückgabewert/Signatur/Verhalten für bestehende Caller? | Ja/Nein |
+| 3 | Gibt es einen Contract der diese Schnittstelle beschreibt? | Ja/Nein |
+| 4 | Wird dieselbe Logik in einem anderen Repo dupliziert? | Ja/Nein |
+| 5 | Berührt die Änderung einen darunterliegenden Layer? | Ja/Nein |
+| 6 | Gibt es einen Tier-Gate der davon abhängt? | Ja/Nein |
+| 7 | Ist die Änderung ein Breaking Change? | Ja/Nein |
+
+Falls alle Antworten "Nein"/keine Treffer: weiter zu Schritt 5, keine Nachfrage.
+
+Falls 1+ Treffer:
+STOP — zeige die Konsequenz-Liste mit den betroffenen Stellen.
+Frage explizit: "Sind diese Konsequenzen tragbar? GO trotz Risiko,
+oder Scope anpassen?"
+Warte auf explizite Bestätigung vom User bevor Template 1-DEV ausgegeben wird.
+
 ## Schritt 5 — Template 1-DEV ausgeben
 
 Lies: docs/delivery/claude-code-prompt-templates-dev.md

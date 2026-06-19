@@ -22,6 +22,31 @@ STOP — zuerst /feature-plan ausführen.
 - Genehmigter Plan: [Verweis auf Template-1-DEV-Output oder Zusammenfassung]
 - Ziel-Repo: [negotiation-buddy | negotiationcoach-backend]
 
+## Schritt 0 — Re-Triage (Code kann sich seit Planung geändert haben)
+
+Da zwischen /feature-plan und /feature-implement Zeit vergangen
+sein kann und sich der Code geändert haben könnte:
+
+1. Prüfe: Hat sich seit dem genehmigten Plan etwas an den betroffenen
+   Dateien geändert?
+```bash
+git log --oneline -5 -- [betroffene Dateien aus dem Plan]
+```
+
+2. Falls Änderungen seit der Planung vorhanden:
+   Wiederhole die Konsequenz-Triage aus /feature-plan Schritt 4b
+   für den aktuellen Code-Stand.
+
+3. Falls neue Treffer entstanden sind die im ursprünglichen Plan
+   nicht berücksichtigt wurden:
+   STOP — zeige die neuen Konsequenzen.
+   Frage: "Der Code hat sich seit der Planung geändert. Neue
+   Konsequenz: [X]. Tragbar, oder Plan anpassen?"
+   Warte auf Bestätigung bevor Template 2b-DEV ausgegeben wird.
+
+4. Falls keine Änderungen oder keine neuen Treffer:
+   weiter zu Schritt 1, keine Nachfrage.
+
 ## Schritt 1 — Template 2b-DEV ausgeben
 
 Lies: docs/delivery/claude-code-prompt-templates-dev.md

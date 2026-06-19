@@ -93,28 +93,24 @@ _Wird durch Template 2-DEV befüllt — erst nach Diagnose-Report._
 
 ## Abschluss
 
-**Datum:** 2026-06-10
-**Root Cause (Observed via curl-Replikation):** Die Supabase EF `chat` (`mode: 'extract'`)
-nutzte ein naives `content.replace(/```json\s*/g,"").replace(/```\s*/g,"").trim()` +
-`JSON.parse()`. Claude (Haiku 4.5) folgt der Anweisung "Antworte NUR mit validem JSON"
-nicht zuverlässig — bei früh-/generischen Konversationen antwortet Claude im normalen
-Coaching-Ton (Prosa) mit einem eingebetteten ` ```json ` Block. Die naive Logik entfernte
-nur die Fence-Marker, ließ die umgebende Prosa aber stehen → `JSON.parse` auf
-Prosa+JSON+Prosa wirft → Catch-Fallback `{details:null, goal:null, counterpart:null,
-alternatives:null}` (oder in anderen Fällen literal `{}`) → `data.extracted.alternatives`
-immer `null`/`undefined` → NC-CONTEXT A (Index.tsx) konnte `batna_description` nie setzen,
-selbst wenn der Nutzer eine BATNA explizit genannt hatte.
+**Datum:** 2026-06-10 (Fix v1) / 2026-06-19 (Fix v2 — vollständig)
+**Status:** DONE
 
-**Fix:** `negotiation-buddy/supabase/functions/chat/index.ts`, extract-mode Parsing auf
-3-stufiges Regex-Fallback umgestellt (analog zu `chatHelpers.ts::parseChatResponse` im
-Backend):
-1. JSON aus ` ```json ... ``` ` Block extrahieren — auch wenn von Prosa umgeben
-2. Fallback: `{...}`-Objekt mit `"alternatives"`-Feld, auch ohne Fence
-3. Fallback: irgendein `{...}`-Objekt
-4. Ergebnis immer mit `{details:null, goal:null, counterpart:null, alternatives:null}`
-   gemerged → konsistentes Schema
+**Root Cause Fix v1 (Observed via curl, 2026-06-10):** EF-Parsing war naiv
+(`replace(fence)+JSON.parse`) — Claude antwortete mit Prosa+JSON → Parse-Fehler →
+all-null Fallback. Fix: 3-stufiges Regex-Fallback in `chat/index.ts`.
 
+**Root Cause Fix v2 (Observed via console-Logs + curl-Bisection, 2026-06-19):**
+Auch nach Fix v1 gab EF all-null zurück. Ursache: Der Anthropic-Extract-Call erhielt
+das vollständige `messages`-Array (user + assistant). Lange strukturierte Coaching-
+Antworten des Assistenten (Szenarien, Strategieblöcke) verursachten, dass Claude beim
+Extrahieren Null zurückgab — obwohl der Nutzer die BATNA explizit genannt hatte.
+Fix: EF filtert `messages` vor Anthropic-Call auf `role: "user"` only. Prompt
+angepasst: "die folgende Nachricht" → "die folgenden Nachrichten des Nutzers" +
+"extrahiere aus ALLEN Nachrichten". Deployed als EF version 7.
+
+**Dateien:** `negotiation-buddy/supabase/functions/chat/index.ts` (v6 + v7)
 **Diagnose-Report:** docs/delivery/bugs/BUG-BATNA-combined-diagnosis-report.md
-**Verifikation:** curl-Replikation des EF-Calls (Anthropic API, gleiches Modell/Prompt)
-zeigte das Prosa+JSON-Antwortmuster reproduzierbar (Observed). `npx tsc --noEmit` clean.
+**Verifikation:** curl-Bisection mit user-only messages → korrekte Extraktion bestätigt.
+`npx tsc --noEmit` clean. EF v7 deployed + ACTIVE.
 **Verwandt:** BUG-20260521-batna-lost-after-nav (UI-Symptom dieses Bugs — mitgefixt).

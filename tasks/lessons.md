@@ -46,6 +46,15 @@ Format für neue Einträge:
 
 ---
 
+## 2026-06-19 — BUG-20260529-batna-extraction (Regression Fix v2)
+**Task:** EF extract-mode auf user-only messages umgestellt — BATNA-Extraktion endgültig gefixt
+**Problem:** Nach Fix v1 (3-tier Regex) gab die EF immer noch all-null zurück. Ursache: Der Anthropic-Call erhielt das vollständige messages-Array (user + assistant). Lange strukturierte Coaching-Antworten (Szenarien, Strategieblöcke) im Assistenten-Kontext verursachten, dass Claude beim Extrahieren all-null zurückgab — obwohl der Nutzer BATNA explizit genannt hatte. curl-Bisection: user-only messages → korrekte Extraktion. Full conversation → all-null.
+**Ursache:** Fix v1 löste das Parsing-Problem, aber nicht das Interferenz-Problem: Assistenten-Nachrichten mit reichen Coaching-Inhalten dominieren den LLM-Kontext und lassen den User-Content in den Hintergrund treten. Das Problem war nur mit dem realen Conversation-Payload sichtbar — synthetische Tests (kurze Konversationen ohne lange Strategie-Blöcke) passierten den Gate.
+**Regel:** Bei LLM-Extraction aus Chat-History: IMMER nur User-Messages an den Extraction-Call übergeben. Assistenten-Nachrichten enthalten Paraphrasierungen, Coaching-Blöcke und Strategie-Outputs die das Signal-zu-Rausch-Verhältnis für strukturierte Extraktion massiv verschlechtern. user-only filter ist Standard-Pattern für Extraction-Calls.
+**Folge-Risiko:** Alle anderen Extraction-Calls (analyze-progress EF, runExtractInputs im Backend) prüfen ob sie ebenfalls den vollen Messages-Array erhalten. analyze-progress EF ist besonders verdächtig — gleiche Architektur.
+
+---
+
 ## 2026-06-10 — BUG-20260521-batna-lost-after-nav + BUG-20260529-batna-extraction
 **Task:** Supabase EF `chat` (`mode: 'extract'`) JSON-Parsing robust gemacht — BATNA-Extraktion repariert
 **Problem:** Die EF entfernte mit `content.replace(/```json\s*/g,"").replace(/```\s*/g,"").trim()` nur die Markdown-Fence-Marker und versuchte dann den GESAMTEN String zu `JSON.parse`en. Claude (Haiku 4.5) hält sich bei früh-/generischen Konversationen NICHT an "Antworte NUR mit validem JSON" — es antwortet im normalen Coaching-Ton (Prosa) mit einem eingebetteten ` ```json `-Block. Nach dem Fence-Strip beginnt der String mit Prosa-Text → `JSON.parse` wirft → Catch-Fallback liefert `alternatives: null` → BATNA wird nie aus `extractedInputs` extrahiert, geht aber durch die `??`-Merge-Logik bei jeder Navigation als "verschwunden" wahr.

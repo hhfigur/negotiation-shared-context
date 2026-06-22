@@ -149,6 +149,23 @@
 
 ---
 
+## Phase D — Implement
+
+**Status:** Done
+**Date:** 2026-06-22
+**Commit:** faf5975 (negotiation-buddy)
+
+**Delivered:**
+- Persona-Auswahl (PERSONAS-Buttons) entfernt — Tier bestimmt Persona automatisch via `tierToPersonaType()`
+- Abo-Status-Card (§I): zeigt aktuellen Tier + Beschreibung + Upgrade-CTA (Link auf /)
+- Dev-Tier-Mock (§DEV): nur wenn `VITE_DEV_TIER_MOCK=true` — 3 Buttons (privat/kmu/profi), schreibt localStorage + DB
+- Account-Sektion (§IV): zeigt E-Mail (read-only) + Passwort-Ändern-Link → /forgot-password
+- **Kritischer Bug gefixt**: `handleSave` schrieb `subscription_tier: "free"` hardcoded → würde nach Phase A jeden User auslockieren. Fix: liest echten Tier aus DB, persistiert ihn korrekt.
+- DB-Query erweitert: `subscription_tier` wird jetzt aus `user_profiles` geladen
+- tsc clean
+
+---
+
 ## Open Decisions
 
 - Phase E: Demo-Sektion — statisch oder mock API-Call? → TBD

@@ -166,9 +166,22 @@
 
 ---
 
-## Open Decisions
+## Phase E — Implement
 
-- Phase E: Demo-Sektion — statisch oder mock API-Call? → TBD
+**Status:** Done
+**Date:** 2026-06-22
+**Commit:** 42c6fc7 (negotiation-buddy)
+
+**Delivered:**
+- `DemoSection` in Landing.tsx: statische Beispielanalyse (Chat + Ergebnis-Split)
+  Gehaltsverhandlung-Szenario mit ZOPA/Nash/BATNA, Eröffnungssatz, Marktdaten-Badge (KMU/Profi),
+  Strategie-Score, CTA "Jetzt Abo abschließen → Starten" → /auth
+- TierTable: FREI-Tier entfernt — 3 Tiers: Privat 12€ / KMU 49€ / Profi 99€
+  Feature-Matrix aktualisiert (Marktdaten ab KMU, What-If/Team ab Profi)
+  CTA-Buttons: ?plan=privat / ?plan=kmu / ?plan=profi
+- tsc: 0 Fehler
+
+**Open Decision:** statisch oder mock API-Call? → aufgelöst: statisch (kein API-Call, wie im Brief)
 
 ---
 

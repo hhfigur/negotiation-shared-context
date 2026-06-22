@@ -122,6 +122,16 @@
 
 ---
 
+## Phase B — Implement
+
+**Status:** Done
+**Date:** 2026-06-22
+**Commit:** 237aee7 (negotiation-buddy)
+
+**Delivered:** Team-Dashboard-Link `{ marker: "06", label: "Team", route: "/team", badge: "Profi" }` in TOOLS-Array von SessionSidebar.tsx eingefügt. Bestehende visibleTools-Filterlogik aus Phase A handled Sichtbarkeit automatisch (nur profi). tsc clean.
+
+---
+
 ## Open Decisions
 
 - Phase E: Demo-Sektion — statisch oder mock API-Call? → TBD

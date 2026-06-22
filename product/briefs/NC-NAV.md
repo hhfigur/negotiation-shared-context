@@ -125,3 +125,20 @@
 ## Open Decisions
 
 - Phase E: Demo-Sektion — statisch oder mock API-Call? → TBD
+
+---
+
+## Phase A — Implement
+
+**Status:** Done  
+**Date:** 2026-06-22  
+**Commits:** 74903b3, 847aa79 (repo: negotiation-buddy, branch: main)
+
+**Delivered:**
+- A-1: Guest mode removed from Index.tsx, CoachHeader, DrawerMenu, ChatWindow. ProtectedRoute gates `subscription_tier === 'free'` → redirect `/`. Cold-start fix: localStorage absent → let through (not redirect).
+- A-2: `showSessionFeatures` uses `subscription_tier !== 'free'`. SessionSidebar filters tools by tier (privat hides Marktdaten + What-If; kmu hides What-If; profi sees all). Badge display removed. ModeSelector gated to profi only.
+- A-3: OnboardingDialog removed from Index.tsx JSX. `showOnboarding` state and `handleOnboardingComplete` handler removed. File kept as type source.
+
+**TypeScript:** 0 errors  
+**Spec review:** ✅ compliant  
+**Code quality:** Approved (1 critical + 1 important fixed in second commit)

@@ -132,6 +132,23 @@
 
 ---
 
+## Phase C — Implement
+
+**Status:** Done
+**Date:** 2026-06-22
+**Commit:** ff03384 (negotiation-buddy)
+
+**Delivered:**
+- `BottomTabBar.tsx` neu erstellt — 3 Tabs (Chat/Tools/Profil), md:hidden, fixed bottom-0 z-50
+- Tools-Tab öffnet Sheet mit tier-gefilterter Tool-Liste (gleiche Logik wie SessionSidebar)
+- In App.tsx eingehängt (neben ConsentBanner, innerhalb BrowserRouter)
+- BottomBar in Index.tsx in `hidden md:block` gewrappt — auf Mobile durch BottomTabBar ersetzt
+- tsc clean, kein Subagent nötig (Scope war direkt implementierbar)
+
+**Bekannte Limitation:** TOOLS-Array in BottomTabBar.tsx ist eine Kopie von SessionSidebar.tsx (non-blocking, für Phase D oder separates Refactor-Item adressieren).
+
+---
+
 ## Open Decisions
 
 - Phase E: Demo-Sektion — statisch oder mock API-Call? → TBD

@@ -35,6 +35,7 @@ Mapping: AR-xxx Einträge entsprechen den RFB-xxx Items im Audit-Backlog.
 | AR-026 | batnaDetector Edge Function reparieren | Bug | Dropped | negotiationcoach-backend | — | Superseded by ADR-007-A (RFB-006 Commit 9c6f1f2). _shared/engine/ gelöscht 2026-04-21. |
 | AR-032 | Stripe Webhook Handler | Feature | Paused | negotiationcoach-backend | TBD | Stripe nicht live. Unblocked nach NC-TIER-01. |
 | AR-016a | Knowledge Pipeline | Enabler | Dropped | negotiationcoach-backend, shared-context | — | Done via Option B — extraction code removed from useChat.ts and systemPrompt.ts, commit a647d5a, 2026-04-16. |
-| NC-L3 | Layer 3 Simulation Engine | Feature | Idea | negotiationcoach-backend, negotiation-buddy | TBD | Wave 3 |
+| NC-L3 | Layer 3 Simulation Engine | Feature | Idea | negotiationcoach-backend, negotiation-buddy | TBD | Wave 3. Aufgeteilt in Sub-Items: NC-L3-OPPONENT (qualifiziert 2026-06-30), NC-L3-SCENARIO (noch nicht qualifiziert). |
+| NC-L3-OPPONENT | KI-Gegner-Rollenspiel — Verhandlungsübung gegen simulierte Gegenseite | Feature | Qualified | negotiationcoach-backend (primary), negotiation-buddy, shared-context | TBD (Wave 3) | profi only. Brief: product/briefs/NC-L3-OPPONENT.md. ADR: docs/decision-log/ADR-009-opponent-simulation-routing.md (Backend statt EF, Abgrenzung zu ADR-004). Reaktiviert totes Scaffolding (modelRouter opponent_simulation, OpponentStyle/ScenarioDifficulty/SimulationTurn-Typen). |
 | NC-MARKETPLACE | Scenario Marketplace UI | Feature | Idea | negotiation-buddy | TBD | DB vorhanden |
 | NC-PDF | PDF Export | Feature | Idea | negotiationcoach-backend, negotiation-buddy | TBD | Wave 4 |

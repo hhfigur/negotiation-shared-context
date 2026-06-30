@@ -55,6 +55,15 @@ Format für neue Einträge:
 
 ---
 
+## 2026-06-30 — BUG-20260630-tool-nav-404-perf
+**Task:** Tool-Navigation 404 + langsames Laden nach Tool-Rückkehr behoben
+**Problem:** Nach NC-NAV (Route-Umbenennung /zopa → /app/zopa) navigierten SessionSidebar und Landing.tsx weiterhin zu /zopa. React Router traf den catch-all → NotFound (404). Parallel: Index unmountete bei jedem Tool-Wechsel (Flat Routing) → Sessions/Profile re-fetch, N×ReactMarkdown-Parse → spürbare Verzögerung beim Zurücknavigieren.
+**Ursache:** Route-Strings wurden an 2 von 4 Stellen aktualisiert (BottomTabBar ✓, App.tsx ✓), aber SessionSidebar und Landing.tsx wurden übersehen. Keine zentrale Routen-Konstante → Silent Divergence. Das Nested-Routing-Problem (Index remountet) war bekannt aber die 404-Symptome überdeckten es.
+**Regel:** (1) Nach jeder Route-Umbenennung: `grep -r '"/zopa"\|"/canvas"\|"/what-if"'` über ALLE Dateien — nicht nur App.tsx und BottomTabBar. (2) Tool-Routen als Konstante exportieren (`TOOL_ROUTES` in einem zentralen File) statt als Strings an mehreren Stellen. (3) Nested Routing ist die korrekte Lösung für "Keep Parent Mounted" — aber vor Einführung alle navigate() / route strings im gesamten Repo auflisten (grep-Pflicht).
+**Folge-Risiko:** Wenn weitere Route-Umbenennungen kommen, dieselbe grep-Pflicht anwenden. Alle Dateien mit hardcodierten Pfaden: SessionSidebar, Landing, BottomTabBar, StrategyGenerator, DebriefDashboard, TeamDashboard.
+
+---
+
 ## 2026-06-10 — BUG-20260521-batna-lost-after-nav + BUG-20260529-batna-extraction
 **Task:** Supabase EF `chat` (`mode: 'extract'`) JSON-Parsing robust gemacht — BATNA-Extraktion repariert
 **Problem:** Die EF entfernte mit `content.replace(/```json\s*/g,"").replace(/```\s*/g,"").trim()` nur die Markdown-Fence-Marker und versuchte dann den GESAMTEN String zu `JSON.parse`en. Claude (Haiku 4.5) hält sich bei früh-/generischen Konversationen NICHT an "Antworte NUR mit validem JSON" — es antwortet im normalen Coaching-Ton (Prosa) mit einem eingebetteten ` ```json `-Block. Nach dem Fence-Strip beginnt der String mit Prosa-Text → `JSON.parse` wirft → Catch-Fallback liefert `alternatives: null` → BATNA wird nie aus `extractedInputs` extrahiert, geht aber durch die `??`-Merge-Logik bei jeder Navigation als "verschwunden" wahr.

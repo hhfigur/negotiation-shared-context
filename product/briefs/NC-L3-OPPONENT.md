@@ -363,4 +363,10 @@ git commit -m "feat(layer3): opponent simulation backend — endpoints, engine, 
 
 ---
 
-**Nächster Schritt:** Implementierungsplan (writing-plans) auf Basis dieses Briefs.
+**Status: DONE**
+Commit: `d6b39b6` (negotiationcoach-backend) — 2026-07-01
+Verified: tsc --noEmit clean ✓ | Final whole-branch review ✅ (7 commits, all spec constraints passed)
+API contract updated: yes — docs/contracts/frontend-backend.md (3 new endpoints + CON-06 resolved)
+DB delta: 20260630170000_create_opponent_simulation_tables.sql — opponent_simulation_sessions + opponent_simulation_turns + RLS
+ADR created/amended: ADR-009 — opponent-simulation läuft im Backend, nicht in der EF (Abgrenzung zu ADR-004)
+Docs updated: product/feature-register.md, product/briefs/NC-L3-OPPONENT.md, docs/contracts/frontend-backend.md, docs/decision-log/ADR-009-opponent-simulation-routing.md

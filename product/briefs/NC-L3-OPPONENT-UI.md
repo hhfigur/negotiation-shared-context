@@ -131,4 +131,229 @@ Dateien laufen, um sicherzustellen dass kein Eintrag fehlt (Lesson BUG-20260630)
 ## Open Decisions
 
 - Ob `final_offer` aus dem letzten Nutzer-Turn automatisch befüllt wird,
-  oder manuell eingegeben werden muss (Implementierungsdetail)
+  oder manuell eingegeben werden muss → **ENTSCHIEDEN:** Auswertungs-Screen
+  zeigt ein Zahlen-Input vorbelegt mit 0, Nutzer trägt das letzte Angebot ein.
+  Kein NLP-Extraction aus dem Turn-Text (zu komplex, out of scope).
+
+---
+
+## Plan
+
+**Erstellt:** 2026-07-02 — Frontend-Plan, TARGET REPO negotiation-buddy
+**Status:** PLANNED — wartet auf GO
+
+### 1. Reihenfolge
+
+Typen → apiClient → OpponentSimulator.tsx → Routing (App.tsx + BottomTabBar + SessionSidebar + Landing)
+
+### 2. Dateiliste (vollständige Pfade)
+
+| Datei | Art | Änderung |
+|---|---|---|
+| `../negotiation-buddy/src/lib/types.ts` | erweitert | Additive Typen am Ende der Datei |
+| `../negotiation-buddy/src/lib/apiClient.ts` | erweitert | 3 neue Funktionen am Ende |
+| `../negotiation-buddy/src/pages/OpponentSimulator.tsx` | neu | Vollständige neue Komponente |
+| `../negotiation-buddy/src/App.tsx` | erweitert | Import + Route unter `/app` |
+| `../negotiation-buddy/src/components/BottomTabBar.tsx` | erweitert | Neuer Eintrag + TOOL_ROUTES |
+| `../negotiation-buddy/src/components/SessionSidebar.tsx` | erweitert | Neuer Eintrag |
+| `../negotiation-buddy/src/pages/Landing.tsx` | erweitert | Neuer Tool-Eintrag |
+
+### 3. Typ-Erweiterungen (src/lib/types.ts)
+
+Additiv am Ende der Datei, keine bestehenden Typen anfassen:
+
+```typescript
+// ─── NC-L3-OPPONENT: Opponent Simulation ─────────────────────────────────────
+
+export type OpponentStyle = 'kooperativ' | 'hart' | 'manipulativ' | 'sachlich';
+export type ScenarioDifficulty = 'einfach' | 'mittel' | 'schwer';
+
+export interface StartOpponentSimulationBody {
+  negotiation_type:       NegotiationType;
+  opponent_style:         OpponentStyle;
+  scenario_difficulty:    ScenarioDifficulty;
+  own_target:             number;
+  own_minimum:            number;
+  opponent_estimated_max: number;
+  opponent_estimated_min: number;
+  negotiation_session_id?: string;
+}
+
+export interface StartOpponentSimulationResponse {
+  simulation_session_id: string;
+  status:                string;
+  max_turns:             number;
+  opening_message:       string;
+}
+
+export interface TurnOpponentSimulationResponse {
+  assistant_message?: string;
+  turn_count:         number;
+  max_turns:          number;
+  finished:           boolean;
+  idempotent?:        boolean;
+  reason?:            string;
+}
+
+export interface OpponentSimulationEvaluation {
+  final_outcome:      number;
+  own_zopa_min:       number;
+  own_zopa_max:       number;
+  nash_solution:      number;
+  outcome_vs_nash:    number;
+  outcome_percentile: number;
+  tactic_assessment:  string;
+}
+
+export interface FinishOpponentSimulationResponse {
+  evaluation:                  OpponentSimulationEvaluation;
+  hidden_opponent_minimum:     number;
+  hidden_opponent_target:      number;
+}
+```
+
+### 4. API-Funktionen (src/lib/apiClient.ts)
+
+Additiv am Ende der Datei, Pattern identisch zu bestehenden Funktionen
+(`analyzeOnly`, `enrich` etc. — alle rufen `apiCall<T>` auf):
+
+```typescript
+export function startOpponentSimulation(
+  body: StartOpponentSimulationBody,
+  token: string,
+) {
+  return apiCall<StartOpponentSimulationResponse>('/opponent-simulation/start', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify(body),
+  });
+}
+
+export function sendOpponentTurn(
+  simulationSessionId: string,
+  body: { content: string; client_turn_id: string },
+  token: string,
+) {
+  return apiCall<TurnOpponentSimulationResponse>(
+    `/opponent-simulation/${simulationSessionId}/turn`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify(body),
+    },
+  );
+}
+
+export function finishOpponentSimulation(
+  simulationSessionId: string,
+  body: { final_offer: number },
+  token: string,
+) {
+  return apiCall<FinishOpponentSimulationResponse>(
+    `/opponent-simulation/${simulationSessionId}/finish`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify(body),
+    },
+  );
+}
+```
+
+### 5. OpponentSimulator.tsx — Struktur
+
+Drei Phasen via lokalen State `phase: 'setup' | 'playing' | 'evaluation'`.
+Pattern von `WhatIfSimulator.tsx`: `useAnalysis()` für extractedInputs, `trackEvent`,
+`useNavigate`, Supabase-Session für Token, `toast` für Fehler.
+
+**Setup-Phase:**
+- `negotiation_type`: Dropdown vorbelegt aus `extractedInputs?.negotiation_type ?? 'gehalt'`
+- `opponent_style`: Dropdown (kooperativ/hart/manipulativ/sachlich)
+- `scenario_difficulty`: Dropdown (einfach/mittel/schwer)
+- `own_target`/`own_minimum`/`opponent_estimated_max`/`opponent_estimated_min`:
+  aus `extractedInputs` vorbelegt, Inputs falls null
+- Start-Button → `startOpponentSimulation(...)` → setzt `simSessionId` + `messages[0]`
+  → Wechsel zu `'playing'`
+- Wenn `subscription_tier !== 'profi'`: Upgrade-Hinweis statt Setup-Formular (AC-1)
+
+**Playing-Phase:**
+- Messages-Liste (alternierend user/assistant)
+- Textarea + "Senden"-Button
+- Beim Senden: `client_turn_id = crypto.randomUUID()` (AC-3)
+- Turn-Counter "Runde {turn_count} von {max_turns}"
+- Bei `finished: true` → direkt `phase = 'evaluation'` nach Bestätigung von
+  `final_offer` (kleines Modal/Inline-Input)
+- "Beenden"-Button → zeigt `final_offer`-Input → `finishOpponentSimulation(...)`
+  → Wechsel zu `'evaluation'`
+
+**Evaluation-Phase:**
+- `evaluation.tactic_assessment` prominent
+- `outcome_vs_nash` mit Vorzeichen (`+` = gut)
+- `own_zopa_min`–`own_zopa_max` Balken
+- Erst hier: `hidden_opponent_minimum` + `hidden_opponent_target` sichtbar (AC-5)
+- "Neue Runde"-Button → `phase = 'setup'`, State leeren
+- `trackEvent('tool_opened', { tool: 'opponent_simulator' })` beim Mount
+
+### 6. Routing
+
+**App.tsx:** Import + neue Child-Route:
+```typescript
+import OpponentSimulator from './pages/OpponentSimulator';
+// unter <Route path="/app" ...>:
+<Route path="opponent" element={<OpponentSimulator />} />
+```
+
+**BottomTabBar.tsx:**
+- Neuer Eintrag: `{ marker: "06", label: "KI-Gegner", route: "/app/opponent", badge: "Profi" }`
+- `/app/opponent` zu `TOOL_ROUTES` hinzufügen
+
+**SessionSidebar.tsx:**
+- Neuer Eintrag: `{ marker: "06", label: "KI-Gegner", route: "/app/opponent", badge: "Profi" }`
+
+**Landing.tsx:**
+- Neuer Eintrag in Tool-Liste mit `route: "/app/opponent"`
+
+### 7. Side-Effect-Check
+
+a) `grep -r '"/app/opponent"' src/` vor Commit — erwartet: genau in App.tsx,
+   BottomTabBar.tsx, SessionSidebar.tsx, Landing.tsx, OpponentSimulator.tsx (useNavigate-Calls).
+   Falls eine Datei fehlt → nachpflegen (Lesson BUG-20260630).
+
+b) Neue apiClient-Funktionen sind additiv — kein bestehender Caller betroffen.
+   `apiCall<T>` wird unverändert wiederverwendet, kein Eingriff.
+
+c) Loop-Risiko in OpponentSimulator.tsx: kein `useContext`-Wert aus AnalysisContext
+   als `useEffect`-Dep nutzen — nur stabile Werte (`extractedInputs` beim Init
+   einmalig lesen, nicht als reaktive Dep). Pattern wie WhatIfSimulator.tsx.
+
+d) Keine DB-Änderung.
+
+e) API-Contract: `docs/contracts/frontend-backend.md` bereits aktuell — kein Update nötig.
+
+### 8. Tests
+
+- `npx tsc --noEmit` — 0 Fehler (Pflicht)
+- Manueller Full-Flow lokal mit profi-Test-Account:
+  Setup → Start (Eröffnungsnachricht erscheint) → 2+ Turns → Finish → Auswertung sichtbar
+- Nicht-profi-Account: Upgrade-Hinweis statt Formular (AC-1)
+- Tool in BottomTabBar sichtbar + Navigation zu `/app/opponent` funktioniert ohne 404
+
+### 9. Rollback
+
+Reine Frontend-Änderung, keine DB-Migration. Rollback:
+- `src/pages/OpponentSimulator.tsx` löschen
+- Route-Einträge in App.tsx, BottomTabBar.tsx, SessionSidebar.tsx, Landing.tsx entfernen
+- apiClient.ts + types.ts — additive Abschnitte entfernen
+
+### 10. Git-Commit
+
+```
+cd ../negotiation-buddy
+git add src/lib/types.ts src/lib/apiClient.ts \
+        src/pages/OpponentSimulator.tsx \
+        src/App.tsx \
+        src/components/BottomTabBar.tsx \
+        src/components/SessionSidebar.tsx \
+        src/pages/Landing.tsx
+git commit -m "feat(layer3): OpponentSimulator UI — /app/opponent, 3 API-Funktionen, Routing (NC-L3-OPPONENT-UI)"
+```

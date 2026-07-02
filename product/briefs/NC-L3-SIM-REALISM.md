@@ -222,3 +222,14 @@ cd ../negotiation-buddy
 git add src/lib/types.ts src/pages/OpponentSimulator.tsx
 git commit -m "feat(ui): OpponentSimulator Warning-Banner für triviale Simulation (NC-L3-SIM-REALISM)"
 ```
+
+---
+
+**Status: DONE**
+Commit Backend: `690851c` (negotiationcoach-backend) — 2026-07-02
+Commit Frontend: `25f3214` (negotiation-buddy) — 2026-07-02
+Verified: tsc --noEmit backend 0 Fehler ✓ | vitest 22/22 Frontend ✓ | Eröffnungsangebot 39.500 statt 47.400 ✓
+API contract updated: yes — warning-Feld additiv in /start-Response (docs/contracts/frontend-backend.md)
+DB delta: none
+ADR created/amended: none
+Docs updated: product/feature-register.md, product/briefs/NC-L3-SIM-REALISM.md

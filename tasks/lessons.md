@@ -55,6 +55,13 @@ Format für neue Einträge:
 
 ---
 
+## 2026-07-02 — NC-L3-OPPONENT-UI (apiClient Path Bug)
+**Task:** OpponentSimulator apiClient-Pfade korrigiert
+**Problem:** Brief spezifizierte `/opponent-simulation/start` ohne `/api/`-Prefix — alle anderen apiClient-Funktionen nutzen `/api/...`. Fehler: `Cannot POST /opponent-simulation/start` im Frontend.
+**Ursache:** Plan-Code-Block wurde ohne Abgleich mit bestehenden apiClient-Beispielen geschrieben.
+**Regel:** Wenn neue apiClient-Funktionen im Plan spezifiziert werden, immer ein bestehendes Beispiel (z.B. `analyzeOnly`, `enrich`) aus der Datei zitieren, damit der Implementer das exakte Pfad-Pattern erkennt — nicht nur `/path` schreiben, wenn alle anderen `/api/path` nutzen.
+**Folge-Risiko:** Jede neue apiClient-Funktion ohne expliziten `/api/`-Prefix-Hinweis im Plan.
+
 ## 2026-07-02 — NC-L3-OPPONENT-UI
 **Task:** OpponentSimulator Frontend-Plan + Implementierung
 **Problem:** Plan spezifizierte marker "06" für BottomTabBar/SessionSidebar, aber "06" war bereits von "Team" belegt. Implementer nutzte korrekt "07".

@@ -71,8 +71,7 @@ Skills laufen immer im Kontext des aktiven TARGET REPO:
 
 Unabhängig von TARGET REPO gelten diese Regeln in jeder Session:
 - Keine Logik oder Business-Regeln ins Frontend (negotiation-buddy)
-- Alle LLM-Calls: Express backend → Anthropic Claude (ADR-003)
-- Edge Functions: Gemini via Lovable AI Gateway — kein Anthropic in EF
+- Alle LLM-Calls: Anthropic Claude (ADR-003) — sowohl Express Backend als auch Edge Functions (alle EFs nutzen claude-haiku-4-5-20251001)
 - Keine direkten Supabase-Calls aus Frontend-Komponenten
 - Tier-Prüfungen immer serverseitig (RLS)
 - Schema-Änderungen nur via Migration-Files, nie Supabase Dashboard
@@ -80,3 +79,27 @@ Unabhängig von TARGET REPO gelten diese Regeln in jeder Session:
 - Cross-Repo-Änderungen nur nach `/impact-check`
 - Layer-Abhängigkeiten: 0 → 1 → 2 → 3 (nie überspringen)
 - Bis ADR-007 entschieden: keine neue Logik in Edge Function engine path
+
+---
+
+## Architektur-Dokumentation (`docs/ARCHITECTURE.md`)
+
+### Pflicht-Update-Trigger
+
+Nach jeder Änderung an folgenden Dateitypen MUSS `docs/ARCHITECTURE.md` aktualisiert werden:
+- Routing-Dateien (`routes.*`, `router.*`, `app.*`, `index.ts/js`)
+- API-Endpunkte oder Service-Klassen
+- Auth-Logik oder Middleware
+- Externe Service-Integrationen (Supabase, Anthropic, PostHog, Resend, etc.)
+- Error-Handler
+
+### Update-Prozess
+
+1. Identifiziere, welcher der vier Abschnitte betroffen ist (User Flows / Datenflüsse / Service Boundaries / Error Handling)
+2. Aktualisiere nur die betroffenen Diagramme — andere nicht überschreiben
+3. Trage die Änderung ins `## Letzte Aktualisierung`-Log ein (Datum + betroffene Dateien)
+4. Bestätige am Ende jeder relevanten Task: "ARCHITECTURE.md aktualisiert ✓"
+
+### Vollständige Neugenerierung
+
+Bei größeren Refactorings: Prompt "regenerate architecture docs" führt eine komplette Neuanalyse aller vier Abschnitte durch.

@@ -190,3 +190,35 @@ Außerdem: `StartOpponentSimulationResponse` in `src/lib/types.ts` um
 | `src/api/opponentSimulationRoutes.ts` | negotiationcoach-backend | Warning aufrufen + in Response |
 | `src/pages/OpponentSimulator.tsx` | negotiation-buddy | Warning-Banner in Playing-Phase |
 | `src/lib/types.ts` | negotiation-buddy | `warning?: string` in StartOpponentSimulationResponse |
+
+---
+
+## Plan
+
+**Erstellt:** 2026-07-02 — Cross-Repo-Plan (negotiationcoach-backend primary, negotiation-buddy secondary)
+**Status:** PLANNED
+
+### Reihenfolge
+1. `opponentEngine.ts` — 4 Fixes (Kern-Logik)
+2. `opponentSimulationRoutes.ts` — Warning aufrufen + in Response
+3. `negotiation-buddy/src/lib/types.ts` — `warning?: string` additiv
+4. `negotiation-buddy/src/pages/OpponentSimulator.tsx` — Warning-Banner
+5. tsc --noEmit beide Repos + manuelle AC-1-Prüfung
+
+### Side-Effect-Check
+a) `computeHiddenOpponentRange`/`buildOpponentSystemPrompt` → nur in `opponentSimulationRoutes.ts` verwendet — kein weiterer Caller
+b) Signatur unverändert — nur Zahlenwerte und Prompt-Text ändern sich
+c) Warning-State im Frontend: `const [simulationWarning, setSimulationWarning] = useState<string | null>(null)` — kein Loop-Risiko
+d) Kein DB-Delta
+e) `warning`-Feld in `/start`-Response ist optional (`undefined` wenn kein Warning) — kein bestehender Caller bricht
+
+### Git-Commits
+```
+cd ../negotiationcoach-backend
+git add src/layer3/opponentEngine.ts src/api/opponentSimulationRoutes.ts
+git commit -m "fix(layer3): opponentEngine Eröffnungsformel + Prompt-Richtung + Warning (NC-L3-SIM-REALISM)"
+
+cd ../negotiation-buddy
+git add src/lib/types.ts src/pages/OpponentSimulator.tsx
+git commit -m "feat(ui): OpponentSimulator Warning-Banner für triviale Simulation (NC-L3-SIM-REALISM)"
+```

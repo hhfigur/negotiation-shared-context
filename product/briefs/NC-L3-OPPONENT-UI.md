@@ -137,6 +137,16 @@ Dateien laufen, um sicherzustellen dass kein Eintrag fehlt (Lesson BUG-20260630)
 
 ---
 
+**Status: DONE**
+Commit: `78ff4fb` (negotiation-buddy) — 2026-07-02
+Verified: tsc --noEmit clean ✓ | Final whole-branch review ✅ (6 commits, alle 10 Constraints grün)
+API contract updated: no (frontend-backend.md bereits aktuell aus NC-L3-OPPONENT Backend)
+DB delta: none
+ADR created/amended: none
+Docs updated: product/feature-register.md, product/briefs/NC-L3-OPPONENT-UI.md, tasks/lessons.md
+
+---
+
 ## Plan
 
 **Erstellt:** 2026-07-02 — Frontend-Plan, TARGET REPO negotiation-buddy

@@ -55,6 +55,13 @@ Format für neue Einträge:
 
 ---
 
+## 2026-07-02 — NC-L3-OPPONENT-UI
+**Task:** OpponentSimulator Frontend-Plan + Implementierung
+**Problem:** Plan spezifizierte marker "06" für BottomTabBar/SessionSidebar, aber "06" war bereits von "Team" belegt. Implementer nutzte korrekt "07".
+**Ursache:** Marker-Nummer wurde aus Annahme "nächste nach 05" ohne Codebase-Check vergeben.
+**Regel:** Vor jeder Plan-Spezifikation von Marker-Nummern, Enum-Werten oder anderen sequential IDs: grep oder direkten Dateicheck durchführen. Keine sequenziellen IDs aus dem Kopf vergeben.
+**Folge-Risiko:** Alle Pläne die neue BottomTabBar/Sidebar-Einträge spezifizieren — immer aktuellen Stand der TOOLS-Arrays prüfen vor Nummerierung.
+
 ## 2026-06-30 — BUG-20260630-tool-nav-404-perf
 **Task:** Tool-Navigation 404 + langsames Laden nach Tool-Rückkehr behoben
 **Problem:** Nach NC-NAV (Route-Umbenennung /zopa → /app/zopa) navigierten SessionSidebar und Landing.tsx weiterhin zu /zopa. React Router traf den catch-all → NotFound (404). Parallel: Index unmountete bei jedem Tool-Wechsel (Flat Routing) → Sessions/Profile re-fetch, N×ReactMarkdown-Parse → spürbare Verzögerung beim Zurücknavigieren.

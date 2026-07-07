@@ -1,0 +1,177 @@
+# Delivery Brief: NC-L3-SIM
+## Layer 3 Simulation Engine — Redesign (L1/L2-geerdeter Gegner, dynamischer Intake, Debrief)
+
+**Release:** TBD (Wave 3)
+**Status:** Qualified
+**Affected repos:** negotiationcoach-backend (primary), negotiation-buddy, shared-context (Docs/ADR)
+**Tier impact:** profi only
+**Created:** 2026-07-06 (Design-Stub) · Qualified: 2026-07-07
+**Priority:** P3 — kein Tier-Druck, inhaltlicher Fortschritt für Profi-Wertversprechen
+**Parent:** NC-L3 (Layer 3 Simulation Engine) — Nachfolger von NC-L3-OPPONENT / NC-L3-SIM-REALISM
+**Full Design:** `docs/features/layer3-simulation.md` (Discovery A1–A4, Datenfluss, Types, Error-Cases, Test-Plan — vollständig)
+**ADR:** ADR-009 (Routing, unverändert gültig) · ADR-010 empfohlen (Intake-Strategie, nicht blockierend)
+
+---
+
+## Goal / Outcome
+
+Die bestehende Gegner-Simulation (NC-L3-OPPONENT, Released) ist zu trivial: der
+Gegner kennt nur seine eigenen versteckten Zahlen, nicht die quantitativen
+Layer-1-Ergebnisse der realen Analyse (ZOPA, Nash, Monte-Carlo, Acceptance
+Curve). NC-L3-SIM macht die Simulation mathematisch geerdet und methodisch
+fundiert (Harvard Principled Negotiation, Anchoring, MESO, kalibrierte Fragen):
+
+- Gegner bewegt sich innerhalb eines quantitativ berechneten ZOPA-Bands,
+  reagiert auf Nash-/Deadline-Druck, hat privaten Zustand (verdecktes BATNA,
+  darf bluffen)
+- Intake-Phase liest Kontext aus der bestehenden Nego-Session, LLM stellt
+  gezielte Rückfragen statt starrem Formular
+- Marktdaten (Layer 2) fließen als dritte Realitätsebene ein — **seit
+  2026-07-07 aktiv**, kein Gate mehr (L2 verifiziert grün: R-2026-05 +
+  R-2026-09 Released)
+- Debrief liefert messbare Bewertung: ZOPA-Perzentil, Nash-Distanz,
+  Konzessionsanalyse, verpasste Taktiken
+
+---
+
+## Verhältnis zu NC-L3-OPPONENT (wichtig)
+
+**NC-L3-SIM ersetzt NC-L3-OPPONENT in diesem Item NICHT.** Die bestehenden,
+released Endpoints `/api/opponent-simulation/{start,turn,finish}` bleiben
+unverändert lauffähig. `opponentEngine.ts` wird additiv erweitert (optionale
+Parameter für L1/L2-Injection) — kein Breaking Change am dokumentierten
+Contract (`docs/contracts/frontend-backend.md:480-597`).
+
+Konsequenz: bis zur separat geplanten UI-Migration existieren zwei parallele
+Simulations-Einstiegspunkte im Frontend. Das ist eine bewusst akzeptierte,
+befristete Konsequenz (Blast-Radius-Review 2026-07-07), keine Zielarchitektur.
+
+**Side-Effect-Check bestätigt (2026-07-07):** `computeHiddenOpponentRange`,
+`buildOpponentSystemPrompt`, `computeSimulationWarning`, `evaluateOutcome`
+haben genau EINEN Caller im gesamten Repo: `opponentSimulationRoutes.ts`.
+Das reduziert das Refactor-Risiko erheblich — ein einziger Call-Site zur
+Migration auf additive Parameter.
+
+---
+
+## Architektur
+
+Läuft im **Express Backend** (negotiationcoach-backend), nicht in der
+Supabase Edge Function — ADR-009 bestätigt dies auch für die
+Redesign-Variante (keine neue Prüfung nötig, Begründung identisch:
+Layer-1-Funktionen leben nur im Backend, keine Duplikation).
+
+Neue Endpoints unter `/api/simulate/*`, geschützt mit `authMiddleware` +
+`requireTier('profi')`.
+
+---
+
+## Komponenten
+
+**Backend (`negotiationcoach-backend/src/layer3/`):**
+- `smlParser.ts` (neu) — Intake-Ergebnis → `ScenarioObject`
+- `promptBuilder.ts` (neu) — System-Prompt-Konstruktion inkl. L1/L2-Grounding
+- `simulationLoop.ts` (neu) — Turn-Orchestrierung, Offer-Detection, Terminierung
+- `debriefEngine.ts` (neu) — Konzessionsanalyse, Taktik-Bewertung, `DebriefResult`
+- `opponentEngine.ts` (refactor, additiv) — `computeHiddenOpponentRange` erweitert
+  um optionale L1/L2-Parameter, bestehende Signatur ohne diese Parameter bleibt
+  gültig
+- `index.ts` (neu) — Orchestrierung
+- `src/api/simulationRoutes.ts` (neu) — `/api/simulate/{start,turn,debrief}`
+
+**Frontend (`negotiation-buddy`):** `OpponentSimulator.tsx`-Refactor oder neue
+`SimulationPage.tsx` (Intake-Phase, neue Endpoints) — **separates Future-Item**,
+nicht Teil der ersten Implementierungssequenz (siehe Design-Doc Abschnitt 11,
+Phase 6).
+
+**DB (Migration in `negotiationcoach-backend/supabase/migrations/`):**
+- `simulation_sessions` (ScenarioObject, Layer1/2-Snapshot, private_state, evaluation)
+- `simulation_turns` (Turn-Historie inkl. `coach_hint`, `offer_detected`)
+- RLS von Anfang an: `user_id = auth.uid() AND tier = 'profi'`
+- Bestehende Tabellen (`opponent_simulation_sessions/turns`) bleiben unverändert.
+
+Vollständige Type-Definitionen (`ScenarioObject`, `SimulationTurn`,
+`PrivateOpponentState`, `DebriefResult`, Request/Response-Typen): siehe
+Design-Doc Abschnitt 4.
+
+---
+
+## Datenfluss
+
+Siehe Design-Doc Abschnitt 3 (vollständige Skizze inkl. L2-Datenpfad).
+Kurzfassung:
+
+1. `/api/simulate/start` → lädt `layer1_result` (+ `layer2_result` wenn
+   vorhanden) aus `negotiation_sessions` → Intake-Lückenanalyse (Sonnet)
+2. `/api/simulate/turn` (Intake) → Extraktion aus Nutzerantworten, bis
+   `ScenarioObject` vollständig → dann `computeHiddenOpponentRange`
+   (erweitert) → Opening Message (Opus)
+3. `/api/simulate/turn` (aktiv) → Offer-Detection, Acceptance-Curve-Lookup,
+   Deadline-Eskalation, Gegner-Antwort (Opus), optionaler Coach-Hint
+4. `/api/simulate/debrief` → Konzessionsanalyse, `DebriefResult`, enthüllt
+   `hidden_opponent_minimum/target`
+
+---
+
+## Fehlerbehandlung
+
+Vollständige Tabelle: Design-Doc Abschnitt 5. Kernpunkte:
+- Fehlendes `layer1_result` → 422 `MISSING_LAYER1_DATA`
+- Layer-2 für diese Session nicht verfügbar → kein Fehler, Simulation läuft
+  ohne Marktdaten-Erdung (Per-Session-Check, kein globales Gate mehr)
+- Anthropic-Timeout → 504, Idempotenz-Key retrybar
+- Turn-Limit → Auto-finish, Debrief sofort verfügbar
+
+---
+
+## Nicht in Scope (dieses Item)
+
+- Migration von `OpponentSimulator.tsx` auf `/api/simulate/*` (separates Future-Item)
+- Deprecation/Ablösung von `/api/opponent-simulation/*`
+- Streaming (spätere Ausbaustufe)
+- ADR-010-Entscheidung selbst (empfohlen, aber nicht Teil dieses Briefs — via `/adr-create`)
+
+---
+
+## Acceptance Criteria
+
+- AC-1: Nicht-profi-Nutzer erhalten 403 bei allen drei neuen Endpoints
+- AC-2: `/api/opponent-simulation/{start,turn,finish}` funktionieren nach dem
+  `opponentEngine.ts`-Refactor unverändert (Regressionstest Pflicht)
+- AC-3: Gegner-Privatzustand (`private_state`) ist zu keinem Zeitpunkt vor
+  `/debrief` im Response sichtbar
+- AC-4: Turn-Schreiben ist idempotent (`client_turn_id`)
+- AC-5: Marktdaten fließen ein, wenn `layer2_result` in der Session vorhanden
+  ist (kein manueller Aktivierungsschritt nötig)
+- AC-6: TypeCheck negotiation-buddy + negotiationcoach-backend: 0 Fehler
+- AC-7: `docs/contracts/frontend-backend.md` enthält die drei neuen Endpoints
+- AC-8: Alle 6 curl-Tests aus Design-Doc Abschnitt 10 laufen gegen den
+  Live-Endpoint erfolgreich (TypeCheck-only zählt nicht als DONE)
+
+---
+
+## Abhängigkeiten
+
+- ADR-009 (Routing) — entschieden, keine offene Frage
+- Layer 2 (Market Data) — grün seit R-2026-05/R-2026-09, kein Blocker mehr
+- Bestehendes `modelRouter`-Scaffolding (`opponent_simulation` → Opus)
+- `layer1/zopaCalculator.ts`, `layer1/nashBargaining.ts`
+
+---
+
+## Open Decisions
+
+- max_turns für SIM-v2: **15** (entschieden 2026-07-07) — höher als
+  NC-L3-OPPONENT-Default (12), da die Intake-Phase zusätzliche Turns
+  verbraucht, bevor die eigentliche Verhandlung beginnt
+- ADR-010 (dynamischer Intake vs. SML-Bibliothek): empfohlen, nicht
+  blockierend — separat via `/adr-create` zu entscheiden vor Phase 1
+
+---
+
+## Plan
+
+Implementierungssequenz (Design-Doc Abschnitt 11): Phase 1 (`smlParser.ts` +
+`promptBuilder.ts`, reine Logik) zuerst. Phase-1-Plan wird via Template 1-DEV
+in `docs/features/layer3-simulation.md` (Abschnitt `## Phase-1-Plan`)
+dokumentiert, nicht in diesem Brief dupliziert.

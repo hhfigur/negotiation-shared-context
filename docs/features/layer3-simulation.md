@@ -1,11 +1,12 @@
-**Status:** DRAFT — Proposed (awaiting GO/HOLD)
+**Status:** GO — Qualified 2026-07-07 (feature-plan Schritt 2–5 durchlaufen), Phase-1-Planung läuft
 **Item-ID:** NC-L3-SIM
-**Erstellt:** 2026-07-06
+**Erstellt:** 2026-07-06 · **Qualified:** 2026-07-07
 **Owner/Repo:** negotiationcoach-backend (src/layer3/)
-**Blockiert durch:**
-  - Layer-2-Fix — Marktdaten-Pfad bleibt inaktiv bis L2-Qualität verifiziert (Q8-Gate); alle L2-Felder im Design hinter `MarketDataContext.available`-Flag gekapselt
+**Blockiert durch:** nichts mehr.
+  - Layer-2-Fix: ✅ AUFGELÖST 2026-07-07 — R-2026-05 (NC-L2-FIX) und R-2026-09 (NC-L2-UI) sind Released und laut `product/roadmap.md`/`product/strategy.md` verifiziert. `MarketDataContext.available` bleibt als defensiver Per-Session-Check bestehen (einzelne Sessions können weiterhin ohne L2-Daten sein), ist aber **kein globaler Kill-Switch mehr** — siehe aktualisierten Abschnitt 3.
   - ADR-007 (Option A) ist entschieden und blockiert NICHT mehr — NC-L3-OPPONENT ist Released; dieses Item betrifft keine EF-Engine-Logik
-**Feature-Register-Abgleich:** NICHT durchgeführt in dieser Session — NC-L3-SIM ist noch nicht im Register eingetragen (NC-L3 = Idea, NC-L3-OPPONENT/UI = Released). Vor jeder Freigabe: Item in `product/feature-register.md` eintragen, Release-Stufe (Wave 3) bestätigen, Brief in `product/briefs/NC-L3-SIM.md` anlegen.
+**Neue verbindliche Design-Vorgabe (2026-07-07):** `opponentEngine.ts`-Refactor MUSS additive/optionale Parameter verwenden — die bestehenden, released `/api/opponent-simulation/*`-Endpoints (Contract: `docs/contracts/frontend-backend.md:480-597`) laufen unverändert weiter, kein Breaking Change. Siehe aktualisierten Abschnitt 7/11.
+**Feature-Register-Abgleich:** ✅ Erledigt 2026-07-07 — `product/feature-register.md` (Status: Qualified, Wave 3), Brief `product/briefs/NC-L3-SIM.md` angelegt.
 
 ---
 
@@ -207,7 +208,7 @@ POST /api/simulate/debrief { simulation_id, final_offer? }
           └─ Response: DebriefResult (+ hidden_opponent_minimum/target enthüllt)
 ```
 
-**L2-Gate-Pattern** (in allen Prompts):
+**L2-Datenpfad** (in allen Prompts) — **AKTIV seit 2026-07-07** (Layer 2 verifiziert grün, R-2026-05/R-2026-09 Released). Die Funktion bleibt als Per-Session-Defensivcheck bestehen (nicht jede `negotiation_session` hat zwangsläufig ein valides `layer2_result`), ist aber kein globales Feature-Flag mehr:
 
 ```typescript
 interface MarketDataContext {
@@ -219,7 +220,7 @@ interface MarketDataContext {
 
 function buildMarketDataContext(layer2?: EnrichedAnalysisResult): MarketDataContext {
   if (!layer2 || layer2.market_data_source === 'none' || !layer2.market_median) {
-    return { available: false }; // Gate inaktiv — kein L2 in Simulation
+    return { available: false }; // Diese Session hat keine L2-Daten — kein globales Gate
   }
   return { available: true, data: { ...layer2 } };
 }
@@ -386,7 +387,7 @@ interface SimulateDebriefRequest {
 
 | Fehler-Case | Handling |
 |------------|---------|
-| Layer-2 nicht verfügbar | `MarketDataContext.available = false` → L2-Pfad inaktiv; Simulation läuft ohne Marktdaten-Erdung; kein Fehler |
+| Layer-2 nicht verfügbar für diese Session | `MarketDataContext.available = false` → L2-Pfad für DIESE Simulation inaktiv (kein globales Gate mehr, siehe Abschnitt 3); Simulation läuft ohne Marktdaten-Erdung; kein Fehler |
 | Unvollständige Session (kein layer1_result) | `/start` → HTTP 422 `MISSING_LAYER1_DATA` — Simulation setzt L1-Daten voraus |
 | Intake bricht ab (User sendet "abbrechen") | Status → `user_abort`; `simulation_sessions.status = 'abandoned'`; Ressourcen freigegeben |
 | Anthropic-Timeout (>30s) | HTTP 504 `LLM_TIMEOUT`; client kann Idempotenz-Key wiederverwenden → identischer Call retrybar |
@@ -490,6 +491,8 @@ CREATE POLICY simulation_turns_user_policy ON simulation_turns
 ```
 
 **Bestehende Tabellen:** keine Änderungen an `opponent_simulation_sessions` oder `opponent_simulation_turns` — backward compat zu NC-L3-OPPONENT-UI.
+
+**Bestehender Code — verbindliche Backward-Compat-Vorgabe (2026-07-07):** `opponentEngine.ts` wird aktuell live von `/api/opponent-simulation/{start,turn,finish}` genutzt (dokumentierter Contract, `docs/contracts/frontend-backend.md:480-597`, Released). Der Refactor von `computeHiddenOpponentRange` (L1/L2-Erweiterung) MUSS additive, optionale Parameter verwenden — alte Caller ohne die neuen Argumente müssen unverändertes Verhalten erhalten. Kein Deprecation der alten Endpoints in diesem Item; Migration von `OpponentSimulator.tsx` auf `/api/simulate/*` bleibt separates Future-Item (Abschnitt 11).
 
 ---
 
@@ -628,14 +631,14 @@ NC-L3-SIM-REALISM                ✅ Released (690851c) — opponentEngine Basis
                           Phase 2: debriefEngine.ts (pure Logik)
                           Phase 3: simulationRoutes.ts + routes.ts-Integration
                           Phase 4: Supabase-Migration (simulation_sessions + simulation_turns + RLS)
-                          Phase 5: opponentEngine.ts refactor (L1-Injection)
+                          Phase 5: opponentEngine.ts refactor (L1-Injection, additive/optionale
+                                      Parameter — /api/opponent-simulation/* bleibt unverändert lauffähig)
                           Phase 6: negotiation-buddy OpponentSimulator.tsx refactor
                           Phase 7: curl-Tests + TypeCheck + manueller Acceptance-Test
 
-Layer-2-Fix (GATED):              ─── unabhängig von Implementierungssequenz
-                                      L2-Gate in promptBuilder.ts aktivieren sobald L2 grün
-                                      kein Code-Change benötigt — nur env/config Flag?
-                                      %% TODO: nicht eindeutig aus Code ableitbar — L2-Gate-Aktivierung über Code oder Config klären
+Layer-2-Datenpfad:                 ✅ AKTIV seit 2026-07-07 (kein Gate mehr, siehe Abschnitt 3) —
+                                      buildMarketDataContext läuft ab Phase 1 mit echten L2-Daten,
+                                      kein separater Aktivierungsschritt nötig
 
 NC-L3-OPPONENT-UI Migration:          separates Future-Item — OpponentSimulator.tsx auf neue
                                       /api/simulate/* Endpoints umstellen (nach Verifikation)
@@ -661,9 +664,74 @@ NC-L3-OPPONENT-UI Migration:          separates Future-Item — OpponentSimulato
 
 ## Offene Freigabe-Punkte
 
-- [ ] Feature-Register-Abgleich (`product/feature-register.md`, `product/releases/current.md`) — NC-L3-SIM als Item eintragen
-- [ ] ADR-010-Status prüfen (empfohlen: dynamischer Intake vs. SML-Bibliothek)
-- [ ] Layer-2-Fix-Status prüfen — L2-Gate-Aktivierungs-Mechanismus klären (Code vs. Config)
-- [ ] NC-L3-OPPONENT-UI Migration-Zeitpunkt klären (weiterhin alte Endpoints oder sofort auf /api/simulate/*)
-- [ ] max_turns für SIM-v2 abstimmen (Default 15 — höher als NC-L3-OPPONENT Default 12?)
-- [ ] GO / HOLD / SPLIT / BACK TO DOCS Entscheidung dokumentiert
+- [x] Feature-Register-Abgleich (2026-07-07) — NC-L3-SIM in `product/feature-register.md` eingetragen (Status: Qualified, Wave 3)
+- [ ] ADR-010-Status prüfen (empfohlen: dynamischer Intake vs. SML-Bibliothek) — weiterhin offen, nicht blockierend
+- [x] Layer-2-Fix-Status geprüft (2026-07-07) — ✅ grün, kein Gate mehr; siehe Abschnitt 3
+- [x] opponentEngine.ts-Kompatibilität geklärt (2026-07-07) — additive/optionale Parameter verbindlich, siehe Abschnitt 7
+- [ ] NC-L3-OPPONENT-UI Migration-Zeitpunkt klären (weiterhin alte Endpoints oder sofort auf /api/simulate/*) — bewusst als separates Future-Item zurückgestellt (2026-07-07), zwei parallele Simulations-Einstiegspunkte bis dahin akzeptiert
+- [x] max_turns für SIM-v2 entschieden (2026-07-07) — **15** (höher als NC-L3-OPPONENT Default 12, da Intake-Phase zusätzliche Turns verbraucht)
+- [x] GO / HOLD / SPLIT / BACK TO DOCS Entscheidung dokumentiert (2026-07-07) — **GO**. Feature-Register-Eintrag (Status: Qualified) und `product/briefs/NC-L3-SIM.md` erstellt. ADR-010 bleibt offen (empfohlen, nicht blockierend, separat via `/adr-create`). Nächster Schritt: Phase-1-Plan (siehe unten).
+
+---
+
+## Phase-1-Plan
+
+**Erstellt:** 2026-07-07 — Backend-Plan, TARGET REPO negotiationcoach-backend
+**Status:** PLANNED — wartet auf GO für Implementierung (Template 2b-DEV)
+**Scope:** kleinste sichere erste Slice aus Abschnitt 11 — reine Logik-Module, kein DB-Zugriff, keine Route-Registrierung, kein Eingriff in `opponentEngine.ts`/`opponentSimulationRoutes.ts`.
+
+### 1. Umfang
+
+Zwei neue, isolierte Module in `negotiationcoach-backend/src/layer3/`:
+
+**`smlParser.ts` (neu):**
+- `deriveUserBatnaStrength(own_minimum, own_target): number` — `own_minimum / own_target`, geklemmt auf `[0,1]`
+- `computeRecommendedOpening(nash_solution, own_minimum, difficulty_factor): number` — `nash_solution + (nash_solution - own_minimum) * difficulty_factor`
+- `buildScenarioObject(intakeResult, layer1Snapshot, layer2Snapshot?): ScenarioObject` — reine Zusammenführung, keine LLM-Calls, kein DB-Zugriff (Intake-LLM-Orchestrierung selbst ist Phase 3, `simulationRoutes.ts`)
+
+**`promptBuilder.ts` (neu):**
+- `buildMarketDataContext(layer2?: EnrichedAnalysisResult): MarketDataContext` — exakt wie in Abschnitt 3 spezifiziert (Per-Session-Defensivcheck, kein globales Gate)
+- Grundgerüst für Intake-Fragen-Prompt (Lückenanalyse-Prompt-Text, noch ohne Anthropic-Client-Call — der Call selbst gehört zu `simulationRoutes.ts`, Phase 3)
+
+**Nicht Teil von Phase 1:** `simulationLoop.ts`, `debriefEngine.ts`, `index.ts`, `simulationRoutes.ts`, `opponentEngine.ts`-Refactor, Migration — folgen in Phase 2–5 (Abschnitt 11).
+
+### 2. Exakt betroffene Dateien
+
+| Datei | Art |
+|---|---|
+| `negotiationcoach-backend/src/layer3/smlParser.ts` | neu |
+| `negotiationcoach-backend/src/layer3/promptBuilder.ts` | neu |
+| `negotiationcoach-backend/src/types/index.ts` | erweitert — `ScenarioObject`, `MarketDataContext` als Typen ergänzen (additiv, keine bestehenden Typen ändern) |
+
+### 3. SIDE-EFFECT-CHECK (PFLICHT — bereits durchgeführt 2026-07-07)
+
+a) `grep -rn "computeHiddenOpponentRange\|buildOpponentSystemPrompt\|computeSimulationWarning\|evaluateOutcome" src/` → **genau ein Treffer-File:** `src/api/opponentSimulationRoutes.ts` (4 Importe, keine anderen Caller im Repo). Phase 1 fasst diese Funktionen nicht an — Befund dokumentiert für spätere Phase-5-Referenz.
+b) Kann die Änderung Verhalten für andere Caller verändern? **Nein** — `smlParser.ts`/`promptBuilder.ts` sind neue Dateien ohne bestehende Importe; `types/index.ts`-Erweiterung ist rein additiv (neue Interfaces, keine bestehenden Felder geändert).
+c) Loop-Risiko (useEffect/useCallback)? **Entfällt** — reiner Backend-Code, kein React.
+d) DB-Schema-Änderung? **Keine** in Phase 1.
+e) API-Contract-Änderung? **Keine** in Phase 1 — keine Route registriert.
+
+→ Alle fünf Punkte beantwortet, Blast Radius für Phase 1: **isoliert, keine Regressionsgefahr für bestehenden Code.**
+
+### 4. Tests die danach laufen müssen
+
+- Unit-Tests für `deriveUserBatnaStrength`, `computeRecommendedOpening`, `buildMarketDataContext` — pure Funktionen, kein DB/LLM-Mock nötig
+- `npx tsc --noEmit` (negotiationcoach-backend) — 0 Fehler, insbesondere für die additiven `types/index.ts`-Erweiterungen
+- Kein curl-Test in Phase 1 möglich (keine Route) — curl-Tests (Design-Doc Abschnitt 10) erst ab Phase 3
+
+### 5. Docs/Contracts die zu updaten sind
+
+- Keine — `docs/contracts/frontend-backend.md` erst bei Phase 3 (neue Routen)
+- ADR-010 weiterhin empfohlen, nicht blockierend für Phase 1
+
+### 6. Rollback-Strategie
+
+Zwei neue, ungenutzte Dateien + additive Typen ohne Downstream-Referenzen — Rollback = Dateien löschen bzw. Types-Erweiterung revertieren. Kein DB-State, kein Deploy-Risiko, kein Caller betroffen.
+
+### 7. Exakter Git-Commit-Befehl
+
+```bash
+cd ../negotiationcoach-backend && git add src/layer3/smlParser.ts src/layer3/promptBuilder.ts src/types/index.ts && git commit -m "feat(layer3): NC-L3-SIM Phase 1 — smlParser + promptBuilder (pure logic)"
+```
+
+**STOP — Phase-1-Plan steht. Wartet auf GO für Template 2b-DEV (Implementierung durch Subagent-Pattern).**

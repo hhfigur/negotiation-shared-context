@@ -2,7 +2,7 @@
 ## Layer 3 Simulation Engine — Redesign (L1/L2-geerdeter Gegner, dynamischer Intake, Debrief)
 
 **Release:** TBD (Wave 3)
-**Status:** IN PROGRESS — Phase 1 von 7 implementiert (2026-07-08)
+**Status:** IN PROGRESS — Phase 2 von 7 implementiert (2026-07-08)
 **Affected repos:** negotiationcoach-backend (primary), negotiation-buddy, shared-context (Docs/ADR)
 **Tier impact:** profi only
 **Created:** 2026-07-06 (Design-Stub) · Qualified: 2026-07-07
@@ -205,6 +205,39 @@ dokumentiert, nicht in diesem Brief dupliziert.
   3. Neue Phase-1-Tests sind noch nicht in `package.json`
      `scripts.test` verkabelt — spätere Phase muss das nachholen, sonst
      fängt CI keine Regression in diesen Funktionen ab.
-- **Nächster Schritt:** Phase 2 (`debriefEngine.ts`, reine Logik) gemäß
-  Design-Doc Abschnitt 11 — erfordert neuen /feature-plan-Durchlauf oder
-  direkte Fortsetzung mit Template 2b-DEV, je nach Wunsch.
+**Phase 2 — debriefEngine.ts (reine Logik):**
+
+- **Commit:** `2f163c8` — feat(layer3): NC-L3-SIM Phase 2 — debriefEngine (pure logic)
+- **Umgesetzt via:** `/subagent-driven-development` (Implementer + Task-Reviewer, Modell Sonnet)
+- **Geänderte Dateien:**
+  `src/layer3/debriefEngine.ts` (neu — `computeConcessionTimeline`,
+  `computeOutcomeMetrics`, `computeMarketComparison`, `buildDebriefResult`),
+  `src/types/index.ts` (additiv — `DebriefResult` neu, `SimulationTurn`
+  additiv erweitert um `role: 'coach'`, `offer_detected?`, `coach_hint?`),
+  `tests/layer3/debriefEngine.test.ts` (neu)
+- **Design-Entscheidung eingehalten:** `computeOutcomeMetrics` nutzt die
+  echten `layer1_snapshot`-Werte (ZOPA/Nash/Monte-Carlo), keine
+  Neuberechnung aus `opponent_estimated_*` — Task-Reviewer hat dies
+  unabhängig verifiziert (kein `opponent_estimated_*`-Feld im gesamten Diff).
+- **Verifikation:** `npx tsc --noEmit` → 0 Fehler (Controller-seitig
+  unabhängig bestätigt). `git diff --stat` bestätigt: nur geplante Dateien
+  geändert (3 Dateien: debriefEngine.ts, types/index.ts, Test-Datei).
+  `opponentEngine.ts`/`opponentSimulationRoutes.ts` nicht im Diff enthalten.
+  `SimulationTurn`-Erweiterung: 0 Fremd-Importeure bestätigt (Task-Reviewer,
+  eigener grep-Check).
+- **Task-Review:** ✅ Spec compliant, 0 Critical/Important Findings.
+  **Task quality: Approved.**
+- **Minor-Findings (nicht blockierend):**
+  1. Neue Phase-2-Tests sind wie schon Phase 1 nicht in `package.json`
+     `scripts.test` verkabelt (bestehende Repo-Konvention, kein neues Problem).
+  2. Feldname `market_comparison` hat jetzt zwei inkompatible Semantiken im
+     Code: Layer 2 (`EnrichedAnalysisResult`, range-basiert) vs. Layer 3
+     Debrief (`DebriefResult`, ±2%-von-Median) — Brief-mandatiert, kein
+     Implementierungsfehler, aber Verwechslungsrisiko für künftige
+     Maintainer/LLM-Prompts vormerken.
+- **Nächster Schritt:** Phase 3 (`simulationRoutes.ts` + `routes.ts`-
+  Integration, erste LLM-Calls, erste DB-Schreibzugriffe) gemäß Design-Doc
+  Abschnitt 11 — deutlich größerer Scope als Phase 1/2 (erste echte
+  Route-Registrierung, erster Anthropic-Call, erstmals nicht mehr "reine
+  Logik"). Sollte vor Beginn erneut durch /feature-plan Schritt 4b
+  (Konsequenz-Triage) laufen, nicht direkt per /feature-implement.

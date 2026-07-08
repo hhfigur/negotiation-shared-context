@@ -412,7 +412,7 @@ interface SimulateDebriefRequest {
 | Separate SML-Parsing-Library | `smlParser.ts` als eigenständiges Modul | Funktional äquivalent; kein Library-Overhead |
 | `win_conditions` im alten EF-Schema | Abgebildet auf `acceptance_curve` aus Layer 1 | Mathematisch präziser als verbale Win-Conditions |
 
-**ADR-Bedarf:** Das dynamische Intake-Design ist eine signifikante Abweichung vom ursprünglichen SML-Ansatz und betrifft die Simulation-Architektur grundlegend. **Ein ADR-010 "NC-L3-SIM Intake Strategy" wird empfohlen** (DECISION: dynamischer LLM-Intake vs. statische SML-Bibliothek; STATUS: Proposed). ADR-009 bleibt unverändert (Backend-Routing für Layer 3 bestätigt).
+**ADR-Bedarf:** ✅ Erledigt — `docs/decision-log/ADR-010-l3-sim-intake-strategy.md`, **DECIDED 2026-07-08**: Option A (dynamischer LLM-Intake), Option C (Hybrid) als trigger-basierte Zukunftsoption dokumentiert. ADR-009 bleibt unverändert (Backend-Routing für Layer 3 bestätigt).
 
 ---
 
@@ -665,7 +665,7 @@ NC-L3-OPPONENT-UI Migration:          separates Future-Item — OpponentSimulato
 ## Offene Freigabe-Punkte
 
 - [x] Feature-Register-Abgleich (2026-07-07) — NC-L3-SIM in `product/feature-register.md` eingetragen (Status: Qualified, Wave 3)
-- [ ] ADR-010-Status prüfen (empfohlen: dynamischer Intake vs. SML-Bibliothek) — weiterhin offen, nicht blockierend
+- [x] ADR-010-Status geprüft (2026-07-08) — **DECIDED**, Option A (dynamischer Intake), Option C als spätere Erweiterung vorgemerkt
 - [x] Layer-2-Fix-Status geprüft (2026-07-07) — ✅ grün, kein Gate mehr; siehe Abschnitt 3
 - [x] opponentEngine.ts-Kompatibilität geklärt (2026-07-07) — additive/optionale Parameter verbindlich, siehe Abschnitt 7
 - [ ] NC-L3-OPPONENT-UI Migration-Zeitpunkt klären (weiterhin alte Endpoints oder sofort auf /api/simulate/*) — bewusst als separates Future-Item zurückgestellt (2026-07-07), zwei parallele Simulations-Einstiegspunkte bis dahin akzeptiert

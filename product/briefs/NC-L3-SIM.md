@@ -9,7 +9,7 @@
 **Priority:** P3 — kein Tier-Druck, inhaltlicher Fortschritt für Profi-Wertversprechen
 **Parent:** NC-L3 (Layer 3 Simulation Engine) — Nachfolger von NC-L3-OPPONENT / NC-L3-SIM-REALISM
 **Full Design:** `docs/features/layer3-simulation.md` (Discovery A1–A4, Datenfluss, Types, Error-Cases, Test-Plan — vollständig)
-**ADR:** ADR-009 (Routing, unverändert gültig) · ADR-010 empfohlen (Intake-Strategie, nicht blockierend)
+**ADR:** ADR-009 (Routing, unverändert gültig) · ADR-010 DECIDED 2026-07-08 (Intake-Strategie: Option A, Option C trigger-basiert vorgemerkt)
 
 ---
 
@@ -129,7 +129,7 @@ Vollständige Tabelle: Design-Doc Abschnitt 5. Kernpunkte:
 - Migration von `OpponentSimulator.tsx` auf `/api/simulate/*` (separates Future-Item)
 - Deprecation/Ablösung von `/api/opponent-simulation/*`
 - Streaming (spätere Ausbaustufe)
-- ADR-010-Entscheidung selbst (empfohlen, aber nicht Teil dieses Briefs — via `/adr-create`)
+- ~~ADR-010-Entscheidung selbst~~ — ✅ DECIDED 2026-07-08, siehe `docs/decision-log/ADR-010-l3-sim-intake-strategy.md`
 
 ---
 
@@ -164,8 +164,7 @@ Vollständige Tabelle: Design-Doc Abschnitt 5. Kernpunkte:
 - max_turns für SIM-v2: **15** (entschieden 2026-07-07) — höher als
   NC-L3-OPPONENT-Default (12), da die Intake-Phase zusätzliche Turns
   verbraucht, bevor die eigentliche Verhandlung beginnt
-- ADR-010 (dynamischer Intake vs. SML-Bibliothek): empfohlen, nicht
-  blockierend — separat via `/adr-create` zu entscheiden vor Phase 1
+- ~~ADR-010 (dynamischer Intake vs. SML-Bibliothek)~~ — ✅ DECIDED 2026-07-08 (Option A)
 
 ---
 

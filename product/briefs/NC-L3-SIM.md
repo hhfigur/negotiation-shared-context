@@ -2,7 +2,7 @@
 ## Layer 3 Simulation Engine — Redesign (L1/L2-geerdeter Gegner, dynamischer Intake, Debrief)
 
 **Release:** TBD (Wave 3)
-**Status:** Qualified
+**Status:** IN PROGRESS — Phase 1 von 7 implementiert (2026-07-08)
 **Affected repos:** negotiationcoach-backend (primary), negotiation-buddy, shared-context (Docs/ADR)
 **Tier impact:** profi only
 **Created:** 2026-07-06 (Design-Stub) · Qualified: 2026-07-07
@@ -175,3 +175,36 @@ Implementierungssequenz (Design-Doc Abschnitt 11): Phase 1 (`smlParser.ts` +
 `promptBuilder.ts`, reine Logik) zuerst. Phase-1-Plan wird via Template 1-DEV
 in `docs/features/layer3-simulation.md` (Abschnitt `## Phase-1-Plan`)
 dokumentiert, nicht in diesem Brief dupliziert.
+
+## Implement
+
+**Phase 1 — smlParser.ts + promptBuilder.ts (reine Logik):**
+
+- **Repo/Branch:** negotiationcoach-backend, direkt auf `main` (explizite
+  User-Zustimmung 2026-07-08 — Begründung: additiv, risikoarm, konsistent
+  mit bisherigem Ein-Branch-Workflow des Projekts)
+- **Commit:** `c00e719` — feat(layer3): NC-L3-SIM Phase 1 — smlParser + promptBuilder (pure logic)
+- **Umgesetzt via:** `/subagent-driven-development` (Implementer + Task-Reviewer, Modell Sonnet)
+- **Geänderte Dateien:**
+  `src/layer3/smlParser.ts` (neu), `src/layer3/promptBuilder.ts` (neu),
+  `src/types/index.ts` (additiv — `ScenarioObject`, `MarketDataContext`),
+  `tests/layer3/smlParser.test.ts` (neu), `tests/layer3/promptBuilder.test.ts` (neu)
+- **Verifikation:** `npx tsc --noEmit` → 0 Fehler (Controller-seitig unabhängig
+  bestätigt, nicht nur Implementer-Report). `git diff --stat` bestätigt: nur
+  geplante Dateien geändert. `opponentEngine.ts`/`opponentSimulationRoutes.ts`
+  byte-identisch zu vorher (Task-Reviewer via `git show`-Diff verifiziert) —
+  DO-NOT-TOUCH-Vorgabe eingehalten.
+- **Task-Review:** ✅ Spec compliant, 0 Critical/Important Findings.
+  **Task quality: Approved.**
+- **Minor-Findings (nicht blockierend, für spätere Phasen vormerken):**
+  1. `ScenarioIntakeInput`-Typ liegt in `smlParser.ts`, nicht `types/index.ts`
+     — Phase 3 soll ihn von dort importieren, nicht neu definieren.
+  2. `DIFFICULTY_FACTOR`-Werte (0.1/0.25/0.4) sind Platzhalter ohne
+     Produkt-Quelle — Sign-off nötig bevor Phase 3 `recommended_opening`
+     Endnutzern zeigt.
+  3. Neue Phase-1-Tests sind noch nicht in `package.json`
+     `scripts.test` verkabelt — spätere Phase muss das nachholen, sonst
+     fängt CI keine Regression in diesen Funktionen ab.
+- **Nächster Schritt:** Phase 2 (`debriefEngine.ts`, reine Logik) gemäß
+  Design-Doc Abschnitt 11 — erfordert neuen /feature-plan-Durchlauf oder
+  direkte Fortsetzung mit Template 2b-DEV, je nach Wunsch.

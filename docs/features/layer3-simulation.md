@@ -735,3 +735,80 @@ cd ../negotiationcoach-backend && git add src/layer3/smlParser.ts src/layer3/pro
 ```
 
 **STOP — Phase-1-Plan steht. Wartet auf GO für Template 2b-DEV (Implementierung durch Subagent-Pattern).**
+
+**✅ Phase 1 implementiert 2026-07-08 — commit `c00e719`, Task-Review Approved. Details: `product/briefs/NC-L3-SIM.md` Abschnitt "## Implement".**
+
+---
+
+## Phase-2-Plan
+
+**Erstellt:** 2026-07-08 — Backend-Plan, TARGET REPO negotiationcoach-backend
+**Status:** PLANNED — wartet auf GO für Implementierung (Template 2b-DEV)
+**Scope:** zweite sichere Slice aus Abschnitt 11 — `debriefEngine.ts`, weiterhin reine Logik, kein DB-Zugriff, keine Route-Registrierung, kein LLM-Call.
+
+### 1. Umfang
+
+**`src/layer3/debriefEngine.ts` (neu):**
+
+- `computeConcessionTimeline(turns: SimulationTurn[]): { concession_timeline: DebriefResult['concession_timeline']; total_user_concession_pct: number; total_opponent_concession_pct: number }`
+  — liest `offer_detected` aus den Turns (Feld existiert nach der Typ-Erweiterung unten), baut die Timeline paarweise, berechnet prozentuale Zugeständnisse relativ zum jeweils vorherigen eigenen Angebot. Reine Funktion, kein DB-Zugriff (Turns werden als Array übergeben, nicht geladen).
+- `computeOutcomeMetrics(finalOffer: number, layer1Snapshot: AnalysisResult): Pick<DebriefResult, 'final_vs_zopa_percentile' | 'final_vs_nash_distance' | 'final_vs_nash_direction' | 'vs_monte_carlo_p50' | 'vs_monte_carlo_p90'>`
+  — **wichtig, Design-Entscheidung:** nutzt die bereits im `layer1_snapshot` gespeicherten `zopa_min/zopa_max/nash_solution/monte_carlo_p50/monte_carlo_p90` (echte Analyse-Werte), NICHT eine Neuberechnung aus `opponent_estimated_*`-Werten wie die alte `opponentEngine.ts::evaluateOutcome`. Das ist der Kernunterschied zu NC-L3-OPPONENT: NC-L3-SIM erdet das Debrief an der echten Analyse, nicht an geschätzten Gegner-Werten.
+- `computeMarketComparison(finalOffer: number, layer2Snapshot: MarketDataContext): Pick<DebriefResult, 'vs_market_median' | 'market_comparison'>`
+  — nur befüllt wenn `layer2Snapshot.available === true` und `data.market_median` vorhanden; sonst beide Felder `undefined`. Toleranzband für `market_comparison` ('below'/'at'/'above'): implementer's Ermessen, sinnvoller Default ±2%.
+- `buildDebriefResult(pure: <Ergebnis der drei obigen Funktionen>, llmDerived: Pick<DebriefResult, 'tactics_used_well' | 'tactics_missed' | 'opponent_tactics_observed' | 'key_mistakes' | 'recommendations' | 'overall_score'>, outcome: Pick<DebriefResult, 'deal_reached' | 'final_offer' | 'walkaway_reason' | 'hidden_opponent_minimum' | 'hidden_opponent_target'>): DebriefResult`
+  — reine Zusammenführung. **Die qualitativen LLM-Felder (`tactics_*`, `key_mistakes`, `recommendations`, `overall_score`) werden NICHT in Phase 2 berechnet** — laut Datenfluss (Abschnitt 3) braucht das einen Sonnet-Call ("LLM (Sonnet): qualitative Empfehlungen + key_mistakes"), das ist Phase-3-Scope (`simulationRoutes.ts`). `buildDebriefResult` nimmt sie als fertige Parameter entgegen, analog zu `buildScenarioObject`s additivem Zusammenführungs-Pattern aus Phase 1.
+
+**`src/types/index.ts` — additive Erweiterung:**
+
+- `DebriefResult`-Interface neu hinzufügen (vollständige Definition: Design-Doc Abschnitt 4)
+- `SimulationTurn` additiv erweitern (bestätigt **toter Code, aktuell nirgends importiert** — A2-Discovery, siehe Abschnitt 2 — daher risikolos erweiterbar):
+  ```typescript
+  // vorher: role: 'user' | 'assistant';
+  role: 'user' | 'assistant' | 'coach';
+  offer_detected?: number;   // NEU
+  coach_hint?: string;       // NEU
+  ```
+
+**Nicht Teil von Phase 2:** `simulationLoop.ts`, `simulationRoutes.ts`, jeglicher Anthropic-Client-Call, `opponentEngine.ts`-Refactor, Migration.
+
+### 2. Exakt betroffene Dateien
+
+| Datei | Art |
+|---|---|
+| `negotiationcoach-backend/src/layer3/debriefEngine.ts` | neu |
+| `negotiationcoach-backend/src/types/index.ts` | additiv erweitert — `DebriefResult` neu, `SimulationTurn` additiv erweitert (kein bestehendes Feld entfernt/umbenannt) |
+
+### 3. SIDE-EFFECT-CHECK (PFLICHT)
+
+a) `grep -rn "SimulationTurn" src/` vor Implementierung durchführen und im Report bestätigen — laut A2-Discovery (2026-07-06) aktuell 0 Importe außerhalb der Definition selbst. Falls der Implementer einen Treffer findet, der bei der Planung nicht bekannt war: STOP, nicht einfach erweitern.
+b) Kann die `SimulationTurn`-Erweiterung Verhalten für andere Caller verändern? Bei bestätigtem Befund aus (a): **Nein** — additive Felder, additiver Union-Wert, keine bestehenden Verwender.
+c) `computeConcessionTimeline`/`computeOutcomeMetrics`/`computeMarketComparison`/`buildDebriefResult` sind neue, ungenutzte Exporte — keine bestehenden Caller.
+d) DB-Schema-Änderung? Keine.
+e) API-Contract-Änderung? Keine — keine Route in Phase 2.
+f) `opponentEngine.ts`/`opponentSimulationRoutes.ts` weiterhin nicht angefasst — nicht importiert von `debriefEngine.ts`.
+
+### 4. Tests
+
+- `computeConcessionTimeline`: leeres Turn-Array, Turns ohne `offer_detected`, alternierende User/Gegner-Angebote, Prozent-Berechnung exakt geprüft
+- `computeOutcomeMetrics`: alle drei `vs_monte_carlo_*`-Branches (above/at/below) je p50/p90, `final_vs_nash_direction` alle drei Werte, ZOPA-Perzentil-Randfälle (finalOffer außerhalb ZOPA)
+- `computeMarketComparison`: `available: false` → beide Felder undefined; `available: true` alle drei `market_comparison`-Branches
+- `buildDebriefResult`: Assemblierungs-Test — Ergebnis enthält alle Felder aus allen drei Quellen korrekt gemappt
+- `npx tsc --noEmit` — 0 Fehler
+- Bestehende Test-Suite (`npm test`) — keine Regression
+
+### 5. Docs/Contracts
+
+Keine — Contract-Update erst ab Phase 3 (neue Routen).
+
+### 6. Rollback-Strategie
+
+Eine neue Datei + additive Typ-Erweiterung ohne Downstream-Referenzen — Rollback = Datei löschen, Typ-Erweiterung revertieren. Kein DB-State, kein Deploy-Risiko.
+
+### 7. Exakter Git-Commit-Befehl
+
+```bash
+cd ../negotiationcoach-backend && git add src/layer3/debriefEngine.ts src/types/index.ts && git commit -m "feat(layer3): NC-L3-SIM Phase 2 — debriefEngine (pure logic)"
+```
+
+**STOP — Phase-2-Plan steht. Wartet auf GO für Template 2b-DEV.**

@@ -7,14 +7,11 @@
 - Dev: Claude Code (nicht Lovable)
 
 ## Letzte Session
-Datum: 2026-06-19
+Datum: 2026-07-10
 
 Gemacht:
-- BUG-20260529 + BUG-20260521 (BATNA-Extraktion): EF v7 user-only filter deployed + verifiziert (User bestätigt). Commits: `8cb4f42` (negotiation-buddy), `3c5840c` (shared-context).
-- BUG-20260619-canvas-fetch-aborted: neu registriert (P2, offen). "Fetch is aborted" Toast beim Rückkehr aus Canvas — useSessionManager.ts:138.
-
-Problem:
-- BUG-20260619 noch offen (P2) — Canvas-Navigation löst AbortError im createSession-Pfad aus.
+- NC-L3-SIM qualifiziert (Design-Doc, Brief, ADR-010 DECIDED). Phase 1 (`smlParser.ts`+`promptBuilder.ts`, `c00e719`) und Phase 2 (`debriefEngine.ts`, `2f163c8`) implementiert via subagent-driven-development, beide Task-Review Approved. `close-task-dev`-Skill gefixt (Register-Format + Multi-Phase-Gate, `238451b`).
+Problem: keins — reine Feature-Delivery-Session, keine offenen Bugs neu entdeckt.
 
 ## Nächster Schritt
-/bug-fix BUG-20260619-canvas-fetch-aborted — useSessionManager.ts:138 AbortController-Seiteneffekt bei Canvas-Navigation diagnostizieren und fixen.
+`/feature-plan` für NC-L3-SIM Phase 3 (`simulationRoutes.ts` + `routes.ts`-Integration — erste Routen, erster Anthropic-Call, erste DB-Writes). Details: `docs/delivery/session-dump-2026-07-10.md`.

@@ -81,6 +81,29 @@ Frage explizit: "Sind diese Konsequenzen tragbar? GO trotz Risiko,
 oder Scope anpassen?"
 Warte auf explizite Bestätigung vom User bevor Template 1-DEV ausgegeben wird.
 
+## Schritt 4c — Critic-Pass (Kritik-/Red-Team-Loop)
+
+Nach Schritt 4b, vor Template 1-DEV: ein adversarialer Gegen-Durchlauf gegen
+den bisher entstandenen Plan-Entwurf (Schritte 1–4b) — nicht gegen
+Einzeldimensionen, sondern gegen das Gesamtergebnis.
+
+Prüfe den Plan-Entwurf explizit gegen diese Checkliste, als wärst du ein
+Reviewer der ihn ablehnen will:
+
+| # | Kritik-Frage | Befund |
+|---|---|---|
+| 1 | Verletzt der Plan ADR-Konformität — ein Widerspruch zu einem bestehenden ADR, der in Schritt 3 nicht erkannt wurde? | ... |
+| 2 | Verletzt der Plan die Layer-Reihenfolge 0→1→2→3 (übersehene Abhängigkeit)? | ... |
+| 3 | Fehlen ZOPA-/Edge-Cases (Null/undefined-Werte, leere Verhandlung, Tier-Grenzfälle)? | ... |
+| 4 | Gibt es Hidden Coupling (geteilte Utilities, Module-Level-State, Effects mit gemeinsamen Deps), das in Schritt 4b übersehen wurde? | ... |
+| 5 | Gibt es eine RLS-/Tier-Auswirkung, die nicht in Schritt 4 erfasst wurde? | ... |
+
+Falls 1+ Treffer: Plan-Entwurf korrigieren (zurück zu Schritt 4/4b für die
+betroffenen Punkte), dann Critic-Pass erneut durchlaufen — Loop bis stabil
+(keine neuen Treffer mehr).
+
+Falls keine Treffer: weiter mit Schritt 5.
+
 ## Schritt 5 — Template 1-DEV ausgeben
 
 Lies: docs/delivery/claude-code-prompt-templates-dev.md

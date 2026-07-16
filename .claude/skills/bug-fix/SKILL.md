@@ -117,6 +117,12 @@ Nach Logging → Output dokumentieren → Phase 1.5 Gate erneut prüfen.
 **Bestätigte Fehlerursache:** [Observed — Label zwingend]
 ```
 
+**Persistenz-Pflicht:** Falls die Evidenzquelle ein curl-Aufruf oder
+Test-Script ist, wird dieser als Datei committet (nicht nur im Chat/Report
+dokumentiert) — z.B. `scripts/repro/[BUG-ID].sh` oder als Testfall im
+bestehenden Testverzeichnis. Der Repro-Test bleibt nach dem Fix als
+Regressions-Orakel bestehen (nicht löschen nach GREEN).
+
 STOP — Evidenz-Report zeigen. Warte auf GO für Fix-Prompt.
 
 ## Phase 3 — Fix (nur nach Evidenz-GO aus Phase 1.5)

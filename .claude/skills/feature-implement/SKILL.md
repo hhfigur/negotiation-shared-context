@@ -22,7 +22,29 @@ STOP — zuerst /feature-plan ausführen.
 - Genehmigter Plan: [Verweis auf Template-1-DEV-Output oder Zusammenfassung]
 - Ziel-Repo: [negotiation-buddy | negotiationcoach-backend]
 
-## Schritt 0 — Re-Triage (Code kann sich seit Planung geändert haben)
+## Schritt 0 — verify-loop-Hook (Pflicht)
+
+Vor jeder Weitergabe von Template 2b-DEV an den Implementer-Subagenten gilt
+zusätzlich (siehe `.claude/skills/verify-loop/SKILL.md`):
+
+- `/verify-loop` MUSS Teil des Subagent-Auftrags sein (siehe Template 2b-DEV
+  Acceptance-Abschnitt in `docs/delivery/claude-code-prompt-templates-dev.md`).
+- Der Implementer MUSS `scripts/verify.sh` (falls im Ziel-Repo vorhanden)
+  selbst ausführen und bei Fehlern iterieren, BEVOR er
+  DONE/DONE_WITH_CONCERNS meldet.
+- **TypeScript-Kompilierung allein ist KEIN DONE-Kriterium.**
+- Spec-Reviewer prüft dabei auch, ob ein tatsächlicher `verify.sh`-Lauf
+  stattgefunden hat — nicht nur ob er behauptet wurde.
+- Gate-Status: solange `docs/decision-log/ADR-011-verify-loop-gate.md`
+  PROPOSED ist (Soft-Launch), blockiert ein rotes verify.sh nicht automatisch
+  die DONE-Meldung — es MUSS aber transparent im Report ausgewiesen werden.
+  Sobald ADR-011 DECIDED ist, wird ein rotes verify.sh automatisch zum
+  Hard-Blocker, ohne dass dieser Skill erneut geändert werden muss.
+
+Falls `scripts/verify.sh` im Ziel-Repo noch nicht existiert: dies explizit
+im Report vermerken — kein stiller Skip.
+
+## Schritt 1 — Re-Triage (Code kann sich seit Planung geändert haben)
 
 Da zwischen /feature-plan und /feature-implement Zeit vergangen
 sein kann und sich der Code geändert haben könnte:
@@ -45,9 +67,9 @@ git log --oneline -5 -- [betroffene Dateien aus dem Plan]
    Warte auf Bestätigung bevor Template 2b-DEV ausgegeben wird.
 
 4. Falls keine Änderungen oder keine neuen Treffer:
-   weiter zu Schritt 1, keine Nachfrage.
+   weiter zu Schritt 2, keine Nachfrage.
 
-## Schritt 1 — Template 2b-DEV ausgeben
+## Schritt 2 — Template 2b-DEV ausgeben
 
 Lies: docs/delivery/claude-code-prompt-templates-dev.md
 
@@ -57,17 +79,23 @@ bereit zum Einfügen in Claude Code im Ziel-Repo.
 
 STOP — warte auf Bestätigung vom User dass Template übergeben wurde.
 
-## Schritt 2 — Verifikation nach Implementierung
+## Schritt 3 — Verifikation nach Implementierung
 
 Nach Rückmeldung des Implementers prüfe:
 
-1. TypeCheck:
+1. verify.sh-Nachweis (siehe Schritt 0): Liegt ein PASS/FAIL-Summary pro
+   verify.sh-Schritt im Implementer-Report? Falls `scripts/verify.sh` im
+   Ziel-Repo existiert und kein Nachweis vorliegt: STOP — Nachweis nachfordern,
+   nicht als DONE akzeptieren.
+
+2. TypeCheck:
 ```bash
 npx tsc --noEmit
 ```
-Muss clean sein — keine neuen Fehler.
+Muss clean sein — keine neuen Fehler. (Ersetzt nicht den verify.sh-Nachweis
+aus Punkt 1 — TypeScript-Kompilierung allein ist kein DONE-Kriterium.)
 
-2. Diff-Review:
+3. Diff-Review:
 ```bash
 git diff --stat HEAD
 ```
@@ -76,7 +104,7 @@ Falls unerwartete Dateien geändert: STOP — User informieren.
 
 STOP — warte auf Bestätigung des Diffs vom User.
 
-## Schritt 3 — close-task-dev ausführen
+## Schritt 4 — close-task-dev ausführen
 
 Führe /close-task-dev aus für NC-ID.
 

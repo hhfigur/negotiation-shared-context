@@ -4,7 +4,7 @@
 **Owner:** Feature Delivery Controller (Claude)
 **Basis:** Extends `docs/claude-code-prompt-templates.md` (Refactor Templates)
 **Status:** Active
-**Last updated:** 2026-04-24
+**Last updated:** 2026-07-16 — Template 2b-DEV: Acceptance-Abschnitt um verify-loop-Pflicht ergänzt (ADR-011)
 
 ---
 
@@ -196,6 +196,20 @@ SIDE-EFFECT-CHECK (PFLICHT — Implementer führt aus, bevor Code geschrieben wi
   5. API-Änderung: welche Frontend-Caller nutzen diesen Endpoint?
   Ergebnis: "Side-Effect-Check: [Liste der Abhängigen] — alle geprüft, kein Regressionsrisiko"
   Oder: "Side-Effect-Check: [Abhängiger X] könnte betroffen sein → fixe auch [X]"
+
+ACCEPTANCE CRITERIA (PFLICHT — siehe /verify-loop):
+  - scripts/verify.sh im Ziel-Repo ausführen, falls vorhanden (Contract:
+    docs/contracts/verify-harness.md). Bei Fehlern iterieren bis Exit 0.
+  - TypeScript-Kompilierung allein ist KEIN DONE-Kriterium.
+  - DONE/DONE_WITH_CONCERNS nur mit Ausführungsnachweis: PASS/FAIL-Summary
+    pro verify.sh-Schritt, wörtlich im Implementer-Report.
+  - Falls scripts/verify.sh im Ziel-Repo noch nicht existiert: explizit
+    vermerken ("verify.sh: nicht vorhanden") — kein stiller Skip.
+  - Gate-Status: .claude/skills/verify-loop/SKILL.md — solange
+    docs/decision-log/ADR-011-verify-loop-gate.md PROPOSED ist (Soft-Launch),
+    blockiert ein rotes verify.sh die DONE-Meldung noch nicht, muss aber
+    transparent gemeldet werden. Spec-Reviewer prüft den Nachweis, vertraut
+    nicht der bloßen Behauptung "Tests laufen".
 
 Nach bestandenem Code-Quality-Review:
 Schreibe Ergebnis in Abschnitt ## Implement der Brief-Datei.

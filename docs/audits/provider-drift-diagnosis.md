@@ -17,18 +17,20 @@ Observed).
 
 **Aber:** `negotiation-buddy/.env` (git-getrackt, Observed via `git ls-files`)
 enthält `VITE_SUPABASE_PROJECT_ID="ujnyioggxipvuxxxcivr"` (Legacy) —
-`negotiation-buddy/.env.local` (vermutlich nicht getrackt, nicht verifiziert)
-überschreibt dies lokal auf `gpllrgkuozytyrmpfwbb`. Vite priorisiert
-`.env.local` über `.env` **nur wenn `.env.local` zur Build-Zeit vorhanden ist**.
+`negotiation-buddy/.env.local` (git-**ignoriert** via `*.local`-Regel in
+`.gitignore`, verifiziert via `git check-ignore -v`, siehe Gate-Abschnitt
+unten) überschreibt dies nur lokal auf `gpllrgkuozytyrmpfwbb`.
 
 **Missing:** Ob der Render.com-Production-Build tatsächlich gegen
 `gpllrgkuozytyrmpfwbb` oder gegen die im Repo committete Legacy-ID
 `ujnyioggxipvuxxxcivr` baut, ist aus lokalen Dateien NICHT ableitbar — das
-hängt davon ab, ob Render eigene Environment-Variablen gesetzt hat (die eine
-`.env.local`-Wirkung im Build-Prozess ersetzen würden) oder nicht. **Alle
-"Observed"-Aussagen unten gelten gesichert nur für `gpllrgkuozytyrmpfwbb`.**
-Falls Production tatsächlich noch `ujnyioggxipvuxxxcivr` nutzt, ist der
-gesamte folgende Befund für die Produktionsrealität nicht validiert.
+hängt davon ab, ob Render eigene Environment-Variablen gesetzt hat oder
+nicht. **Alle "Observed"-Aussagen unten gelten gesichert nur für
+`gpllrgkuozytyrmpfwbb`.** Falls Production tatsächlich noch
+`ujnyioggxipvuxxxcivr` nutzt, ist der gesamte folgende Befund für die
+Produktionsrealität nicht validiert. **Detaillierte Untersuchung dieses
+Vorbehalts:** siehe Abschnitt "Gate: Render-Production Supabase-ID" am
+Ende dieses Dokuments.
 
 ---
 
@@ -254,9 +256,75 @@ Entscheidung möglicherweise auf das falsche Projekt.
 
 ---
 
+## Gate: Render-Production Supabase-ID
+
+**Nachtrag vom 2026-07-16 — READ-ONLY-Untersuchung in `negotiation-buddy`,
+Vertiefung des zentralen Vorbehalts oben.**
+
+### Observed
+
+- **Kein Render-Config-File im Repo.** Weder `render.yaml` noch eine sonstige
+  `.render*`-Datei existiert (`find` über das gesamte Repo, maxdepth 2, leer).
+  Render-Build-Settings (Build Command, Env-Vars) werden folglich —
+  soweit aus dem Repo ersichtlich — ausschließlich über das Render-Dashboard
+  konfiguriert, nicht als Infrastructure-as-Code versioniert.
+- **Build-Script** (`package.json`): `"build": "vite build"` — Standard-Vite-
+  Build ohne Custom-Wrapper, kein Pre-/Post-Build-Hook, der Env-Vars
+  umschreibt.
+- **App-Code liest Supabase-Verbindung** in
+  `src/integrations/supabase/client.ts:5-6`:
+  ```
+  const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+  const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+  ```
+  Klassisches Vite `import.meta.env` — wird **zur Build-Zeit** in das
+  Static-Bundle eingebacken, nicht zur Laufzeit im Browser aufgelöst.
+- **`.env` vs. `.env.local` — Projekt-IDs (nur IDs, keine Key-Werte):**
+  | Datei | `VITE_SUPABASE_PROJECT_ID` | Git-Status |
+  |---|---|---|
+  | `.env` | `ujnyioggxipvuxxxcivr` (Legacy) | **Git-getrackt** (`git ls-files` zeigt `.env`) |
+  | `.env.local` | `gpllrgkuozytyrmpfwbb` (Aktiv) | **Git-ignoriert** — matcht die `*.local`-Regel in `.gitignore` Zeile 13, verifiziert via `git check-ignore -v .env.local` → `.gitignore:13:*.local  .env.local` |
+  | `.env` (Kontrollprobe) | — | `git check-ignore -v .env` → **kein Treffer**, d. h. `.env` ist bewusst NICHT ignoriert |
+  - `.env.local` enthält zusätzlich `VITE_API_URL="http://localhost:3001"` und `VITE_DEV_TIER_MOCK="true"` — eindeutig als lokale Dev-Overrides erkennbar, nicht für Production gedacht.
+  - `.env.example` enthält **keine** `VITE_SUPABASE_*`-Platzhalter (nur `VITE_POSTHOG_*`) — Onboarding-Doku zu diesen Variablen fehlt, unabhängig vom eigentlichen Befund.
+
+### Inferred
+
+- Da `.env.local` git-ignoriert ist, ist es **nicht Teil eines frischen
+  `git clone`** — ein Render-Build, der aus dem Repo-Checkout baut, sieht
+  `.env.local` nur, wenn es zusätzlich (außerhalb von Git) auf den
+  Build-Runner kopiert oder manuell im Dashboard nachgebildet wurde.
+  **Ohne explizite Render-Dashboard-Overrides für `VITE_SUPABASE_URL` /
+  `VITE_SUPABASE_PROJECT_ID` / `VITE_SUPABASE_PUBLISHABLE_KEY` würde ein
+  Default-Build aus einem frischen Checkout ausschließlich die im Repo
+  committete `.env` sehen — also die Legacy-ID `ujnyioggxipvuxxxcivr`.**
+  Dies folgt aus Standard-Vite-Verhalten (Datei-Präzedenz `.env.local` >
+  `.env`, aber nur wenn die Datei tatsächlich vorhanden ist) und ist hier
+  als Inferred markiert, weil Vites generelles Präzedenzverhalten nicht
+  im Repo selbst dokumentiert/konfiguriert, sondern Framework-Standard ist.
+- Sollte Render dagegen echte Dashboard-Environment-Variablen für diese
+  drei Keys gesetzt haben, würden diese (als Prozess-Env-Variablen zur
+  Build-Zeit) sowohl `.env` als auch ein eventuell manuell nachgebildetes
+  `.env.local` überstimmen — auch das ist Standard-Vite/Node-Verhalten,
+  aber ebenfalls nicht aus dem Repo verifizierbar (siehe Missing).
+
+### Missing (explizit)
+
+- **Die tatsächlich in Render gesetzten Build-Environment-Variablen des
+  `negotiation-buddy`-Static-Site-Deploys** — aus dem Repo nicht
+  feststellbar, da kein `render.yaml` existiert und Dashboard-Konfiguration
+  nicht Teil des Git-Repos ist. Dies ist die einzige Quelle, die den
+  zentralen Vorbehalt (aktives vs. Legacy-Supabase-Projekt in Production)
+  abschließend klären kann. Muss direkt im Render-Dashboard geprüft werden.
+- Ob auf dem Render-Build-Runner jemals manuell eine `.env.local`-Datei
+  hinterlegt wurde (z. B. über ein Secret-File-Feature von Render) — aus
+  dem Repo nicht ersichtlich.
+
+---
+
 ## Offene Missing-Punkte (Zusammenfassung)
 
-1. Welches Supabase-Projekt (`gpllrgkuozytyrmpfwbb` vs. `ujnyioggxipvuxxxcivr`) baut der tatsächliche Render.com-Production-Build? (siehe zentraler Vorbehalt)
+1. Welches Supabase-Projekt (`gpllrgkuozytyrmpfwbb` vs. `ujnyioggxipvuxxxcivr`) baut der tatsächliche Render.com-Production-Build? (siehe zentraler Vorbehalt und Gate-Abschnitt oben — Repo-seitig nun vollständig untersucht, verbleibt aber Missing bis im Render-Dashboard geprüft)
 2. Zweck/Auftrag von Commit `3cc21fc` ("Option B neuansatz") in negotionationcoach-backend — kein Backlog-/ADR-/Brief-Bezug gefunden.
 3. Existiert `GEMINI_API_KEY` noch als (ungenutztes) Supabase-Secret im aktiven Projekt?
 4. Exaktes Commit-Datum von `c60c249`/`8cb4f42` (negotiation-buddy chat-Bugfixes) — nicht einzeln nachgezogen, für Timeline nicht entscheidungsrelevant.

@@ -181,3 +181,95 @@ Falls dieses Vorhaben über `product/feature-register.md` getrackt wird (siehe 6
 - **Eine Redundanz** (6.1.1 — Baustein D) sollte als Erweiterung statt Neubau behandelt werden, um `bug-fix/SKILL.md` nicht unnötig aufzublähen.
 
 **STOP — wartet auf GO / HOLD / SPLIT / BACK TO DOCS.**
+
+---
+
+## 8. Delivery Log
+
+### PROMPT 1 — Governance/Skills (shared-context, docs-only)
+
+**Status: DONE.** Commits: `2cd0285` (verify-loop-Skill, feature-plan/
+feature-implement/bug-fix-Erweiterungen, ADR-011 PROPOSED, verify-harness.md,
+Template-2b-DEV-Update), `668f7bd` (Lessons-Eintrag zum `/close-task`-
+Formatmismatch bei item-losen Governance-Deliveries).
+
+Abweichungen vom wörtlichen Prompt-Text (dokumentiert, nicht stillschweigend):
+ADR-011 liegt unter `docs/decision-log/` statt `docs/adr/` (folgt der
+bestehenden Konvention aller zehn Vorgänger-ADRs). Die
+"Gemini via Supabase AI Gateway"-Zeile in Template 2b-DEV wurde **nicht**
+korrigiert — Code-Verifikation ergab, dass diese Zeile zum damaligen
+Zeitpunkt tatsächlich noch der Realität einer nie deployten
+`negotiationcoach-backend`-Datei entsprach, siehe separate Untersuchung
+unten.
+
+### Zwischen-Investigation — Provider-Drift (nicht Teil des Loop-Coding-Sets, aber davon ausgelöst)
+
+Während PROMPT 1 auffiel: `negotiationcoach-backend/supabase/functions/chat/index.ts`
+ruft Gemini direkt auf, obwohl `CLAUDE.md` "alle EFs nutzen
+claude-haiku-4-5-20251001" behauptet. Zwei separate READ-ONLY-Investigationen
+(`docs/audits/provider-drift-diagnosis.md`, Commits `1e9074e` + `d3229d1`)
+klärten: die tatsächlich **deployte** `chat`-Function (verifiziert via
+Supabase-MCP) ist die Anthropic-Version aus `negotiation-buddy` — die
+Gemini-Datei in `negotiationcoach-backend` ist ein nie deployter Prototyp
+vom 2026-04-22. Zentraler offener Punkt: ob der Render-Production-Build
+tatsächlich das aktive (`gpllrgkuozytyrmpfwbb`) oder das Legacy-Supabase-
+Projekt (`ujnyioggxipvuxxxcivr`) nutzt, bleibt Missing (nur im
+Render-Dashboard prüfbar, nicht aus dem Repo).
+
+### PROMPT 2 — Backend-Harness (negotiationcoach-backend)
+
+**Status: DONE.** Drei Runden, alle gepusht (`origin/main`, `939b7a2`):
+
+- **Runde 1** (`ac09118`): `scripts/verify.sh`, `curl-assert.sh`,
+  `smoke-enrich.sh` gebaut. Deckte real auf: `AUTH_REQUIRED`/Dev-Bypass war
+  in der lokalen `.env` **nicht** aktiv (echte Supabase-Credentials
+  konfiguriert) — die im PROMPT-Text angenommene "RED-Zustand"-Prämisse für
+  `smoke-enrich.sh` (aus dem Loop-Coding-Master-Plan bereits als stale
+  korrigiert) hielt; stattdessen ein neuer Design-Punkt: Auth-Bypass-Status
+  muss als Pre-Flight geprüft werden.
+- **Runde 2** (`5620c09`): Spec-Reviewer fand `dev-anonymous` sei kein
+  gültiges UUID-Format → Insert in `negotiation_sessions.user_id` schlug
+  fehl, `/api/analyze` gab `sessionId: null` mit `200` zurück (stiller
+  Contract-Bruch). Fix: fester UUID-Konstante `DEV_BYPASS_USER_ID`. Zweiter
+  Fund: `smoke-enrich.sh` prüfte `reality_score` fälschlich gegen 0-100,
+  obwohl das Feld vorzeichenbehaftet ist (reale Werte: -5.3, -2.7) — auf
+  Finite-Number-Check korrigiert.
+- **Runde 3** (`939b7a2`, **Produktionsauswirkung, User-Entscheidung
+  eingeholt**): Nach Runde-2-Fix zeigte sich ein tieferer Root Cause:
+  `negotiation_sessions.user_id` hat ein Live-FK zu `auth.users(id)` auf dem
+  aktiven Supabase-Projekt (`gpllrgkuozytyrmpfwbb`) — jede synthetische
+  UUID scheitert daran, unabhängig vom Format. User-Entscheidung (von drei
+  Optionen): **einen dedizierten echten Test-User seeden** statt FK zu
+  lockern oder die Lücke nur zu dokumentieren. Umgesetzt:
+  `scripts/seed-verify-user.ts` (idempotent, Supabase Admin API,
+  `user_metadata.tier: 'kmu'`) legt `verify-harness@internal.test` in
+  `auth.users` an; `scripts/lib-jwt.sh` holt darüber ein echtes JWT
+  (Password-Grant) für `curl-assert.sh`/`smoke-enrich.sh`. Das generierte
+  Test-Passwort liegt ausschließlich in der lokalen, git-ignorierten `.env`
+  (`VERIFY_HARNESS_TEST_PASSWORD`) — nie geloggt, nie committet, per
+  Spec-Review explizit auf Leak-Freiheit geprüft.
+  **Wichtig für zukünftige Audits:** `verify-harness@internal.test` ist ab
+  sofort ein echter, dauerhafter User in der Produktions-`auth.users`-Tabelle
+  des aktiven Supabase-Projekts — kein Mock, kein Wegwerf-Objekt. Bei
+  zukünftigen Auth-/User-Audits (z. B. VG-01/VG-02) als bekannte,
+  absichtliche Ausnahme mitführen, nicht als Anomalie behandeln.
+- **Reviews:** Spec-Reviewer (2 Durchläufe) und Code-Quality-Reviewer —
+  beide **Approved** (keine Critical/Important-Findings). Offene Minor-Punkte
+  (nicht behoben, bewusst als akzeptable Schulden für internes Tooling
+  eingestuft): `scripts/seed-verify-user.ts` liegt in keinem
+  `tsconfig`-`include` (wird nur indirekt beim `ts-node`-Lauf typgeprüft);
+  `curl-assert.sh`/`smoke-enrich.sh` duplizieren ein ~15-Zeilen-Preamble
+  (bei einem dritten Script: auf eine gemeinsame Funktion ziehen);
+  `SUPABASE_SERVICE_KEY` als `apikey`-Header für den Password-Grant-Login
+  ist empirisch verifiziert, aber kein dokumentiert-garantiertes
+  Supabase-Verhalten.
+- **`/close-task` nicht ausgeführt** — gleicher, bereits in `tasks/lessons.md`
+  (2026-07-16) dokumentierter Formatmismatch: kein RFB-/NC-ID für dieses
+  cross-cutting Tooling-Item. Dieser Delivery-Log-Eintrag + der Push nach
+  `origin/main` sind die Two-Location-Closure für PROMPT 2.
+
+### Nächster Schritt
+
+PROMPT 3 (Frontend-Harness, `negotiation-buddy`) ist unabhängig von PROMPT 2
+und kann jederzeit laufen (siehe Abschnitt 2 — Sequenzierung wurde bereits
+in PROMPT 0 als "beliebige Reihenfolge/parallel" korrigiert).

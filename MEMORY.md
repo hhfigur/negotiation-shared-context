@@ -7,11 +7,12 @@
 - Dev: Claude Code (nicht Lovable)
 
 ## Letzte Session
-Datum: 2026-07-10
+Datum: 2026-07-18
 
 Gemacht:
-- NC-L3-SIM qualifiziert (Design-Doc, Brief, ADR-010 DECIDED). Phase 1 (`smlParser.ts`+`promptBuilder.ts`, `c00e719`) und Phase 2 (`debriefEngine.ts`, `2f163c8`) implementiert via subagent-driven-development, beide Task-Review Approved. `close-task-dev`-Skill gefixt (Register-Format + Multi-Phase-Gate, `238451b`).
-Problem: keins — reine Feature-Delivery-Session, keine offenen Bugs neu entdeckt.
+- ADR-012 committed (AI Provider Strategy — Anthropic-only, ADR-003 superseded).
+- Claude-Code-Permissions-Setup für shared-context: sandbox.enabled + credentials-Deny (~/.ssh, ~/.aws), stack-abgeleitete Allowlist (Scripts einzeln statt `npm run *`), Deny-Regeln (rm -rf außerhalb Baum, force-push, sudo, globale Installs, Secret-Reads inkl. Sub-Repo-Pfade), `.gitignore` um `settings.local.json` ergänzt. Globaler `/setup-permissions`-Slash-Command unter `~/.claude/commands/` angelegt.
+Problem: keins — `.claude/settings.json` + `.gitignore` sind bewusst noch uncommitted (kein Commit angefragt).
 
 ## Nächster Schritt
-`/feature-plan` für NC-L3-SIM Phase 3 (`simulationRoutes.ts` + `routes.ts`-Integration — erste Routen, erster Anthropic-Call, erste DB-Writes). Details: `docs/delivery/session-dump-2026-07-10.md`.
+`.claude/settings.json` + `.gitignore` in shared-context committen (sobald gewünscht), danach prüfen ob `/setup-permissions` nach Neustart im Autocomplete auftaucht.

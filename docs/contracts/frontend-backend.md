@@ -634,9 +634,18 @@ EF calls `supabase.auth.getUser(token)` → queries `user_profiles.persona_type`
 `pro→profi`, `kmu→kmu`, `private→privat`, default→`free`.
 `subscription_tier` in request body is now **ignored** — no longer read from request.
 
-**Model Selection (tier-dependent — RFB-009):**
-- `kmu` / `profi` → `google/gemini-2.5-pro`
-- `free` / `privat` → `google/gemini-2.5-flash`
+**Model Selection — Provider korrigiert 2026-07-18 (ADR-012), Tier-Logik unverändert dokumentiert:**
+Die ursprüngliche RFB-009-Beschreibung nannte hier `google/gemini-2.5-pro`
+(kmu/profi) bzw. `google/gemini-2.5-flash` (free/privat). Der EF-Provider
+ist seit 2026-05-15 Anthropic, nicht mehr Gemini (siehe ADR-012, ersetzt
+ADR-003). **Beobachteter Ist-Zustand (Observed, `docs/audits/provider-drift-diagnosis.md`):**
+die aktuell deployte `chat`-EF verwendet `claude-haiku-4-5-20251001`
+hartkodiert für **alle** Tiers — die hier ursprünglich dokumentierte
+tier-abhängige Modellwahl existiert im Code nicht mehr. Ob eine
+Anthropic-äquivalente Tier-Differenzierung (z. B. günstigeres vs. teureres
+Anthropic-Modell je Tier) eingeführt werden soll, ist eine offene
+Produktentscheidung — siehe `NC-SEC-02` und ADR-012 "Bekannter Nebenbefund".
+Nicht Teil dieses Doc-Updates.
 
 **System Prompt Depth (tier-dependent — RFB-009):**
 M-10 premium-depth block appended for `kmu`/`profi` tiers: proactive escalation paths,

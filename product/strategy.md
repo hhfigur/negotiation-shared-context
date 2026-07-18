@@ -46,7 +46,7 @@
 
 ## Deep-dive references
 - `docs/decision-log/ADR-006-tier-mapping.md` — Tier-Definitionen
-- `docs/decision-log/ADR-003-ai-provider-strategy.md` — AI-Provider-Split
+- `docs/decision-log/ADR-012-ai-provider-anthropic-only.md` — AI-Provider-Strategie (Anthropic-only, ersetzt ADR-003)
 - `docs/decision-log/ADR-004-chat-path-routing.md` — EF-Tier-Enforcement
 - `docs/audits/wave1-completion-gate.md` — Wave-1-Abschluss + Post-Gate-Actions
 - `docs/audits/refactor-backlog.md` — technische Schulden

@@ -1,8 +1,28 @@
 # ADR-003 — AI Provider Strategy
 
-**Status:** Accepted — 2026-03-31
+**Status:** Superseded by ADR-012 — 2026-07-18
 **Supersedes:** MIG01 (Migration Lovable Gateway Gemini → Anthropic)
 **Owner:** Refactor Control Tower
+**Ursprünglicher Status (historisch):** Accepted — 2026-03-31
+
+---
+
+> **⚠️ Superseded 2026-07-18:** Die unten beschriebene Zwei-Provider-
+> Architektur (Edge Function → Lovable AI Gateway → Gemini 2.5 Flash,
+> Railway-Backend → Anthropic Claude) existiert nicht mehr und beschreibt
+> NICHT den aktuellen Zustand. Der tatsächliche Umstieg auf einen einzigen
+> Provider (Anthropic) erfolgte bereits am 2026-05-15 (Commit `fc3ad5b` in
+> `negotiation-buddy`, Grund: Google-AI-Studio-Quota-Probleme — nicht Lovable-
+> bezogen, die Lovable-Gateway-Migration war zu diesem Zeitpunkt bereits
+> separat abgeschlossen), wurde aber nie in diesem ADR nachgezogen.
+>
+> Vollständige Verifikation: `docs/audits/provider-drift-diagnosis.md`
+> (Commit `1e9074e`, Nachtrag `d3229d1`). Aktuelle, verbindliche Entscheidung:
+> **ADR-012 — AI Provider Strategy: Anthropic-only**.
+>
+> Der Text unterhalb dieser Notiz bleibt zur Nachvollziehbarkeit unverändert
+> als historisches Dokument erhalten und darf nicht als aktuelle
+> Architekturbeschreibung zitiert werden.
 
 ---
 

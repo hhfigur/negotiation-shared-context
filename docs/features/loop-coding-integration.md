@@ -268,8 +268,86 @@ Render-Dashboard prüfbar, nicht aus dem Repo).
   cross-cutting Tooling-Item. Dieser Delivery-Log-Eintrag + der Push nach
   `origin/main` sind die Two-Location-Closure für PROMPT 2.
 
+### PROMPT 3 — Frontend-Harness + tsc-strict (negotiation-buddy)
+
+**Status: DONE.** Gepusht nach `origin/main` (`ee12e91`) → Render Static
+Site Auto-Deploy ausgelöst.
+
+- Blast-Radius re-verifiziert: exakt 8 Fehler, 6 Dateien (deckt sich mit
+  der PROMPT-0-Messung) — Single-Pass, kein SPLIT nötig.
+- **Lint-Scope-Entscheidung (User, vor Implementierung):** `npm run lint`
+  hatte 55 vorbestehende, unabhängige Probleme (34 Errors/21 Warnings,
+  ~30 Dateien) — Entscheidung: Lint-Schritt in `verify.sh` ist `[WARN]`,
+  nicht `[FAIL]`, meldet aber den echten Live-Count statt eines
+  Platzhalters. Nach Fertigstellung: 54/33/21 (ein Error weniger — Fix #7
+  hat zufällig denselben `as any`-Ausdruck behoben, den auch ESLint
+  bemängelte).
+  Nach dem Rebase (siehe unten) weiterhin 54/33/21 — unverändert von den
+  Lovable-Commits.
+- Alle 8 Fixes vollständig Design-Gate-recherchiert (Root Cause + exaktes
+  Fix-Pattern pro Datei:Zeile) vor der Implementierung — u. a. ein
+  `.abortSignal()`/`.single()`-Call-Order-Bug in `TeamDashboard.tsx`
+  (via `node_modules`-Quellcode-Analyse der `@supabase/postgrest-js`
+  Klassenhierarchie verifiziert, nicht geraten) und ein Narrowing-Verlust
+  über eine `await`-Grenze in `Index.tsx` (Fix: Werte vor dem `await` in
+  lokale `const`s einfangen).
+- UI-Spot-Check (Pflicht laut `negotiation-buddy/CLAUDE.md`): `ChatInput`
+  und `effectiveProgress` liegen ausschließlich hinter
+  `<ProtectedRoute>` (`/app`), kein Dev-Auth-Bypass vorhanden — echter
+  Klick-Test in dieser Sandbox nicht möglich (kein Testnutzer). Ehrlich
+  als Concern dokumentiert statt vorgetäuscht; stattdessen Headless-Chrome-
+  CDP-Check der öffentlichen App-Shell (0 Konsolenfehler, Routing/Auth-Gate
+  funktionieren) + tsc/vitest-Nachweis. Spec-Reviewer hat den Auth-Gate-
+  Befund unabhängig durch Code-Lektüre (`App.tsx`, `ProtectedRoute.tsx`)
+  bestätigt — kein übersehener erreichbarer Pfad.
+- **Reviews:** Spec-Reviewer — vollständig clean, keine Findings (inkl.
+  eigenständiger Re-Ausführung von tsc/vitest/verify.sh und empirischer
+  Verifikation des Lint-Count-Deltas durch Checkout der Vorher-Version).
+  Code-Quality-Reviewer — Approved with minor follow-ups: ein
+  "Important"-markierter Kommentar-Vorschlag (abortSignal-Reihenfolge
+  ohne Sibling-Pattern erklären) direkt umgesetzt statt eigenem Fix-Loop
+  (triviale 1-Zeilen-Ergänzung); ein Minor-Punkt (ChatInput-Ref-Cast-Stil)
+  bewusst nicht behoben.
+
+**Merge-Konflikt mit paralleler Lovable-Session (wichtig für Nachvollziehbarkeit):**
+Beim Push lehnte `origin/main` ab — 5 unabhängige Commits waren zwischenzeitlich
+gelandet (Commit-Messages "Made the requested updates", "Changes" ×3, "Report
+auf Synthese-Stil fixiert" — Muster passt zu Lovable, `BottomBar.tsx`,
+`DebriefDashboard.tsx`, `strategyPlan.css`, `planHtmlTemplate.ts`,
+`package.json`/`bun.lock`, `.lovable/plan.md` betroffen, unabhängig von
+diesem Delivery). Echte Überschneidung auf zwei Dateien: `Profile.tsx` und
+`TeamDashboard.tsx` — die Lovable-Session hatte **dieselben 2 der 8
+tsc-strict-Fehler** unabhängig "gefixt", aber mit schwächeren Techniken
+(`Profile.tsx`: Inline-Cast am Call-Site statt Parameter-Typ-Verengung an
+der Quelle; `TeamDashboard.tsx`: die **gesamte** Query-Chain mit `as any`
+umhüllt statt der korrekten Call-Order-Korrektur — hätte die Type-Safety
+genau an der Stelle wieder ausgehebelt, die dieses Delivery beheben sollte).
+User-Entscheidung: Rebase auf `origin/main`, bei den 2 echten Konflikten
+die eigenen (saubereren) Fixes behalten, alle anderen Lovable-Änderungen
+unangetastet lassen. Durchgeführt (`git rebase origin/main`, ein echter
+Konflikt in `TeamDashboard.tsx` manuell aufgelöst, `Profile.tsx` mergte
+automatisch — dort den nun redundanten Lovable-Cast entfernt, da die
+eigene Parameter-Typ-Verengung ihn überflüssig macht). Nach dem Rebase
+vollständig erneut verifiziert (tsc 0 Fehler, vitest 22/22, `verify.sh`
+GRÜN) — dann erst gepusht.
+**Lehre:** Cross-Session-Kollisionen mit Lovable auf `negotiation-buddy`
+sind real und können identische Fixes mit unterschiedlicher Qualität
+produzieren — vor jedem Push in diesem Repo `git fetch` + Ahead/Behind-
+Check nicht blind aus einem früheren Turn übernehmen, sondern unmittelbar
+vor dem tatsächlichen Push neu prüfen.
+- **`/close-task` nicht ausgeführt** — gleicher Grund wie PROMPT 1/2: kein
+  RFB-/NC-ID. Dieser Delivery-Log-Eintrag + der Push sind die
+  Two-Location-Closure für PROMPT 3.
+
 ### Nächster Schritt
 
-PROMPT 3 (Frontend-Harness, `negotiation-buddy`) ist unabhängig von PROMPT 2
-und kann jederzeit laufen (siehe Abschnitt 2 — Sequenzierung wurde bereits
-in PROMPT 0 als "beliebige Reihenfolge/parallel" korrigiert).
+Alle drei Prompts (Governance, Backend-Harness, Frontend-Harness) sind
+DONE. Offene Folge-Punkte, keine davon blockierend für dieses Set:
+- ADR-011 (Soft-Launch) auf DECIDED heben, sobald genug reale
+  verify-loop-Zyklen gelaufen sind.
+- `negotiationcoach-backend`s `.claude/settings.json`-Sandbox-Änderung
+  (`Read(.env*)`-Deny, blockiert `.env`-Zugriff auch für Kindprozesse)
+  committen oder bewusst zurücksetzen — aktuell uncommitteter Drift.
+- Der Merge-Konflikt oben zeigt: eine engere Lovable/Claude-Code-
+  Koordination für `negotiation-buddy` wäre wertvoll (z. B. kurzer
+  Fetch-Check als fester Bestandteil jedes Push-Schritts).

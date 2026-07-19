@@ -351,3 +351,54 @@ DONE. Offene Folge-Punkte, keine davon blockierend für dieses Set:
 - Der Merge-Konflikt oben zeigt: eine engere Lovable/Claude-Code-
   Koordination für `negotiation-buddy` wäre wertvoll (z. B. kurzer
   Fetch-Check als fester Bestandteil jedes Push-Schritts).
+
+---
+
+## 9. Follow-up: verify-harness Produktions-User
+
+**Status:** Diagnose abgeschlossen — READ-ONLY (SQL-Queries + Advisors gegen
+das aktive Supabase-Projekt, ein Curl-Test gegen den lokalen Dev-Server).
+Keine Schema-/Daten-Änderung, kein Code-Fix.
+**Datum:** 2026-07-19
+**Auslöser:** Nachfrage zur Isolation von `verify-harness@internal.test`
+(seit PROMPT 2, Round 3, in `auth.users` des aktiven Projekts
+`gpllrgkuozytyrmpfwbb` geseedet) und zum `SUPABASE_SERVICE_KEY`-als-
+Login-`apikey`-Muster in `scripts/lib-jwt.sh`.
+**Klassifizierung:** Observed | Inferred | Missing
+
+### Teil 1 — Tier-Isolation
+
+| Frage | Befund |
+|---|---|
+| **Aktueller Tier** | **Divergiert je nach System (Observed, SQL-Query):** `auth.users.raw_user_meta_data.tier = "kmu"` (von `seed-verify-user.ts` explizit gesetzt — das ist der Wert, den `authMiddleware` liest und der `/api/enrich`s `requireTier('kmu')` erfüllt). **Aber** `public.user_profiles.subscription_tier = "free"`, `persona_type = "pro"` — eine zweite, unabhängige Tier-Repräsentation in einer anderen Tabelle. |
+| **Root Cause der Divergenz** | **Observed, aus Trigger-Definition:** `handle_new_user()` (Trigger `on_auth_user_created` auf `auth.users` INSERT) fügt bei **jedem** neuen Signup unbedingt `INSERT INTO user_profiles (user_id, persona_type, experience_level) VALUES (NEW.id, 'pro', 1)` ein — liest `raw_user_meta_data.tier` NICHT, setzt `subscription_tier` NICHT (bleibt beim Spalten-Default `'free'`). **Das ist systemisch, nicht spezifisch für den Test-User** — jeder neue Signup auf diesem Projekt bekommt dieselbe Divergenz. Bestätigt konkret (mit Live-Beispiel) das bereits in `AGENTS.md` dokumentierte HIGH-03 ("drei inkompatible Tier-Systeme"). |
+| **RLS-Unterscheidung Test-User vs. Kunde** | **Missing — explizit bestätigt als nicht vorhanden.** `pg_policies` für `user_profiles` und `negotiation_sessions`: alle vier Policies (`SELECT`/`INSERT`/`UPDATE`/`DELETE` bzw. `SELECT`/`INSERT`) sind ausschließlich `auth.uid() = user_id`. Keine Policy, kein Column, kein Flag unterscheidet "interner Test-User" von "echter Kunde" — der Harness-User ist RLS-seitig nicht von einem realen Kunden zu unterscheiden. |
+| **Analytics/Metrics-Kontamination** | **Ja, strukturell real (Observed, Code-Beleg).** `src/services/telemetry.ts:14`: `client.capture({ distinctId: 'server', event, properties })` — **jedes** `trackEvent()` (u. a. `analyze_completed` in `src/api/routes.ts:224-229`, mit `properties: { tier: req.tier, negotiation_type, zopa_exists, strategy_score }`) läuft unter derselben festen `distinctId: 'server'`. Es gibt **keinen** User-Identifier im Event überhaupt — weder zum Zuordnen noch zum Herausfiltern des Harness-Users. Jeder `verify.sh`-Lauf (curl-assert + smoke-enrich) erzeugt ein reales `analyze_completed`-Event mit `tier: "kmu"`, nicht unterscheidbar von echtem kmu-Traffic. Aktuell **praktisch folgenlos**, weil laut `product/metrics.md` noch kein Aggregations-Layer aktiv ist ("Baseline-Erhebung möglich erst nach NC-TELEMETRY-C") — das Risiko ist latent und wird real, sobald Tier-Verteilungs-Auswertungen aus PostHog oder Render-Logs gebaut werden. |
+| **Ressourcen-Zugriff (Layer 2, kmu-Tier)** | **Observed, Laufzeit-Beweis gegen lokalen Dev-Server (2026-07-19, NICHT Production):** Mit einem über `scripts/lib-jwt.sh` bezogenen echten JWT für `verify-harness@internal.test`: `POST /api/analyze` → `200`, `sessionId` gesetzt, `zopa_exists: true`. Anschließend `POST /api/enrich` (verlangt `requireTier('kmu')`) mit derselben `sessionId` → `200`, `market_data_source: "knowledge_graph"`, kein Fehler. Der Harness-User kann Layer-2-Endpunkte exakt wie ein echter kmu-Kunde aufrufen — bestätigt, kein Sonderfall in der Zugriffsprüfung. |
+
+**Weitere Missing-Punkte (Teil 1):**
+- Ob `verify-harness@internal.test` in einer echten, bereits gebauten Tier-Verteilungs-Auswertung (Dashboard, Report) sichtbar mitgezählt wurde — es existiert noch keine solche Auswertung, daher nicht prüfbar (folgt aus dem "praktisch folgenlos"-Befund oben).
+- Ob es außerhalb dieses Repos (z. B. in einem BI-Tool, falls eines existiert) eine Filterung nach E-Mail-Domain (`@internal.test`) o. ä. gibt — außerhalb der Reichweite von Repo-Grep/SQL-Query.
+
+### Teil 2 — SERVICE_KEY-als-Login-apikey-Muster
+
+| Frage | Befund |
+|---|---|
+| **Exakte Fundstelle** | `negotiationcoach-backend/scripts/lib-jwt.sh:56`, Funktion `fetch_verify_harness_jwt()` (beginnt Zeile 45): `-H "apikey: ${SUPABASE_SERVICE_KEY}"` als Header für `POST {SUPABASE_URL}/auth/v1/token?grant_type=password` (Supabase-Auth-Login-Endpunkt, nicht der DB-REST-Pfad). Dokumentiert im Datei-Header (Zeilen 16-21) als "empirisch verifiziert (round 3)". |
+| **Weitere Fundstellen desselben Musters** | **Keine — bestätigt einmalig.** Repo-weiter Grep nach `SUPABASE_SERVICE_KEY` findet genau zwei weitere Stellen: `src/layer0/supabaseClient.ts:7` und `src/api/middleware.ts:46` — beide verwenden den Key für seinen **vorgesehenen** Zweck (Instanziierung eines Service-Role-DB-Clients via `createClient(url, serviceKey)`), nicht als Auth-/Login-Header. Das Login-apikey-Muster ist ein **isolierter Sonderfall**, ausschließlich im Harness-Script, nicht in Anwendungscode kopiert. |
+
+**OWASP-Rahmen (Einordnung, kein voller Lauf):**
+Der `service_role`-Key ist der maximal privilegierte Supabase-Key — er umgeht RLS vollständig für jede Tabelle. `lib-jwt.sh:56` nutzt ihn zweckentfremdet als `apikey`-Header an einem öffentlich erreichbaren Auth-Endpunkt, weil dieses Repo (anders als `negotiation-buddy`) keinen separaten anon/publishable Key konfiguriert hat. Das funktioniert hier nur, weil der Aufrufer (das Harness-Script) vollständig unter eigener Kontrolle läuft und der Key nie das Dateisystem/den Prozess verlässt. **Würde dieses Muster unreflektiert in einen anderen Kontext kopiert** (z. B. ein neues Feature, das denselben "Login via Service-Key-als-apikey"-Trick für echten User-facing Code wiederverwendet, oder falls der Rückgabewert/Fehlertext dieses Aufrufs jemals in einen client-erreichbaren Pfad geriete), wäre der Impact ein vollständiger RLS-Bypass für die gesamte Datenbank — nicht nur ein falscher Tier, sondern uneingeschränkter Lese-/Schreibzugriff auf alle Tabellen. Klassifikation: A01:2021-Broken Access Control-adjacent (Verwendung eines übermäßig privilegierten Credentials in einem replay-fähigen, für einen weniger privilegierten Zweck gedachten Code-Pfad).
+
+### Risikobewertung (Proposed, keine Entscheidung)
+
+**Vor GA vermutlich fix-bedürftig:**
+- **Metrics-Kontamination (Teil 1):** Da `tier` bereits in den Event-Properties steckt, aber kein User-Identifier existiert, lässt sich der Harness-Traffic später nicht mehr nachträglich herausfiltern, sobald eine Tier-Verteilungs-Auswertung gebaut wird. Ein Fix (z. B. `distinctId` auf echte User-ID umstellen und/oder einen expliziten `is_test_user`-Flag in den Properties) sollte VOR dem ersten produktiven Tier-Dashboard stehen, nicht danach — danach ist rückwirkende Bereinigung viel teurer.
+
+**Als dokumentierte Ausnahme vertretbar (kein Blocker):**
+- **Tier-Divergenz zwischen `auth.users`-Metadata und `user_profiles`** — ist ein systemisches, vorbestehendes Problem (HIGH-03), nicht durch den Harness verursacht und nicht durch ihn verschlimmert. Der Harness-User macht das bestehende Problem nur sichtbar, ist aber kein neuer Risikofaktor.
+- **RLS-Nichtunterscheidung Test-/Echt-User** — entspricht dem Modell, das ohnehin für alle User gilt (Isolation ist rein zeilenbasiert). Eine explizite "Test-User"-Sonderbehandlung in RLS einzuführen wäre selbst ein neues Risiko (zusätzliche Komplexität, potenzielle neue Bypass-Fläche) für einen Nutzen, der über "sauberere Metrics" (siehe oben, dort adressiert) nicht hinausgeht.
+- **`SUPABASE_SERVICE_KEY`-als-Login-apikey in `lib-jwt.sh`** — bestätigt isolierter Einzelfall, kein kopiertes Anti-Pattern. Vertretbar als dokumentierte, kommentierte Ausnahme in einem Skript, das nie Teil des ausgelieferten Produkts ist — sollte aber im Kommentar (bereits vorhanden) bleiben, damit niemand es unreflektiert in echten Feature-Code überträgt.
+
+**Diese Einordnung ist eine Vorlage, keine Entscheidung.** Fix-Priorisierung
+liegt beim Product Owner nach Review dieses Nachtrags.

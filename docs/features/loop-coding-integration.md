@@ -393,7 +393,7 @@ Der `service_role`-Key ist der maximal privilegierte Supabase-Key — er umgeht 
 ### Risikobewertung (Proposed, keine Entscheidung)
 
 **Vor GA vermutlich fix-bedürftig:**
-- **Metrics-Kontamination (Teil 1):** Da `tier` bereits in den Event-Properties steckt, aber kein User-Identifier existiert, lässt sich der Harness-Traffic später nicht mehr nachträglich herausfiltern, sobald eine Tier-Verteilungs-Auswertung gebaut wird. Ein Fix (z. B. `distinctId` auf echte User-ID umstellen und/oder einen expliziten `is_test_user`-Flag in den Properties) sollte VOR dem ersten produktiven Tier-Dashboard stehen, nicht danach — danach ist rückwirkende Bereinigung viel teurer.
+- **Metrics-Kontamination (Teil 1) — ✅ BEHOBEN 2026-07-20.** `distinctId` ist jetzt Pflicht-Parameter (echte `user_id`, kein Default, kein `'server'` mehr) und ein `internal: true`-Flag markiert `verify-harness@internal.test`-Events explizit filterbar. Backend-Commits `db0252f` + `2cda4c8` (Code-Quality-Follow-up), gepusht. Details: `tasks/lessons.md` Eintrag 2026-07-20 "Telemetry distinctId-Fix".
 
 **Als dokumentierte Ausnahme vertretbar (kein Blocker):**
 - **Tier-Divergenz zwischen `auth.users`-Metadata und `user_profiles`** — ist ein systemisches, vorbestehendes Problem (HIGH-03), nicht durch den Harness verursacht und nicht durch ihn verschlimmert. Der Harness-User macht das bestehende Problem nur sichtbar, ist aber kein neuer Risikofaktor.

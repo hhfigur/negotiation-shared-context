@@ -119,3 +119,40 @@ Format für neue Einträge:
 
 - **Ziel-Repo (negotiationcoach-backend):** Commits `d4dc9b4`, `0a68c28`. `grep` bestätigt 0 verbleibende Code-Referenzen auf `functions/chat` oder `GEMINI_API_KEY` (nur noch in der Doku-Zeile selbst). `npx tsc --noEmit` und `npm test` beide grün (mit `dangerouslyDisableSandbox` wegen des oben beschriebenen Sandbox-Artefakts). Nicht gepusht — im Gegensatz zu PROMPT 2 enthielt dieser Auftrag keine explizite Push-Anweisung.
 - **shared-context:** dieser Lessons-Eintrag + Korrektur des 2026-07-16-Eintrags (Wiki-Pfad-Fehldiagnose).
+
+---
+
+## 2026-07-20 — Telemetry distinctId-Fix (Follow-up zur verify-harness-Diagnose)
+
+**Task:** `trackEvent()` in `negotiationcoach-backend/src/services/telemetry.ts`
+setzte `distinctId: 'server'` hartkodiert für **jedes** PostHog-Event — kein
+User-Identifier, keine Möglichkeit, den `verify-harness@internal.test`-
+Traffic aus künftigen Tier-Metrics herauszufiltern. Befund stammt aus
+`docs/features/loop-coding-integration.md` Abschnitt 9 (Commit `5e5a52d`,
+"Teil 1 — Analytics/Metrics-Kontamination", dort als der einzige
+vor-GA-fix-bedürftige Punkt eingestuft).
+**Fix:** `distinctId` ist jetzt Pflicht-Parameter (kein Default, kein
+interner Fallback) — Aufrufer müssen explizit `req.user!.id` (echte
+Supabase-UUID, kein Hashing-Schema, da keine existierende Praxis dafür im
+Repo gefunden wurde), `"system:<job-name>"` (Konvention für künftige
+Cron-Aufrufer, aktuell keiner vorhanden) oder `"unknown"` übergeben —
+niemals mehr `"server"`. Neue Funktion `isInternalTestUser(email)` markiert
+`verify-harness@internal.test`-Events mit `internal: true` in den
+Event-Properties, filterbar statt distinctId-basiert versteckt. Backend-
+Commits: `db0252f` (Fix + Test), `2cda4c8` (Code-Quality-Follow-up: Test in
+`npm test` verdrahtet — lief vorher NUR standalone, war als Regressions-Guard
+faktisch wirkungslos; PostHog-Prototype-Patch im Test jetzt restauriert).
+**Regel:** Bei Metrics-/Telemetry-Helpern grundsätzlich keinen impliziten
+Default für Identity-Felder (`distinctId` o. Ä.) zulassen — ein Pflicht-
+Parameter ohne Fallback zwingt jeden Call-Site zu einer expliziten,
+sichtbaren Entscheidung statt eines stillschweigend falschen Default-Werts.
+**Folge-Risiko:** Falls künftig weitere `trackEvent()`-Call-Sites entstehen
+(z. B. für `/api/chat`, `/api/plan`), gilt dieselbe Pflicht — die JSDoc auf
+`trackEvent()` dokumentiert die drei zulässigen Konventionen, damit niemand
+das Muster neu erfinden oder auf `'server'` zurückfallen muss.
+
+## Two-Location-Closure — Telemetry distinctId-Fix
+
+- **Ziel-Repo (negotiationcoach-backend):** Commits `db0252f`, `2cda4c8`, gepusht (`0a68c28..2cda4c8`). Ausführungsnachweis: `tsc --noEmit` clean, `npm test` grün (inkl. neuem `tests/telemetry/telemetry.test.ts`, 5/5 Assertions), echter Curl-Beweis gegen lokalen Dev-Server (temporärer, nicht committeter Debug-Log bestätigte `distinctId` = echte `verify-harness`-User-ID + `internal: true`), `./scripts/verify.sh` → `VERIFY_RESULT: PASS`. Beide Reviews (Spec + Code-Quality) approved, zwei Important-Findings der Code-Quality-Review direkt behoben (Test-Verdrahtung, Prototype-Restore).
+- **shared-context:** dieser Lessons-Eintrag + Statusaktualisierung in `docs/features/loop-coding-integration.md` Abschnitt 9 (Metrics-Kontamination als behoben markiert).
+- **`/close-task` nicht ausgeführt** — gleicher, bereits mehrfach dokumentierter Grund: kein RFB-/NC-ID für dieses Item.

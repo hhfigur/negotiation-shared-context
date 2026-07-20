@@ -1,9 +1,57 @@
 {
+  "sandbox": {
+    "enabled": true,
+    "credentials": {
+      "files": [
+        { "path": "~/.ssh", "mode": "deny" },
+        { "path": "~/.aws", "mode": "deny" }
+      ]
+    }
+  },
   "permissions": {
     "allow": [
-      "Bash(grep -E \"\\\\.\\(tsx?|jsx?\\)$\")",
-      "Bash(npx tsc --noEmit)",
-      "Bash(npx tsc --noEmit 2>&1)"
+      "Bash(npx tsc *)",
+      "Bash(npx vitest *)",
+      "Bash(npm install)",
+      "Bash(npm ci)",
+      "Bash(npm run dev)",
+      "Bash(npm run build)",
+      "Bash(npm run build:dev)",
+      "Bash(npm run lint)",
+      "Bash(npm run preview)",
+      "Bash(npm run test)",
+      "Bash(npm run test:watch)",
+      "Bash(npm run start)",
+      "Bash(npm run typecheck)",
+      "Bash(git add *)"
+    ],
+    "deny": [
+      "Bash(rm -rf /*)",
+      "Bash(rm -rf ~*)",
+      "Bash(rm -rf ..*)",
+      "Bash(rm -rf $HOME*)",
+      "Bash(git push --force*)",
+      "Bash(git push * --force*)",
+      "Bash(git push -f*)",
+      "Bash(git push * -f*)",
+      "Bash(git reset --hard*)",
+      "Bash(git clean -f*)",
+      "Bash(git branch -D*)",
+      "Bash(git branch * -D*)",
+      "Bash(sudo *)",
+      "Bash(npm install -g *)",
+      "Bash(npm i -g *)",
+      "Bash(npm install --global *)",
+      "Bash(yarn global add *)",
+      "Bash(pnpm add -g *)",
+      "Read(.env*)",
+      "Read(*.key)",
+      "Read(*.pem)",
+      "Read(~/.ssh/**)",
+      "Read(~/.aws/**)",
+      "Read(~/app-workspace/**/.env*)",
+      "Read(~/app-workspace/**/*.key)",
+      "Read(~/app-workspace/**/*.pem)"
     ],
     "additionalDirectories": [
       "/Users/maikfigur/app-workspace/shared-context/.claude/skills"

@@ -97,7 +97,7 @@ If not found: HALT — report "ITEM_ID not found in [filename]."
 
 ### Step C — Check for existing DONE stamp
 
-Scan the entry body for `**Status: DONE**`.
+Scan the entry body for `**Status:** DONE`.
 If already present: HALT — report "Entry already stamped DONE. Skipping."
 
 ### Step E — Stamp the entry body
@@ -105,7 +105,7 @@ If already present: HALT — report "Entry already stamped DONE. Skipping."
 Append this exact block to the end of the entry body (before the next `---`):
 
 ```
-**Status: DONE**
+**Status:** DONE
 Commit: `<COMMIT>` (<REPO>) — <DATE>
 Verified: <one-line summary: e.g. "tsc --noEmit clean ✓ | API /api/enrich smoke test ✓">
 API contract updated: <yes — docs/api-catalog.md updated | no>
@@ -308,7 +308,7 @@ If no, or uncertain:
 
 Expected entry body stamp:
 ```
-**Status: DONE**
+**Status:** DONE
 Commit: `a3f9c12` (negotiationcoach-backend) — 2026-04-24
 Verified: tsc --noEmit clean ✓ | API /api/enrich smoke test returns 200 ✓
 API contract updated: yes — docs/api-catalog.md updated (EnrichedAnalysisResult shape)

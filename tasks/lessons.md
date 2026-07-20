@@ -156,3 +156,55 @@ das Muster neu erfinden oder auf `'server'` zurückfallen muss.
 - **Ziel-Repo (negotiationcoach-backend):** Commits `db0252f`, `2cda4c8`, gepusht (`0a68c28..2cda4c8`). Ausführungsnachweis: `tsc --noEmit` clean, `npm test` grün (inkl. neuem `tests/telemetry/telemetry.test.ts`, 5/5 Assertions), echter Curl-Beweis gegen lokalen Dev-Server (temporärer, nicht committeter Debug-Log bestätigte `distinctId` = echte `verify-harness`-User-ID + `internal: true`), `./scripts/verify.sh` → `VERIFY_RESULT: PASS`. Beide Reviews (Spec + Code-Quality) approved, zwei Important-Findings der Code-Quality-Review direkt behoben (Test-Verdrahtung, Prototype-Restore).
 - **shared-context:** dieser Lessons-Eintrag + Statusaktualisierung in `docs/features/loop-coding-integration.md` Abschnitt 9 (Metrics-Kontamination als behoben markiert).
 - **`/close-task` nicht ausgeführt** — gleicher, bereits mehrfach dokumentierter Grund: kein RFB-/NC-ID für dieses Item.
+
+---
+
+## 2026-07-20 — /close-task Exemption-Pfad formalisiert (Reparatur der eigenen Lücke)
+
+**Task:** `.claude/skills/close-task/SKILL.md` um einen expliziten
+Tooling/Infra-Exemption-Pfad ergänzt (Step B), damit ein fehlendes RFB-/
+NC-ID nicht mehr zu einem stillen HALT/Skip führt, sondern einen regulären,
+dokumentierten Closure-Pfad auslöst. Grundlage: die fünf vorherigen Fälle,
+in denen genau dieser Ersatz-Pfad bereits ad hoc gelebt wurde, aber nie im
+Skill selbst festgehalten war — Loop-Coding-Integration PROMPT 1
+(`2cd0285`), PROMPT 2 (`939b7a2`), PROMPT 3 (`ee12e91`), DCC-EF-02
+(`d4dc9b4`), Telemetry-Fix (`db0252f`/`2cda4c8`). Jedes Mal wurde manuell
+begründet, warum `/close-task` nicht blind durchlief — jetzt ist das der
+im Skill selbst dokumentierte Normalfall für diese Situation, kein
+Sonderfall mehr.
+
+**Zwei Prämissen im ursprünglichen Auftrag waren stale — vor dem Fix
+verifiziert statt blind übernommen:**
+1. **Lücke 2 (`**Status: DONE**` → `**Status:** DONE`)** existierte NICHT
+   in `close-task/SKILL.md` (dort war das Format bereits korrekt) — sondern
+   in `close-task-dev/SKILL.md`, drei Stellen (Zeilen 100, 108, 311: der
+   Scan-Pattern in Step C, der Stamp-Block in Step E, das illustrative
+   Beispiel). Dort behoben statt in der ursprünglich genannten Datei nichts
+   zu ändern.
+2. **Lücke 3** (Brief-Status-Update-Schritt in `/pm-sync-status`) war
+   bereits gelöst — der geforderte Schritt existiert dort wortwörtlich
+   bereits seit Commit `2a64f74` (2026-06-04, "repairs to close-task,
+   pm-skills"). Keine Änderung an `pm-sync-status/SKILL.md` nötig oder
+   vorgenommen.
+3. Grep über `docs/delivery/bugs/`: **0 von 10** vorhandenen BUG-FILEs mit
+   `Status: DONE` nutzen das falsche Format — der Bug lebte ausschließlich
+   in `close-task-dev`s eigenem Template-Text, ist nie in ein echtes
+   BUG-FILE durchgesickert (die `/bug-fix`-Skill-Vorlage nutzte von Anfang
+   an das korrekte Format). Kein Cleanup-Kandidat, kein Massen-Edit nötig.
+
+**Regel:** Bevor eine im Auftrag behauptete Lücke gefixt wird: den
+tatsächlichen aktuellen Zustand der genannten Datei(en) verifizieren (grep/
+Read), nicht die Behauptung als gegeben annehmen — auch wenn der Auftrag
+sehr präzise klingt. Diese Session hat wiederholt gezeigt (Wiki-Pfad
+2026-07-16, RED-Zustand-Prämisse PROMPT 2, Gemini-Provider-Zeile PROMPT 1,
+jetzt Lücke 2/3), dass Prompt-Prämissen zwischen Erstellung und Ausführung
+veralten können — Verifikation zuerst, dann handeln, Abweichungen
+transparent dokumentieren statt entweder blind zu befolgen oder blind zu
+ignorieren.
+
+**Folge-Risiko:** Der neue Exemption-Pfad in `close-task/SKILL.md` erwähnt
+ein generisches `TOOL-[YYYYMMDD]-[kurzname]`-ID-Schema als Option (analog
+zu `BUG-[YYYYMMDD]-[kurzname]`), aber ohne bisherige Anwendung — falls
+künftig ein Tooling-Delivery tatsächlich eine dauerhafte, eigenständige
+Tracking-ID braucht (nicht nur Commit + Lessons-Eintrag), ist dieses Schema
+noch nie in der Praxis erprobt.

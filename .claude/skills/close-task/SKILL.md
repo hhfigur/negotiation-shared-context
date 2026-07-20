@@ -30,7 +30,104 @@ Read `shared-context/docs/audits/refactor-backlog.md` in full.
 ### Step B — Locate the entry body
 
 Find the section heading `### <ITEM_ID>` in the backlog.
-If not found: **HALT — report "ITEM_ID not found in backlog".**
+If not found:
+- Check the Tooling/Infra Exemption below.
+- If the exemption does NOT apply: **HALT — report "ITEM_ID not found in backlog".**
+- If the exemption DOES apply: skip Steps C–J entirely and run the
+  Exemption Path instead (see below) — this is not a skip, it is the
+  regular closure path for this case.
+
+---
+
+### Step B — Tooling/Infra Exemption (no RFB-/NC-ID)
+
+Some deliveries are cross-cutting tooling/governance/infra work that was
+never meant to get an RFB-/NC-ID — not "not yet entered," but structurally
+outside the product backlog's scope. This has already happened five times
+in practice (Loop-Coding-Integration PROMPT 1/2/3, the `verify-harness`
+telemetry fix, and `DCC-EF-02`) via an ad hoc version of exactly this path
+— this section formalizes it for `/close-task` itself, it does not invent
+new behavior.
+
+**The exemption applies when Step B's HALT triggers AND at least one of:**
+1. No RFB-/NC-ID was ever assigned to this delivery — there is no pending
+   backlog entry to find, because none was ever meant to exist for this
+   kind of work.
+2. The changed files are predominantly under one or more of: `scripts/`,
+   `.claude/skills/`, `docs/contracts/`, `docs/decision-log/`,
+   `docs/dead-code-candidates.md`, or a `docs/features/*.md` file that
+   already has a "Delivery Log" section.
+3. The originating task explicitly framed this as a governance/tooling/
+   infra delivery (e.g. Template 2-DEV with no ITEM_ID parameter at all, or
+   a 2b-DEV harness/skill-repair delivery) rather than a product feature or
+   bug fix.
+
+If none of these apply, the exemption does not apply — fall through to the
+normal HALT.
+
+**Exemption Path (replaces Steps C–J):**
+
+a) Check whether an existing internal ID scheme fits:
+   - `DCC-[EF|BE]-[NN]` in `docs/dead-code-candidates.md` for dead-code
+     findings — stamp there using that document's own existing DONE/Status
+     convention.
+   - No other scheme currently exists. If none fits, use a generic
+     `TOOL-[YYYYMMDD]-[kurzname-kebab-case]` identifier (mirrors the
+     `BUG-[YYYYMMDD]-[kurzname]` convention from `/bug-report`) **only if**
+     a durable, standalone tracking entry is actually warranted — for a
+     one-off skill/doc fix that's fully captured by its own commit message
+     plus a lessons.md entry, minting an ID just to have one is unnecessary
+     ceremony. Default to (b) unless a specific reason favors a tracked ID.
+
+b) If no scheme fits (the common case for pure governance/process
+   deliveries): run the already-established replacement path — this
+   **is** the regular closure for this case, not a fallback:
+   - A delivery-log entry in `shared-context/tasks/lessons.md`, and/or the
+     "Delivery Log" section of the relevant `docs/features/*.md` file if
+     this delivery continues one.
+   - Confirmation that every relevant commit (target repo(s) + shared-context)
+     is actually pushed — `git log <remote>/main..HEAD` empty for each
+     affected repo.
+   - Output (replaces Step H):
+     ```
+     close-task: [no RFB-/NC-ID — Tooling/Infra Exemption]
+     ────────────────────────────────────────
+     Exemption reason:      <which of the 3 conditions above applies>
+     Internal ID scheme:    <DCC-*/TOOL-*/none applicable>
+     Delivery-log entry:    DONE (<path>)
+     Commits pushed:        DONE (<repo>: <range>)
+     ────────────────────────────────────────
+     Status: DONE (via Exemption Path)
+     ```
+   Steps I/J (git commands, wiki update) do not apply here — there is no
+   backlog entry needing a wiki cross-reference — but the underlying
+   two-location rule (target repo + shared-context both committed and
+   pushed) still holds and is confirmed in the output above.
+
+**Example (dry run — no real task, illustrates the path only):**
+
+```
+/close-task ITEM_ID=none COMMIT=a1b2c3d REPO=shared-context DATE=2026-07-20
+```
+Step B: no `### none` heading exists (there never will be — this is a
+docs-only skill-repair delivery, never meant to carry an RFB-ID).
+Exemption check: condition 1 applies (no ID was ever assigned) and
+condition 2 applies (changed files are `.claude/skills/close-task/SKILL.md`
+and `.claude/skills/close-task-dev/SKILL.md`). Exemption path (b) runs —
+no existing ID scheme fits a skill repair, and minting a `TOOL-*` ID for a
+single self-contained doc fix isn't warranted here.
+```
+close-task: [no RFB-/NC-ID — Tooling/Infra Exemption]
+────────────────────────────────────────
+Exemption reason:      No RFB-/NC-ID ever assigned; changed files under .claude/skills/
+Internal ID scheme:    none applicable — one-off skill fix, commit + lessons entry is sufficient
+Delivery-log entry:    DONE (tasks/lessons.md)
+Commits pushed:        DONE (shared-context: <range>)
+────────────────────────────────────────
+Status: DONE (via Exemption Path)
+```
+
+---
 
 ### Step C — Check for existing DONE stamp in entry body
 

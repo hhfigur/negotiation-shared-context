@@ -265,3 +265,47 @@ bevor sie weitere `.env`-Arbeiten in beiden Repos blockiert.
 - **Ziel-Repo (negotiation-buddy):** Commit `b07aa2a`, gepusht (`ee12e91..b07aa2a`, unmittelbar vor dem Push per `git fetch` neu geprüft — keine parallele Lovable-Kollision diesmal). `npm run build` erfolgreich mit lokaler `.env.local`.
 - **shared-context:** dieser Lessons-Eintrag.
 - **`/close-task` — Tooling/Infra-Exemption-Pfad genutzt** (siehe unten): kein passender Eintrag in `docs/audits/refactor-backlog.md` (einziger `.env`-Treffer dort ist eine unabhängige Stripe-Aktivierungs-Checkliste in RFB-032, kein Match).
+
+## 2026-07-21 — BUG-20260719-signup-trigger-tier-mismatch
+
+**Task:** `handle_new_user()`-Trigger gefixt — hartkodiertes `persona_type='pro'`
+bei jedem Signup durch CASE-Allowlist aus `raw_user_meta_data.tier` ersetzt
+(Fallback `'private'`, kein direkter Enum-Cast).
+
+**Problem:** Das BUG-FILE war beim Start bereits ungewöhnlich detailliert
+vorbefüllt (inkl. eigenem Laufzeit-Evidenz-Gate) — genau deshalb lohnte sich
+die Nachprüfung: die Titel-Formulierung ("Trigger ignoriert
+raw_user_meta_data.tier") war technisch korrekt, aber irreführend für den
+Fix-Scope. Der reale Signup-Pfad (`useAuth.tsx`) übergibt beim Signup nie
+ein `tier`-Metadata-Feld — nur ein manuelles Seed-Script tut das. Der aktive
+Schaden für echte Nutzer war nicht "Metadata wird ignoriert", sondern "der
+Trigger überschreibt einen bereits korrekten Spalten-Default mit einem
+falschen hartkodierten Wert". Ohne diese Präzisierung hätte ein Fix, der nur
+"Metadata jetzt lesen" umsetzt, den Kernschaden für reale Nutzer nicht
+automatisch behoben (es kommt auf den Fallback-Wert an, nicht nur auf das Lesen).
+
+**Ursache:** Ein sehr gründliches BUG-FILE lädt dazu ein, die Diagnose als
+abgeschlossen zu behandeln. War sie nicht — es fehlte die Prüfung, wer den
+Metadata-Wert überhaupt jemals setzt, und ob ein nachgelagerter Mechanismus
+(Onboarding, Dev-Tier-Toggle) das Ergebnis ohnehin wieder überschreibt.
+
+**Regel:** Auch ein bereits sehr detailliertes BUG-FILE ersetzt nicht die
+eigene Diagnose-Phase — insbesondere: (a) wer schreibt das als Ursache
+benannte Feld tatsächlich in der Produktion (Grep über beide Repos, nicht
+nur den einen zitierten Call-Site), (b) gibt es einen nachgelagerten Pfad,
+der das Ergebnis des Fixes wieder überschreiben würde. Zusätzlich: beim
+Schreiben eines SQL-Regressions-Orakels mit CASE-Ausdrücken IMMER auf
+Variablen casten, nie auf Literale direkt in einem CASE-Branch — Postgres
+validiert einen Literal-Cast (`'x'::enum_type`) zur Parse-Zeit unabhängig
+davon, ob der Branch je erreicht wird, während ein Cast auf eine Variable
+erst zur Laufzeit ausgewertet wird. Das eigene Testscript ist genau daran
+zuerst gescheitert (nicht der Fix selbst) — beim nächsten SQL-Test-Oracle
+diesen Unterschied vorab einplanen, nicht erst beim Fehlschlag entdecken.
+
+**Folge-Risiko:** Kein Backfill für Bestandsnutzer durchgeführt — jeder
+Signup seit 2026-03-09 hat `persona_type='pro'` in der DB stehen und bleibt
+so, bis eine bewusste Backfill-Entscheidung getroffen wird (nicht Teil
+dieses minimalen Fixes). Die vier LLM-Edge-Functions außer `chat`
+(`generate-plan`, `analyze-progress`, `summarize-session`,
+`analyze-document`) wurden nicht geprüft, ob sie denselben
+`persona_type`-Lookup nutzen und ähnlich betroffen wären.

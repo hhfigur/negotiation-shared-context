@@ -1,7 +1,7 @@
 # BUG-20260719-signup-trigger-tier-mismatch
 
 **Erstellt:** 2026-07-19
-**Status:** OPEN
+**Status:** DONE
 **Risiko:** P1 (Proposed — siehe Schweregrad-Begründung unten, keine Entscheidung getroffen)
 **TARGET REPO:** cross-repo (Ursache: Supabase-DB-Trigger auf dem aktiven Projekt `gpllrgkuozytyrmpfwbb`, betrifft sowohl `negotiationcoach-backend` als auch `negotiation-buddy`)
 **Layer:** API (Tier-/Autorisierungs-Infrastruktur, keine der Verhandlungs-Layer 0–3)
@@ -184,10 +184,45 @@ Priorisierung liegt beim Product Owner.
   Zeilen 19–31.
 
 ## Plan
-_Wird durch Template 1-DEV befüllt._
+Minimaler Fix ausschließlich an `handle_new_user()`: `persona_type` per
+CASE-Allowlist aus `raw_user_meta_data.tier` lesen (Fallback `'private'`
+statt hartkodiertem `'pro'`), `subscription_tier` unangetastet lassen
+(Default bereits korrekt). Details: `BUG-20260719-signup-trigger-tier-mismatch-diagnosis-report.md`.
 
 ## Implement
-_Wird durch Template 2-DEV befüllt._
+Migration `negotiation-buddy/supabase/migrations/20260721090454_fix_handle_new_user_persona_type.sql`
+(`CREATE OR REPLACE FUNCTION`), live angewendet auf `gpllrgkuozytyrmpfwbb`
+via `mcp__supabase__apply_migration`. Regressions-Orakel persistiert unter
+`negotiation-buddy/scripts/repro/BUG-20260719-signup-trigger-tier-mismatch.sql`
+(RAISE-EXCEPTION-basiert, bewusst mit einer absichtlich falschen Erwartung
+gegengeprüft, um zu beweisen, dass es wirklich rot wird).
 
 ## Abschluss
-_Wird durch /close-task befüllt._
+
+**Root Cause:** `handle_new_user()` überschrieb den korrekten
+`persona_type`-Spalten-Default (`'private'`) hart mit `'pro'`, unabhängig
+von `raw_user_meta_data.tier`. `subscription_tier` blieb korrekt.
+
+**Fix:** CASE-Allowlist statt direktem Enum-Cast (Cast auf eine Variable,
+nicht auf ein Literal — sicher gegen unerwartete Metadata-Werte, siehe
+Diagnose-Report für die Begründung).
+
+**Verifikation:**
+- RED (vor Fix): `verify-harness@internal.test`, `requested_tier="kmu"`,
+  gespeichertes `persona_type="pro"` — Live-Query, Evidenz-Report.
+- GREEN (nach Fix): dieselbe Eingabe resolved jetzt korrekt zu `"kmu"` —
+  Live-Query nach Migration, `pg_get_functiondef` bestätigt deployten Stand.
+- Oracle bewiesen scharf: absichtlich falsche Erwartung im Repro-Script
+  ausgelöst → `RAISE EXCEPTION` griff wie erwartet.
+
+**Scope-Ausschlüsse (bewusst, siehe Diagnose-Report):**
+- Kein Backfill für Bestandsnutzer (persona_type='pro' seit 2026-03-09) —
+  separate Produktentscheidung, nicht Teil dieses minimalen Fixes.
+- `negotiation_sessions.persona_type` (Session-Parameter) ist ein anderes
+  Feld, nicht betroffen.
+- `negotiationcoach-backend`: kein Dateiwechsel nötig (eigenes,
+  unabhängiges Migrationsverzeichnis ohne Berührung dieses Triggers).
+
+**Two-Location-Closure:**
+- `negotiation-buddy`: Commit `f3f3008`.
+- `shared-context`: dieses BUG-FILE + Diagnose-Report + Lessons-Eintrag.

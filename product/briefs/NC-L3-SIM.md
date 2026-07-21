@@ -2,7 +2,11 @@
 ## Layer 3 Simulation Engine — Redesign (L1/L2-geerdeter Gegner, dynamischer Intake, Debrief)
 
 **Release:** TBD (Wave 3)
-**Status:** IN PROGRESS — Phase 2 von 7 implementiert (2026-07-08)
+**Status:** IN PROGRESS — Phase 3 von 7 implementiert (2026-07-21). Ehemalige
+Phase 4 (Migration) + Phase 5 (`opponentEngine.ts`-Refactor) in Phase 3
+aufgegangen (Konsolidierung während /feature-plan, siehe Implement-Abschnitt).
+Ehemalige Phase 7 (curl-Tests + Acceptance) ebenfalls bereits erledigt.
+Einzig verbleibend: Phase 6 (negotiation-buddy Frontend-Integration).
 **Affected repos:** negotiationcoach-backend (primary), negotiation-buddy, shared-context (Docs/ADR)
 **Tier impact:** profi only
 **Created:** 2026-07-06 (Design-Stub) · Qualified: 2026-07-07
@@ -240,3 +244,87 @@ dokumentiert, nicht in diesem Brief dupliziert.
   Route-Registrierung, erster Anthropic-Call, erstmals nicht mehr "reine
   Logik"). Sollte vor Beginn erneut durch /feature-plan Schritt 4b
   (Konsequenz-Triage) laufen, nicht direkt per /feature-implement.
+
+**Phase 3 — simulate routes, opponent L1-grounding, migration (erweitert — absorbiert ehemalige Phase 4 + Phase 5):**
+
+- **Repo/Branch:** negotiationcoach-backend, direkt auf `main` (explizite
+  User-Zustimmung 2026-07-21 — abweichend von Phase 1/2 erneut eingeholt,
+  weil diese Phase ein qualitativ anderes Risiko trägt: Live-Migration +
+  additiver Refactor von production-genutztem `opponentEngine.ts`, nicht nur
+  ungenutzte reine Logik)
+- **Plan:** `/feature-plan NC-L3-SIM`, Schritte 1–4c durchlaufen. Schritt 4b
+  fand einen offenen, bewusst akzeptierten Befund: kein Produktionspfad
+  setzt `auth.users.raw_user_meta_data.tier` auf `'profi'` (kein
+  Stripe-Webhook, AR-032 weiterhin Paused) — dieselbe Lücke wie bei
+  NC-L3-OPPONENT, kein neues Problem, GO trotzdem erteilt. Schritt 4c
+  (Critic-Pass) fand einen echten Scope-Fehler in der ursprünglichen
+  7-Phasen-Sequenz: Phase 3 setzt laut Datenfluss (Design-Doc Abschnitt 3)
+  bereits den L1-erweiterten `computeHiddenOpponentRange`/
+  `buildOpponentSystemPrompt` voraus — das war aber erst als Phase 5
+  geplant. Phase 3, die ehemalige Phase 4 (Migration) und die ehemalige
+  Phase 5 (`opponentEngine.ts`-Refactor) wurden deshalb zu einer
+  Implementierungseinheit zusammengefasst (Design-Doc,
+  "## Phase-3-Plan (erweitert)", Commit `51644ca`).
+- **Commits:** `007a6ee` (Implementierung) → Task-Review fand 5 Important
+  Findings → `b5bf2d7` (Fix) → Re-Review Approved.
+- **Umgesetzt via:** `/subagent-driven-development` (Implementer + Task-Reviewer
+  + Fix-Subagent + Re-Review, Modell Sonnet, ein Dispatch für die gesamte
+  Phase — konsistent mit Phase 1/2, keine Sub-Task-Zerlegung)
+- **Geänderte Dateien:**
+  `src/layer3/simulationLoop.ts` (neu), `src/layer3/index.ts` (neu —
+  `runIntake`/`runTurn`/`runDebrief`), `src/layer3/opponentEngine.ts`
+  (additiv erweitert — optionale L1/L2-Grounding-Parameter),
+  `src/api/simulationRoutes.ts` (neu — 3 Endpoints), `src/api/routes.ts`
+  (additiv registriert), `src/api/validation.ts` (additiv — 3 Zod-Schemas),
+  `src/utils/modelRouter.ts` (additiv — `l3_sim_intake`/`l3_sim_debrief`),
+  `src/types/index.ts` (additiv), `supabase/migrations/20260721131832_...sql`
+  (neu — `simulation_sessions`/`simulation_turns` + RLS), diverse
+  `tests/layer3/*`-Dateien, `package.json` (Test-Wiring nachgeholt —
+  schließt den seit Phase 1 offenen Minor-Finding).
+- **Migration live angewendet:** `mcp__supabase__apply_migration` +
+  Migrationsdatei (Präzedenzfall BUG-20260719-signup-trigger-tier-mismatch,
+  2026-07-21). Unabhängig verifiziert (`information_schema.tables`):
+  `simulation_sessions`/`simulation_turns` existieren live auf
+  `gpllrgkuozytyrmpfwbb`.
+- **Schema-Korrektur während der Planung:** ein Kommentar in
+  `src/api/sessionRoutes.ts` (2026-04-08) behauptete, `negotiation_sessions`
+  habe keine `layer1_result`/`layer2_result`-Spalten. Live gegengeprüft
+  (2026-07-21): beide Spalten existieren (`jsonb`) und sind für 30/41 bzw.
+  20/41 bestehende Sessions befüllt — der Kommentar ist veraltet, keine
+  Blockade für Phase 3.
+- **Task-Review (1. Durchlauf):** ❌ 5 Important Findings — Turn-Number-
+  Duplikate während Intake, fehlender Pflicht-Test für `runTurn`s
+  Privacy-Garantie, `intakeComplete`-Heuristik konnte `scenario_difficulty`
+  überspringen, totes `existingTurn`-Feld, `/debrief` vertraute
+  Client-Input statt serverseitig bereits vorhandener Status-Disambiguierung.
+  Alle 5 in `b5bf2d7` gefixt.
+- **Task-Review (2. Durchlauf, nach Fix):** ✅ Spec compliant, alle 5 Findings
+  verifiziert gefixt (nicht nur behauptet — Reviewer hat Logik und Tests
+  einzeln nachvollzogen). 0 neue Findings durch den Fix-Commit.
+  **Task quality: Approved.**
+- **Verifikation:** `npx tsc --noEmit` (Root + Test-Projekt) → 0 Fehler.
+  `npm test` → alle grün, inkl. aller 6 Live-curl-Tests aus Design-Doc
+  Abschnitt 10 gegen den lokalen Dev-Server (manuell geseedeter
+  Profi-Test-User, analog `scripts/seed-verify-user.ts`). Zwei während der
+  curl-Verifikation gefundene und gefixte Bugs (Idempotenz-Reihenfolge,
+  UUID-Spalten-Typmismatch) waren bereits im Implementer-Commit `007a6ee`
+  behoben, nicht Teil der Review-Findings.
+- **Minor-Findings (nicht blockierend, vorgemerkt):**
+  1. `walkaway`/`opponent_walkaway`-Status wird nirgends produziert (Typ
+     existiert, kein Erzeugungspfad) — bräuchte eine separate,
+     LLM-signalisierte Erkennung, nicht Teil dieses Scopes.
+  2. Migration-RLS prüft Tier nur über `user_metadata`, nicht zusätzlich
+     `app_metadata` (anders als `middleware.ts`s serverseitiger Check) —
+     geringes Risiko, da alle Writes über den Service-Role-Key laufen,
+     aber inkonsistente Konvention.
+  3. Live-Anthropic-Calls laufen innerhalb von `npm test` (geerbte
+     Konvention aus Phase 1/2) — nicht-deterministischer, kostenpflichtiger
+     CI-Lauf, repo-weites Thema, nicht Phase-3-spezifisch.
+- **Zwei-Repo-Regel:** negotiationcoach-backend (Commits `007a6ee`,
+  `b5bf2d7`) + shared-context (dieser Brief-Eintrag, Design-Doc-Plan
+  bereits in `51644ca`).
+- **Nächster Schritt:** Phase 6 (negotiation-buddy `OpponentSimulator.tsx`-
+  Integration mit den neuen `/api/simulate/*`-Endpoints — separates Item,
+  Frontend-Repo) — Phase 7 (curl-Tests + manueller Acceptance-Test) ist
+  durch die Konsolidierung bereits Teil dieser Phase 3 erledigt, nicht mehr
+  separat offen.

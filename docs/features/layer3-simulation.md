@@ -812,3 +812,223 @@ cd ../negotiationcoach-backend && git add src/layer3/debriefEngine.ts src/types/
 ```
 
 **STOP — Phase-2-Plan steht. Wartet auf GO für Template 2b-DEV.**
+
+---
+
+## Phase-3-Plan (erweitert — absorbiert ehemalige Phase 4 + Phase 5)
+
+**Erstellt:** 2026-07-21 — Backend-Plan, TARGET REPO negotiationcoach-backend
+**Status:** PLANNED — wartet auf GO für Implementierung (Template 2b-DEV)
+**Erzeugt via:** `/feature-plan NC-L3-SIM` (Schritte 1–4c durchlaufen, Schritt 4b explizit
+bestätigt — siehe Konsequenz-Triage unten)
+
+### Scope-Änderung ggü. Abschnitt 11 (Befund dieser Planungsrunde)
+
+Die ursprüngliche Sequenz trennt Phase 3 (Routes), Phase 4 (Migration) und Phase 5
+(`opponentEngine.ts`-Refactor). Beim Nachzeichnen des exakten Call-Graphs für diese
+Phase wurden zwei Kopplungen gefunden, die diese Trennung nicht mehr sauber zulassen:
+
+1. **Phase 3 hängt an Phase 5.** Der Datenfluss (Abschnitt 3) beschreibt die
+   Opening-Message/Turn-Generierung bereits mit dem **erweiterten**
+   `computeHiddenOpponentRange` (L1-ZOPA-Band) und `buildOpponentSystemPrompt`
+   (ZOPA/Nash/MC-Grounding) — genau die additiven Parameter, die laut Abschnitt 11
+   erst in Phase 5 entstehen sollen. Ohne diese Erweiterung würde Phase 3 den
+   *alten*, nicht-L1-geerdeten Gegner ausliefern — das widerspricht dem gesamten
+   Sinn von NC-L3-SIM ("mathematisch geerdete Simulation"). Der additive
+   `opponentEngine.ts`-Refactor ist damit kein separierbarer Nachfolgeschritt,
+   sondern eine Voraussetzung für funktionierende Phase-3-Turns.
+2. **Phase 3 hängt an Phase 4 für sicheres Deployment.** `simulationRoutes.ts`
+   schreibt gegen `simulation_sessions`/`simulation_turns`, die erst in Phase 4
+   angelegt werden. Push nach `main` löst Auto-Deploy aus (Projekt-Konvention) —
+   ohne die Migration wären die drei neuen Endpoints live, aber jeder Aufruf
+   scheitert mit "relation does not exist". Entschärft durch den Tier-Gate-Befund
+   unten (kein echter Nutzer erreicht die Endpoints ohnehin), aber es verletzt den
+   Grundsatz "DB-Änderungen müssen in Produktion verifiziert werden" (siehe
+   `tasks/lessons.md`, `feedback_migration_verification.md`), wenn Phase 3 isoliert
+   als abgeschlossen gilt.
+
+**Konsequenz:** Phase 3, Phase 4 (Migration) und Phase 5 (`opponentEngine.ts`-
+Refactor) werden zu **einer** Implementierungseinheit zusammengefasst. Phase-
+Nummern in Abschnitt 11 bleiben als historische Marker stehen; "Phase 5" entfällt
+als eigener Schritt, ihr Inhalt ist Teil dieses Plans. Phase 6 (Frontend) und
+Phase 7 (curl + manueller Acceptance-Test) bleiben unverändert eigene Schritte.
+
+### Aus Schritt 4b bestätigt (GO 2026-07-21, keine Scope-Anpassung verlangt)
+
+- **Tier-Gate-Lücke:** `requireTier('profi')` + die geplante RLS-Policy hängen von
+  `auth.users.raw_user_meta_data.tier` ab. Verifiziert: kein Produktionspfad setzt
+  dieses Feld je auf `'profi'` (kein Stripe-Webhook — AR-032 Paused; der
+  Dev-Tier-Mock-Toggle schreibt nur `user_profiles.subscription_tier/persona_type`,
+  ein anderes Feld). Kein echter Nutzer kann die neuen Endpoints heute erreichen.
+  Bewusst akzeptiert — dieselbe Lücke wie bei NC-L3-OPPONENT, kein neues Problem.
+- **Phase-3/4-Reihenfolge:** akzeptiert, gelöst durch die Scope-Zusammenfassung oben
+  (Migration ist jetzt Teil derselben Implementierungseinheit, nicht nachgelagert).
+
+### 1. Umfang
+
+**Call-Graph (neu, Phase 3):**
+
+```
+routes.ts
+  └─ simulationRoutes.ts (neu) — 3 Handler: POST /start, POST /turn, POST /debrief
+       ├─ authMiddleware, requireTier('profi'), validateBody(Simulate*Schema)
+       └─ layer3/index.ts (neu) — Orchestrierungs-Entrypoint
+            ├─ smlParser.ts (Phase 1, unverändert) — buildScenarioObject, deriveUserBatnaStrength, computeRecommendedOpening
+            ├─ promptBuilder.ts (Phase 1, unverändert) — buildMarketDataContext, buildIntakePromptSkeleton
+            ├─ layer3/simulationLoop.ts (neu) — Turn-Orchestrierung, Offer-Detection, Terminierung
+            ├─ opponentEngine.ts (additiv erweitert, siehe unten) — computeHiddenOpponentRange, buildOpponentSystemPrompt, computeSimulationWarning
+            └─ debriefEngine.ts (Phase 2, unverändert) — computeConcessionTimeline, computeOutcomeMetrics, computeMarketComparison, buildDebriefResult
+```
+
+**`src/layer3/simulationLoop.ts` (neu):**
+- `detectOffer(userMessage: string): number | undefined` — Regex-first (Lesson
+  2026-06-19: LLM-Zahlenextraktion braucht Regex-Fallback), Beträge im Format
+  `\d{1,3}(\.\d{3})*|\d+` vor Währungswörtern
+- `lookupAcceptanceProbability(offer: number, layer1Snapshot: AnalysisResult): number`
+  — nutzt bestehende `acceptance_curve` aus `layer1_snapshot`, keine Neuberechnung
+- `computeDeadlineEscalation(turnNumber: number, deadlineDays: number | undefined, maxTurns: number): number`
+  — Urgency-Faktor 0–1, steigt Richtung `max_turns`
+- `checkTermination(turn: SimulationTurn, turnCount: number, maxTurns: number): 'active' | 'deal' | 'user_abort' | 'max_turns'`
+
+**`src/layer3/index.ts` (neu) — Orchestrierung, ein Export pro Endpoint-Phase:**
+- `runIntake(session, userMessage | undefined): { status: 'intake' | 'ready'; clarifying_questions?: string[]; opening_message?: string; scenario: ScenarioObject }`
+  — LLM-Call 1 (Sonnet, neuer `TaskType` `l3_sim_intake`): Lückenanalyse bei erstem
+  Aufruf, Extraktion bei Folgeaufrufen. Bei `intake_complete === true`:
+  `computeHiddenOpponentRange` (erweitert) → `buildOpponentSystemPrompt` (erweitert)
+  → LLM-Call (Opus, bestehender `TaskType` `opponent_simulation` — gleiche Aufgabe,
+  gleiches Modell wie NC-L3-OPPONENT, kein neuer Router-Key nötig) → Opening Message
+- `runTurn(session, userMessage, clientTurnId): { opponent_message: string; coach_hint?: string; offer_detected?: number; turn_number: number; status: string; idempotent?: true }`
+  — Idempotenz-Check zuerst (client_turn_id), dann `detectOffer` →
+  `lookupAcceptanceProbability` → `computeDeadlineEscalation` →
+  `buildOpponentSystemPrompt` (per Turn, stateless) → LLM (Opus, `opponent_simulation`)
+  → `checkTermination`
+- `runDebrief(session, finalOffer?): DebriefResult`
+  — lädt alle Turns → `computeConcessionTimeline` → `computeOutcomeMetrics` →
+  `computeMarketComparison` → LLM-Call (Sonnet, neuer `TaskType` `l3_sim_debrief`):
+  qualitative `tactics_used_well/missed`, `key_mistakes`, `recommendations`,
+  `overall_score` → `buildDebriefResult`
+
+**`src/layer3/opponentEngine.ts` (additiv erweitert — vormals Phase 5):**
+- `computeHiddenOpponentRange` erhält optionale Parameter für L1-ZOPA-Band;
+  bestehende Aufrufe ohne diese Parameter (aus `opponentSimulationRoutes.ts`)
+  bleiben unverändert gültig (Design-Vorgabe Abschnitt 7, bereits Side-Effect-
+  geprüft am 2026-07-07: genau ein Caller je Funktion)
+- `buildOpponentSystemPrompt` erhält optionale Parameter für Nash-Referenz und
+  Monte-Carlo-Pacing, gleiche Additiv-Regel
+
+**`src/utils/modelRouter.ts` (additiv):**
+- Zwei neue `TaskType`-Werte: `l3_sim_intake` (→ `MODELS.SONNET`), `l3_sim_debrief`
+  (→ `MODELS.SONNET`). Opponent-Turn-Generierung nutzt den bestehenden
+  `opponent_simulation`-Key (→ `MODELS.OPUS`) weiter — keine Duplikation eines
+  bereits vorhandenen Routing-Eintrags.
+
+**`src/types/index.ts` (additiv):**
+- Request/Response-Typen für die drei Endpoints (vollständige Definitionen:
+  Design-Doc Abschnitt 4, "Request/Response-Typen")
+- Neuer `TaskType`-Union-Eintrag (s.o.)
+
+**`src/api/validation.ts` (additiv, Pattern wie `StartOpponentSimulationSchema`/`TurnOpponentSimulationSchema`):**
+- `SimulateStartSchema`, `SimulateTurnSchema`, `SimulateDebriefSchema` (Zod)
+
+**`src/api/simulationRoutes.ts` (neu):**
+- 3 Express-Handler, Fehlerbehandlung exakt nach Design-Doc Abschnitt 5
+  (`MISSING_LAYER1_DATA`, `LLM_TIMEOUT`, `SIMULATION_ALREADY_FINISHED`,
+  `LLM_RESPONSE_INVALID`, `UNAUTHORIZED_SESSION`)
+- **Ergänzung ggü. Abschnitt 5 (in dieser Planungsrunde gefunden):** die Tabelle
+  deckt "kein `layer1_result`" ab, aber nicht "`layer1_result` vorhanden, aber
+  strukturell unvollständig" (z. B. ein älteres Analyse-Ergebnis mit
+  `_debug.error`-Feld statt echter ZOPA/Nash-Werte). `/start` muss zusätzlich zur
+  reinen Existenzprüfung die erwarteten numerischen Felder validieren, sonst
+  bekommt `computeHiddenOpponentRange` `undefined`/`NaN`-Eingaben. Gleiches
+  `MISSING_LAYER1_DATA`-Errorcode, erweiterte Prüfbedingung.
+
+**Migration (`negotiationcoach-backend/supabase/migrations/`, vormals Phase 4):**
+- `simulation_sessions` + `simulation_turns` + 2 RLS-Policies exakt wie Design-Doc
+  Abschnitt 7 spezifiziert. Anwendung via `mcp__supabase__apply_migration`
+  (Präzedenzfall: BUG-20260719-signup-trigger-tier-mismatch, 2026-07-21) plus
+  Migrationsdatei im Repo — beides, nicht nur eines von beiden.
+
+**Route-Registrierung in `routes.ts`:**
+```typescript
+router.post('/simulate/start', authMiddleware, requireTier('profi'), validateBody(SimulateStartSchema), async (req, res, next) => { ... });
+router.post('/simulate/turn', authMiddleware, requireTier('profi'), validateBody(SimulateTurnSchema), async (req, res, next) => { ... });
+router.post('/simulate/debrief', authMiddleware, requireTier('profi'), validateBody(SimulateDebriefSchema), async (req, res, next) => { ... });
+```
+
+**Nicht Teil dieser Phase:** `negotiation-buddy` (Phase 6, separates Item), curl-
+Tests gegen den Live-Endpoint + manueller Acceptance-Test (Phase 7 — wird direkt im
+Anschluss an diese Phase ausgeführt, da die Migration jetzt Teil derselben Einheit
+ist), Deprecation von `/api/opponent-simulation/*` (nicht geplant).
+
+### 2. Exakt betroffene Dateien
+
+| Datei | Art |
+|---|---|
+| `negotiationcoach-backend/src/layer3/simulationLoop.ts` | neu |
+| `negotiationcoach-backend/src/layer3/index.ts` | neu |
+| `negotiationcoach-backend/src/layer3/opponentEngine.ts` | additiv erweitert (optionale Parameter, keine bestehende Signatur entfernt) |
+| `negotiationcoach-backend/src/api/simulationRoutes.ts` | neu |
+| `negotiationcoach-backend/src/api/routes.ts` | additiv — 3 neue Registrierungen |
+| `negotiationcoach-backend/src/api/validation.ts` | additiv — 3 neue Zod-Schemas |
+| `negotiationcoach-backend/src/utils/modelRouter.ts` | additiv — 2 neue `TaskType`-Werte |
+| `negotiationcoach-backend/src/types/index.ts` | additiv — Request/Response-Typen, `TaskType`-Erweiterung |
+| `negotiationcoach-backend/supabase/migrations/<timestamp>_create_simulation_sessions.sql` | neu |
+| `shared-context/docs/contracts/frontend-backend.md` | neuer Abschnitt — 3 Endpoints |
+
+### 3. SIDE-EFFECT-CHECK (PFLICHT)
+
+a) `grep -rn "computeHiddenOpponentRange\|buildOpponentSystemPrompt\|computeSimulationWarning" src/` vor Implementierung erneut durchführen — Stand 2026-07-07 (Brief): genau ein Caller je Funktion (`opponentSimulationRoutes.ts`). Falls Implementer einen zweiten Caller findet: STOP, nicht einfach erweitern, erneut Side-Effect-Check.
+b) Verändert die additive Erweiterung Verhalten für den bestehenden Caller (`opponentSimulationRoutes.ts`)? **Nein**, solange die neuen Parameter optional sind und bei Abwesenheit exakt das alte Verhalten reproduzieren — muss der Implementer per Unit-Test explizit beweisen (alter Aufruf ohne neue Parameter → identischer Output wie vor dem Refactor), nicht nur behaupten.
+c) `opponentSimulationRoutes.ts` selbst wird nicht angefasst — bestätigen per `git diff --stat`.
+d) DB-Schema-Änderung: 2 neue Tabellen, keine Änderung an bestehenden Tabellen (`opponent_simulation_sessions/turns` bleiben unverändert — per `git diff` gegen die Migration bestätigen, nicht nur behaupten).
+e) API-Contract-Änderung: 3 neue Endpoints, keine bestehenden Endpoints verändert — `docs/contracts/frontend-backend.md` nur ergänzt, bestehende Abschnitte unverändert.
+f) `modelRouter.ts`: neue `TaskType`-Werte sind additiv zur bestehenden Union — bestehende Task-Types/Routing-Einträge unverändert, per Diff bestätigen.
+
+### 4. Tests
+
+- Unit: `simulationLoop.ts` — `detectOffer` (Regex-Fälle inkl. Tausenderpunkt, kein Treffer, mehrere Zahlen im Text), `lookupAcceptanceProbability` (Randfälle: Angebot außerhalb ZOPA), `computeDeadlineEscalation` (ohne `deadline_days`, an `max_turns`-Grenze), `checkTermination` (alle 4 Zustände)
+- Unit: `opponentEngine.ts` — Regressionstest: alter Call ohne neue Parameter → Output identisch zu vor dem Refactor (Pflicht, siehe SIDE-EFFECT-CHECK b)
+- `npx tsc --noEmit` (negotiationcoach-backend) — 0 Fehler
+- `npm test` — keine Regression, neue Tests in `scripts.test` verkabelt (holt die in Phase 1/2 als Minor-Finding vorgemerkte Lücke nach)
+- **curl-Tests (Design-Doc Abschnitt 10, alle 6) gegen den Live-Endpoint** — jetzt
+  möglich, da Migration Teil derselben Phase ist. Test 6 (Tier-Gate, 403) ist die
+  einzige *tatsächlich* durchführbare Verifikation der Tier-Gate-Lücke von oben:
+  ein `$KMU_JWT` bekommt 403, ein manuell geseedeter `$PROFI_JWT` (analog
+  `seed-verify-user.ts`) müsste für Tests 1–5 verwendet werden, da kein echter
+  Nutzer aktuell ein solches JWT organisch erhalten kann.
+
+### 5. Docs/Contracts
+
+- `docs/contracts/frontend-backend.md`: neuer Abschnitt nach dem bestehenden
+  `/api/opponent-simulation/*`-Muster (Zeilen 480–597 als Vorlage) — 3 neue
+  Endpoints mit Request/Response-Typen, Error-Codes
+- `/contract-check` — Pflicht vor Merge (Design-Doc Abschnitt 12)
+- `docs/ARCHITECTURE.md` Abschnitt 2 (Datenflüsse) + 3 (Service Boundaries) — laut
+  Abschnitt 12 "nach Implementierung", nicht blockierend für diesen Plan
+
+### 6. Rollback-Strategie
+
+- Code (Routes, Orchestrierung, `modelRouter`/`types`/`validation`-Additive):
+  Dateien löschen bzw. additive Erweiterungen revertieren, keine Downstream-
+  Referenzen außerhalb dieses Features.
+- `opponentEngine.ts`-Refactor: additive Parameter zurücknehmen — bestehender
+  Caller unberührt, da er die neuen Parameter nie übergibt.
+- Migration: `DROP TABLE simulation_turns, simulation_sessions CASCADE` — keine
+  bestehenden Tabellen betroffen, kein Fremdschlüssel von außerhalb dieses
+  Features zeigt auf diese beiden Tabellen.
+- Da kein echter Nutzer die Endpoints heute erreichen kann (Tier-Gate-Lücke),
+  ist ein Rollback nach Deploy praktisch risikolos — es gibt keine Produktions-
+  Nutzungsdaten, die verloren gehen könnten.
+
+### 7. Exakter Git-Commit-Befehl
+
+```bash
+cd ../negotiationcoach-backend && git add \
+  src/layer3/simulationLoop.ts src/layer3/index.ts src/layer3/opponentEngine.ts \
+  src/api/simulationRoutes.ts src/api/routes.ts src/api/validation.ts \
+  src/utils/modelRouter.ts src/types/index.ts \
+  supabase/migrations/ \
+  && git commit -m "feat(layer3): NC-L3-SIM Phase 3 — simulate routes, opponent L1-grounding, migration"
+```
+
+**STOP — Phase-3-Plan steht. Wartet auf GO / HOLD / SPLIT / BACK TO DOCS.**

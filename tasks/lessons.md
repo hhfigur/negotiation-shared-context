@@ -309,3 +309,59 @@ dieses minimalen Fixes). Die vier LLM-Edge-Functions außer `chat`
 (`generate-plan`, `analyze-progress`, `summarize-session`,
 `analyze-document`) wurden nicht geprüft, ob sie denselben
 `persona_type`-Lookup nutzen und ähnlich betroffen wären.
+
+## 2026-07-21 — NC-L3-SIM Phase 3 (Critic-Pass + Task-Review fanden reale Bugs, die ein sehr detaillierter Plan übersah)
+
+**Task:** `/feature-plan` + `/feature-implement` für NC-L3-SIM Phase 3
+(negotiationcoach-backend, Commits `007a6ee` → 5 Important Task-Review-
+Findings → `b5bf2d7` Fix → Re-Review Approved).
+
+**Problem:** Zwei unabhängige Stellen im Prozess fanden echte, im
+Voraus nicht offensichtliche Fehler — obwohl sowohl der Design-Doc
+(vollständige Typen, Datenfluss, Error-Tabelle, 6 curl-Tests) als auch der
+Plan selbst ungewöhnlich detailliert waren:
+1. **Critic-Pass (Planungsphase):** Der Datenfluss (Design-Doc Abschnitt 3)
+   setzte bereits den L1-erweiterten `computeHiddenOpponentRange`/
+   `buildOpponentSystemPrompt` voraus — die ursprüngliche 7-Phasen-Sequenz
+   hatte diese Erweiterung aber erst für Phase 5 vorgesehen, zwei Phasen
+   *nach* Phase 3. Ohne das Nachzeichnen des exakten Call-Graphs beim
+   Schreiben des Plans (nicht nur beim Lesen des Datenflusses) wäre Phase 3
+   isoliert nicht lauffähig gewesen. Gefunden erst beim Ausformulieren der
+   exakten Funktionssignaturen im Phase-3-Plan, nicht schon beim
+   ursprünglichen Feature-Plan-Schritt 4b.
+2. **Task-Review (Implementierungsphase):** fand 5 Important Findings,
+   davon zwei echte Laufzeit-Bugs in normalem Betrieb erreichbar (nicht nur
+   Edge Cases): (a) `turn_number` wurde während der Intake-Phase nie
+   inkrementiert → mehrere DB-Zeilen mit identischem `turn_number`,
+   Debrief-Transkript-Reihenfolge dadurch nicht garantiert; (b) `/debrief`s
+   `dealReached` vertraute rein auf Client-geliefertes `final_offer`, obwohl
+   dieselbe Codebasis bereits eine korrekte serverseitige Status-
+   Disambiguierung (`mapDbStatusToClientStatus`) besaß, die nicht
+   wiederverwendet wurde.
+
+**Ursache:** Ein detaillierter Plan/Design-Doc verleitet dazu, die
+Konsistenz zwischen Abschnitten (Datenfluss vs. Phasen-Sequenz) als
+gegeben anzunehmen, statt sie beim Schreiben des ausführungsreifen Plans
+explizit gegenzuprüfen. Und: ein Implementer, der bereits Server-seitige
+Hilfslogik für ein Problem geschrieben hat (`mapDbStatusToClientStatus`),
+wendet sie nicht automatisch an anderer Stelle im selben Request-Handler
+an, wenn der Plan das nicht explizit verlangt.
+
+**Regel:** (1) Beim Schreiben eines Implementierungsplans aus einem
+Design-Doc: den Call-Graph der NEUEN Funktionen gegen die geplante
+Phasen-Reihenfolge nachzeichnen, nicht nur den Datenfluss lesen und
+Konsistenz unterstellen — genau das hat der Critic-Pass-Schritt hier
+geleistet und sollte nie übersprungen werden, auch wenn der Plan schon
+"fertig" wirkt. (2) Task-Review darf nie durch ein noch so ausführliches
+Self-Review des Implementers ersetzt werden — beide der oben genannten
+echten Bugs waren im Implementer-eigenen Bericht als erledigt/getestet
+dargestellt. (3) Bei Postgres-CASE-Ausdrücken: ein Cast auf ein Literal
+wird zur Parse-Zeit validiert (unabhängig vom genommenen Branch), ein Cast
+auf eine Variable erst zur Laufzeit — bereits in der BUG-20260719-Lektion
+(2026-07-21) dokumentiert, hier im Repro-Script erneut bestätigt.
+
+**Folge-Risiko:** `walkaway`/`opponent_walkaway`-Status bleibt unerzeugt
+(Typ vorhanden, kein Erzeugungspfad) — vorgemerkt für eine spätere Phase,
+kein aktueller Bug. Migration-RLS prüft Tier nur über `user_metadata`,
+nicht zusätzlich `app_metadata` (Inkonsistenz zu `middleware.ts`, geringes
+Risiko wegen Service-Role-Key-Writes).

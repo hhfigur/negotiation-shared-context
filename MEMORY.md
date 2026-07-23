@@ -7,10 +7,10 @@
 - Dev: Claude Code (nicht Lovable)
 
 ## Letzte Session
-Datum: 2026-07-20
+Datum: 2026-07-23 (sehr lange Session, über Mitternacht)
 
-Gemacht: Loop-Coding-Integration komplett (PROMPT 0-3: verify-loop-Skill, Backend-/Frontend-Harness, ADR-011 Soft-Launch). Provider-Drift aufgeklärt (ADR-012 Anthropic-only, ADR-003 superseded, toter Gemini-Prototyp gelöscht). BUG-20260719-signup-trigger-tier-mismatch gefunden (Signup-Trigger ignoriert Tier-Metadata — offen). Telemetry-distinctId-Fix, close-task-Exemption-Pfad, negotiation-buddy .env-Tracking-Footgun behoben.
-Problem: BUG-20260719 wartet auf Product-Owner-GO für den Fix. `.claude/settings.json`-Permissions-Setup vom 2026-07-18 bleibt weiterhin bewusst uncommitted.
+Gemacht: Permission/Sandbox-Setup committet. BUG-20260719-signup-trigger-tier-mismatch gefixt+deployt+geschlossen. roadmap.md gegen feature-register.md resynct (war stark stale). NC-L3-SIM Phase 3 geplant (Critic-Pass fand Scope-Fehler, Phase 3+4+5 konsolidiert) und implementiert (Task-Review fand 5 Findings inkl. 2 echte Bugs, gefixt, Re-Review Approved). Details: docs/delivery/session-dump-2026-07-23.md.
+Problem: keins offen — alle Items dieser Session sauber abgeschlossen. 5 Commits (3 shared-context, 2 negotiationcoach-backend) noch nicht gepusht.
 
 ## Nächster Schritt
-Falls GO zu BUG-20260719 vorliegt: `/bug-fix` Phase 3 direkt starten (Diagnose + Runtime-Evidenz bereits vollständig im BUG-FILE). Sonst: `.claude/settings.json` + `.gitignore` (Permissions-Setup 2026-07-18) committen falls gewünscht.
+Erst pushen (shared-context 51644ca..6be3ab1, negotiationcoach-backend 007a6ee..b5bf2d7), dann: NC-L3-SIM Phase 6 (negotiation-buddy Frontend) via /feature-plan, oder einen der 4 offenen P2/P3-Bugs angehen — keine Priorität festgelegt, User-Entscheidung nötig.

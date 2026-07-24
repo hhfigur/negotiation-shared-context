@@ -662,6 +662,143 @@ den LLM-Kontext einspeist. Er ist aber tot (kein Caller).
 
 ---
 
+### 1.7 `buildOpponentSystemPrompt` + Layer-3-Intake/Debrief-Prompts (Railway, `[local]`) — bislang fehlender Wortlaut
+
+**Nachtrag zur Vollständigkeit:** Abschnitt 4 bewertet `opponentEngine.ts` als
+"methodisch anspruchsvollste Verzahnung von Layer 1 und LLM im ganzen System" —
+der Wortlaut selbst fehlte bisher in Abschnitt 1. Wird hier nachgetragen, da
+der Auftrag "vollständig, wörtlich" für alle System-Prompts verlangt.
+
+**`buildOpponentSystemPrompt` — `src/layer3/opponentEngine.ts:109-181`.**
+Genutzt von `/api/opponent-simulation/*` (**ohne** `grounding`-Argument — live
+genutzter Pfad, siehe Abschnitt 5.2) und `/api/simulate/*` (**mit**
+`grounding` — gebaut, kein Frontend-Caller). Modell:
+`selectModel('opponent_simulation', 'profi')` → Opus (Route ist
+`requireTier('profi')`-gated, daher praktisch immer Opus, nie ein Degrade).
+
+Stil-Bausteine (`styleInstructions`, wörtlich):
+```
+kooperativ:  "Du machst zügig sichtbare Zugeständnisse und signalisierst Bereitschaft zur Einigung. Dein Ton ist konstruktiv und sachlich."
+hart:        "Du hältst lange an deinem Ausgangswert fest und gibst nur minimal nach. Dein Ton ist bestimmt und knapp."
+manipulativ: "Du nutzt Taktiken wie künstlichen Zeitdruck ('Ich habe morgen ein anderes Angebot'), Ankereffekte und emotionale Appelle. Dein Ton wechselt zwischen freundlich und fordernd."
+sachlich:    "Du machst lineare, vorhersehbare Zugeständnisse und begründest jeden Schritt rational. Dein Ton ist nüchtern und professionell."
+```
+
+Basis-Prompt (wörtlich, `${...}` = Laufzeit-Variable):
+```
+Du bist eine KI die in einem Verhandlungs-Rollenspiel die GEGENSEITE spielt.
+Verhandlungstyp: ${setup.negotiation_type}
+
+DEINE VERHANDLUNGSPOSITION (streng vertraulich — nie direkt nennen):
+- Dein Budget-Maximum (du bietest NIE MEHR als diesen Betrag an): ${hiddenRange.hidden_opponent_minimum}
+- Dein Eröffnungsangebot (starte mit diesem Wert und verhandle von hier): ${hiddenRange.hidden_opponent_target}
+
+DEIN VERHANDLUNGSSTIL:
+${styleInstructions[setup.opponent_style]}
+
+REGELN:
+- Antworte immer als Gegenseite, nicht als Coach.
+- Nenne deine internen Zahlen (Minimum/Ziel) niemals explizit.
+- Mach konkrete Gegenangebote oder reagiere auf Angebote der Gegenseite.
+- Halte Antworten kurz (2-4 Sätze).
+[+ optional, wenn turnsLeft <= 3: "HINWEIS: Es sind nur noch ${turnsLeft} Runden übrig. Entscheide dich, ob du eine Einigung anstrebst."]
+```
+
+**Nur wenn `grounding` übergeben wird** (ausschließlich `/api/simulate/*`,
+nicht der live genutzte `/api/opponent-simulation/*`-Pfad), wird angehängt:
+```
+ZUSÄTZLICHE MATHEMATISCHE GRUNDLAGE (nur intern, nie direkt zitieren):
+- Nash-Referenzpunkt (fairer Kompromiss): ${nash_solution} — nenne diesen Wert nur, wenn du selbst unter Druck gerätst (z. B. in den letzten Runden).
+- Konzessions-Pacing: Monte-Carlo-P50 = ${monte_carlo_p50}, P90 = ${monte_carlo_p90} — bewege dich über die ersten Runden Richtung P50, nähere dich P90 nur unter starkem Druck an.
+- Die acceptance_curve (intern bekannt) bestimmt dein Konzessionstempo: Angebote nahe einem hoch-wahrscheinlichen Punkt der Kurve darfst du eher annehmen.
+[+ falls reality_score > 20: "- Marktdaten-Realitätscheck [GATED, aktiv]: reality_score liegt bei ${realityScore}% — du darfst den Marktmedian (${market_median}) als Argument zitieren, wenn es deiner Position hilft."]
+```
+
+`hidden_opponent_minimum`/`hidden_opponent_target` selbst sind nicht LLM-
+erfunden, sondern deterministisch aus `computeHiddenOpponentRange()` (ZOPA +
+`DIFFICULTY_OFFSET`-Map `einfach 0.15/mittel 0.45/schwer 0.75` +
+`STYLE_OPENING_MARGIN`-Map `kooperativ 0.15/sachlich 0.08/hart 0.03/manipulativ 0.02`,
+bei vorhandener Layer-1-ZOPA in `[zopa_min, zopa_max]` geklammert).
+
+**Einordnung: SUBSTANZ, größte methodische Dichte im gesamten System — aber
+nur auf dem `/api/simulate/*`-Pfad aktiviert, der laut Abschnitt 5.2 keinen
+Frontend-Caller hat.** Der live genutzte `/api/opponent-simulation/*`-Pfad
+nutzt dieselbe Funktion **ohne** den Grounding-Block — der Live-Gegner
+verhandelt also innerhalb einer ZOPA-geklammerten Range, aber ohne
+Nash/Monte-Carlo-Pacing oder Reality-Score-Gate im Prompt selbst (das
+Endergebnis wird trotzdem gegen Nash bewertet, siehe `tactic_assessment`,
+Abschnitt 6).
+
+**Layer-3-Intake-Prompts — `src/layer3/index.ts` `runIntake` (Zeilen ca. 229-236, 258-271).**
+Nicht über `promptBuilder.ts` allein gebaut — `buildIntakePromptSkeleton`
+liefert nur ein Lückengerüst, der eigentliche System-Prompt ist inline.
+Modell: `selectModel('l3_sim_intake', 'profi')` → Sonnet.
+
+Erstaufruf (Lücken-Analyse, wörtlich):
+```
+${skeleton}
+
+ZOPA: ${layer1.zopa_min}–${layer1.zopa_max} (existiert: ${layer1.zopa_exists}), Nash-Lösung: ${layer1.nash_solution}, Strategy-Score: ${layer1.strategy_score}.
+
+Antworte AUSSCHLIESSLICH mit JSON in der Form: {"clarifying_questions": ["Frage 1", "Frage 2", ...]}.
+Stelle 2-4 konkrete, kurze Fragen, die für eine realistische Verhandlungssimulation fehlen.
+```
+`skeleton` (`buildIntakePromptSkeleton`, wörtlich):
+```
+Verhandlungstyp: ${negotiation_type}
+
+Fehlende Informationen für den Intake:
+- opponent_style
+- scenario_difficulty
+- batna_description
+- deadline_days
+- relationship_importance
+```
+
+Folgeaufruf (Feld-Extraktion, wörtlich):
+```
+Verhandlungstyp: ${base.negotiation_type}
+Bisher gestellte Fragen: ${JSON.stringify(base.clarifying_questions_asked)}
+Bisheriger Stand: opponent_style=${...}, scenario_difficulty=${...}, batna_description=${...}, deadline_days=${...}, relationship_importance=${...}
+
+Extrahiere aus der Nutzerantwort so viele der folgenden Felder wie möglich: opponent_style (kooperativ|hart|manipulativ|sachlich), scenario_difficulty (einfach|mittel|schwer), batna_description (string), deadline_days (number), relationship_importance (low|medium|high), scenario_description (string).
+Antworte AUSSCHLIESSLICH mit JSON in der Form:
+{"opponent_style": "...", "scenario_difficulty": "...", "batna_description": "...", "deadline_days": number, "relationship_importance": "...", "scenario_description": "...", "intake_complete": boolean, "clarifying_questions": ["..."]}
+intake_complete=true sobald opponent_style, scenario_difficulty UND (batna_description ODER deadline_days) bekannt sind.
+```
+Deterministischer Fallback (kein LLM): `deriveIntakeComplete()` erzwingt
+`intake_complete=true` nach spätestens `MAX_INTAKE_TURNS = 8` unabhängig vom
+LLM-Urteil. Zusätzlicher Regex-Fallback für `deadline_days`
+(`/(\d{1,3})\s*tage?n?\b/i`), falls das LLM keine valide Zahl liefert.
+
+**Layer-3-Debrief-Prompt — `src/layer3/index.ts` `runDebrief`, Zeilen ca. 476-489.**
+Modell: `selectModel('l3_sim_debrief', 'profi')` → Sonnet.
+```
+Du bist ein Verhandlungscoach. Analysiere den folgenden simulierten Verhandlungsverlauf.
+Verhandlungstyp: ${session.inputs?.negotiation_type ?? 'unbekannt'}
+ZOPA: ${layer1.zopa_min}–${layer1.zopa_max} (existiert: ${layer1.zopa_exists})
+Nash-Lösung: ${layer1.nash_solution}
+Finales Angebot: ${effectiveFinalOffer}
+
+Transkript:
+${transcript || '(keine Turns)'}
+
+Antworte AUSSCHLIESSLICH mit JSON in der Form:
+{"tactics_used_well": ["..."], "tactics_missed": ["..."], "opponent_tactics_observed": ["..."], "key_mistakes": ["..."], "recommendations": ["..."], "overall_score": number}
+overall_score: 0-100, basierend auf ZOPA-Perzentil, Nash-Distanz und Verhandlungsverhalten.
+```
+Fällt das LLM bei `overall_score` aus, greift ein berechneter Fallback:
+`Math.round(outcomeMetrics.final_vs_zopa_percentile)` — kein Rateergebnis.
+
+**Einordnung: MISCH.** ZOPA/Nash/Strategy-Score werden als harte Zahlen in
+Intake- und Debrief-Prompt injiziert (echte Grounding), aber die qualitativen
+Urteile (`tactics_used_well`, `key_mistakes` etc.) sind vollständig freie
+LLM-Erfindung ohne benannte Taktik-Taxonomie (kein Anchoring/Logrolling/MESO
+o.ä. wird dem Modell hier vorgegeben, anders als in der `chat`-EF-
+Framework-Bibliothek, Abschnitt 1.1).
+
+---
+
 ## 2. Fragen an den Nutzer — Erhebung, Reihenfolge, Pflicht/Optional
 
 **Observed — drei parallele, unabhängige Extraktionsmechanismen existieren

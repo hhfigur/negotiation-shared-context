@@ -20,14 +20,15 @@
 - NC-L3-SIM-REALISM — Simulation-Realismus-Fix (`690851c`) ✅
 - NC-NAV — Navigation & Tier-Struktur Redesign, Phasen A–E vollständig (`847aa79`…`42c6fc7`) ✅
   TBD (R-2026-10) — code-complete, noch keinem offiziellen Release zugeordnet.
+- NC-L3-SIM — Layer 3 Simulation Engine — Redesign (L1/L2-geerdeter Gegner, dynamischer
+  Intake, Debrief) ✅ `886d3e8` — alle Phasen abgeschlossen 2026-07-24 (Backend Phase 1-3
+  `c00e719`/`2f163c8`/`007a6ee`+`b5bf2d7`; Frontend Phase 6 "Substance Activation A-3"
+  `1bad815`..`886d3e8`). Ersetzt NICHT NC-L3-OPPONENT — `/api/opponent-simulation/*` bleibt
+  deployt, Frontend ruft aber nur noch `/api/simulate/*` auf (Entscheidung P-3, DCC-FE-03/
+  DCC-BE-03). Brief: product/briefs/NC-L3-SIM.md. TBD (R-2026-10) — code-complete, noch
+  keinem offiziellen Release zugeordnet.
 
 ## Now
-- NC-L3-SIM (In Delivery): Layer 3 Simulation Engine — Redesign (L1/L2-geerdeter Gegner,
-  dynamischer Intake, Debrief). Phase 1/2 von 7 implementiert (`c00e719`, `2f163c8`).
-  Ersetzt NICHT NC-L3-OPPONENT — `/api/opponent-simulation/*` bleibt unverändert lauffähig
-  (verifiziert byte-identisch). ADR-010 (Intake-Strategie) DECIDED 2026-07-08, Option A.
-  Neue Endpoints (`/api/simulate/{start,turn,debrief}`, erste LLM-Calls + DB-Writes) folgen
-  ab Phase 3 — größerer Scope, erneuter Konsequenz-Check vor Start.
 - NC-ONBOARDING: BLOCKED — wartet auf 14-Tage PostHog-Baseline ab VITE_POSTHOG_API_KEY-Aktivierung
   (frühestens Mitte Mai 2026). Unblockiert sobald metrics.md Baselines vorliegen.
 
@@ -53,9 +54,9 @@
 - Wave 1 vollständig abgeschlossen (R-2026-05 bis R-2026-08)
 - Wave 2 (R-2026-09) abgeschlossen: NC-PLAN-FIX, NC-L2-UI, NC-CONTEXT, NC-TELEMETRY-C
 - ADR-007 entschieden + dokumentiert (Option A, Retire)
-- Wave 3 ist trotz "Later"-Planung bereits mit drei released Teilstücken gestartet
-  (NC-L3-OPPONENT + UI, NC-L3-SIM-REALISM); NC-L3-SIM (Redesign) ist aktuell In Delivery,
-  Phase 1/2 von 7
+- Wave 3 ist trotz "Later"-Planung bereits mit vier released Teilstücken gestartet
+  (NC-L3-OPPONENT + UI, NC-L3-SIM-REALISM, NC-L3-SIM Redesign — vollständig Released
+  2026-07-24, alle Phasen inkl. Frontend abgeschlossen)
 - NC-ONBOARDING ist von NC-TELEMETRY-C-Baseline (min. 2 Wochen Daten) abhängig —
   NC-TELEMETRY-C ist selbst bereits released (R-2026-09), die Baseline-Uhr läuft entsprechend
 - NC-TELEMETRY-C ist der nächste strategische Entscheidungspunkt (Aggregations-Layer,

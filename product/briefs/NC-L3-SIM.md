@@ -2,11 +2,11 @@
 ## Layer 3 Simulation Engine — Redesign (L1/L2-geerdeter Gegner, dynamischer Intake, Debrief)
 
 **Release:** TBD (Wave 3)
-**Status:** IN PROGRESS — Phase 3 von 7 implementiert (2026-07-21). Ehemalige
-Phase 4 (Migration) + Phase 5 (`opponentEngine.ts`-Refactor) in Phase 3
-aufgegangen (Konsolidierung während /feature-plan, siehe Implement-Abschnitt).
-Ehemalige Phase 7 (curl-Tests + Acceptance) ebenfalls bereits erledigt.
-Einzig verbleibend: Phase 6 (negotiation-buddy Frontend-Integration).
+**Status:** Released — ✅ DONE `886d3e8` (2026-07-24). Alle 7 (effektiv 4,
+nach Konsolidierung) Phasen abgeschlossen: Phase 1/2/3 (negotiationcoach-backend,
+bereits Released) + Phase 6 (negotiation-buddy Frontend-Integration, dieser
+Eintrag) — ehemalige Phase 4/5/7 bereits in Phase 3 aufgegangen. Siehe
+Implement-Abschnitt für den vollständigen Phasenverlauf.
 **Affected repos:** negotiationcoach-backend (primary), negotiation-buddy, shared-context (Docs/ADR)
 **Tier impact:** profi only
 **Created:** 2026-07-06 (Design-Stub) · Qualified: 2026-07-07
@@ -328,3 +328,78 @@ dokumentiert, nicht in diesem Brief dupliziert.
   Frontend-Repo) — Phase 7 (curl-Tests + manueller Acceptance-Test) ist
   durch die Konsolidierung bereits Teil dieser Phase 3 erledigt, nicht mehr
   separat offen.
+
+**Phase 6 — negotiation-buddy Frontend-Integration (letzte verbleibende Phase, geliefert als "Substance Activation A-3"):**
+
+- **Repo/Branch:** negotiation-buddy, isolierter Git-Worktree
+  (`worktree-a3-simulate-debrief`, User-Zustimmung für Worktree-Isolation
+  eingeholt), lokal auf `main` gemerged (fast-forward) nach GO des Users.
+- **Plan:** Vier Tasks per `/subagent-driven-development`
+  (Implementer → Task-Reviewer, je Modell nach Aufgabenkomplexität —
+  Haiku für mechanische Tasks, Sonnet für Integrations-/Judgment-Tasks),
+  plus abschließendes Whole-Branch-Review (Opus).
+- **Commits:** `1bad815` (Task 1 — `apiClient.ts`/`types.ts` Wiring),
+  `75b1b96` (Task 2 — `OpponentSimulator.tsx` auf session-geerdeten Flow
+  umgestellt), `3ab37bb` (Task 3 — narrierte Debrief-Verdikte statt
+  Rohzahlen, neues `debriefNarration.ts`, TDD via vitest), `e638844`
+  (Task 4 — Dead-Reference-Cleanup + `DCC-FE-03`-Dokumentation),
+  `886d3e8` (Fix-Runde nach Whole-Branch-Review).
+- **Architektur-Erkenntnis während Task 2:** `/api/simulate/start` ist
+  session-geerdet (nimmt nur `session_id`, lädt `layer1_result` server-seitig)
+  — anders als das alte `/api/opponent-simulation/start`, das manuelle
+  Zahlen-Eingabe (`own_target`/`own_minimum`/`opponent_estimated_*`)
+  erforderte. Die Setup-Phase in `OpponentSimulator.tsx` wurde entsprechend
+  vereinfacht: Pre-Flight-Check auf `useAnalysis().sessionId` statt
+  manuellem Formular.
+- **Produktkritischer Teil (Task 3):** Debrief-Felder werden nicht mehr als
+  Rohzahlen angezeigt, sondern als narrierte Verdikte (z. B. "X € unter dem
+  rechnerisch fairen Ausgleichspunkt (Nash-Lösung)"). Terminologie-Regel
+  (P-1 aus `substance-activation-brief.md`): Fachbegriff + Erklärung in
+  Klammern, einheitlich für alle Tiers, kein Tier-Gating auf Wortwahl.
+- **Well-evidenced Abweichung von der illustrativen Plan-Vorlage:**
+  `final_vs_nash_distance` ist ein absoluter €-Betrag, keine Prozentzahl —
+  zweifach unabhängig verifiziert durch Quellcode-Nachverfolgung
+  (`debriefEngine.ts:113`, `nashBargaining.ts:8-14`), nicht nur behauptet.
+- **Whole-Branch-Review fand 1 Important Finding** (ZOPA-Perzentil-Tile und
+  -Caption zeigten zwei widersprüchliche Zahlen nebeneinander, plus eine
+  unverifizierte Annahme über die Richtung "höher = besser" — Perzentil ist
+  laut Backend-Quelle richtungsneutral, "höher/niedriger ist besser" hängt
+  von der Verhandlungsseite ab, die zu diesem Zeitpunkt nicht bekannt ist)
+  + 2 Minor Findings (Rundungs-Inkonsistenz zwischen zwei Metric-Tiles und
+  der Concession-Timeline-Liste; "Verhandlung beenden"-Button während
+  Intake-Phase erreichbar). Alle 3 in `886d3e8` gefixt, Re-Review bestätigt
+  Fix unabhängig (inkl. eigenem `tsc`/`vitest`-Re-Run).
+- **Verifikation:** `npx tsc --noEmit --project tsconfig.app.json` → 0 Fehler
+  (Controller-seitig auf gemergtem `main` unabhängig erneut bestätigt, nicht
+  nur Implementer-Report). `npx vitest run` → 48/48 Tests grün auf gemergtem
+  `main`. Vollständige Live-API-Chain-Verifikation (`/api/analyze` →
+  `/api/simulate/start` → mehrere `/turn` → `/debrief`) gegen lokalen
+  Dev-Server mit echtem Profi-JWT, zwei volle Durchläufe (echter `'deal'`-
+  und echter `'user_abort'`-Ausgang), reale `DebriefResult`-JSON erfasst und
+  gegen die Typdefinitionen abgeglichen. `git fetch origin` vor dem Merge
+  bestätigte 0 Fremd-Commits auf `origin/main` (Lovable-Sync-Risiko
+  geprüft, keine Kollision).
+- **AC-Abgleich (Brief-Acceptance-Criteria):** AC-1/AC-3/AC-4 bereits durch
+  Phase 3 (Backend) erfüllt, unverändert. AC-6 (TypeCheck 0 Fehler) erfüllt
+  in beiden Repos. **AC-7** (`docs/contracts/frontend-backend.md` enthält
+  die drei neuen Endpoints) war bis zu diesem Abschluss NICHT erfüllt —
+  während `/close-task-dev` nachgeholt (dieser Commit-Batch, shared-context).
+  AC-8 (6 curl-Tests) bereits in Phase 3 erledigt.
+- **Dead-Code-Dokumentation:** `DCC-FE-03` (negotiation-buddy,
+  `docs/dead-code-candidates.md`) + `DCC-BE-03` (negotiationcoach-backend,
+  `docs/dead-code-candidates.md`, Commit `cb01e90`) — `/api/opponent-simulation/*`
+  bleibt bewusst erhalten (kein Löschen), nur Frontend-Aufrufe entfernt,
+  konsistent mit der bereits in Phase 3 dokumentierten "ersetzt NICHT
+  NC-L3-OPPONENT"-Linie — jetzt präzisiert: Frontend ruft nur noch
+  `/api/simulate/*` auf, Backend-Route bleibt parallel funktionsfähig, aber
+  unaufgerufen (Entscheidung P-3, nicht mehr "zwei aktive Einstiegspunkte").
+- **Bekannte, nicht neue Lücke bleibt bestehen:** kein Produktionspfad setzt
+  `tier='profi'` im JWT (kein Stripe-Webhook) — UI ist ausgeliefert, aber
+  für reale zahlende Nutzer noch nicht erreichbar (unverändert seit Phase 3).
+- **Zwei-Repo-Regel:** negotiation-buddy (Commits `1bad815`..`886d3e8`) +
+  negotiationcoach-backend (`cb01e90`, DCC-BE-03-Dokumentation) +
+  shared-context (dieser Brief-Eintrag, `docs/contracts/frontend-backend.md`
+  AC-7-Nachtrag, `product/feature-register.md`-Stempel).
+- **Nächster Schritt:** Keiner — NC-L3-SIM ist mit dieser Phase vollständig
+  Released. Verbleibende, bereits dokumentierte Minor-Findings aus allen
+  Phasen (siehe oben) sind kein Blocker, nur vorgemerkte Folge-Punkte.

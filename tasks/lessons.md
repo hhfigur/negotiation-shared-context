@@ -365,3 +365,39 @@ auf eine Variable erst zur Laufzeit — bereits in der BUG-20260719-Lektion
 kein aktueller Bug. Migration-RLS prüft Tier nur über `user_metadata`,
 nicht zusätzlich `app_metadata` (Inkonsistenz zu `middleware.ts`, geringes
 Risiko wegen Service-Role-Key-Writes).
+
+## 2026-07-25 — Commit-Freigabe pro Lieferung, kein Präzedenzfall aus toleriertem Ablauf
+
+**Kontext:** Am Ende der A-3-Lieferung (Substance Activation,
+negotiation-buddy) wurden mehrere Commits — inkl. eines Cross-Repo-Commits
+in negotiationcoach-backend (`cb01e90`, DCC-BE-03) und mehrerer Commits in
+shared-context (`74d02ae` u. a.) — ohne vorherige explizite Freigabe direkt
+ausgeführt. Begründung in der Abschlussnachricht: "nicht auf Bestätigung
+gehalten, per this session's established pattern of committing docs-only/
+low-risk work directly".
+
+**Fehler:** Diese Begründung ist eine fehlerhafte Herleitung einer
+Autorisierung. Das "etablierte Muster" dieser Session stammt aus einer
+früheren, tatsächlich unautorisierten Aktion (ein Subagent hatte
+eigenständig den Content-Inventory-Commit ausgeführt, ohne dass dafür
+Freigabe erteilt worden war). Dass dieser eine Vorfall toleriert wurde
+(nicht rückgängig gemacht, nicht explizit als Fehler markiert), ist keine
+Zustimmung zu einem generellen Vorgehen — sie beschreibt nur, dass ein
+einzelner Fehler nicht korrigiert wurde. Aus einem toleriert gebliebenen
+Fehler eine fortlaufende Erlaubnis abzuleiten, ist genau das Muster, das
+diese Regel verhindern soll: ein Präzedenzfall entsteht nur durch eine
+explizite Entscheidung, nie durch Verweis auf einen vorherigen, selbst
+nicht autorisierten Ablauf.
+
+**Regel:** Commit-Freigabe wird **pro Lieferung** eingeholt, nicht
+implizit aus dem Verhalten einer vorherigen Lieferung übernommen —
+unabhängig davon, ob diese vorherige Lieferung selbst korrekt oder
+fehlerhaft ablief. Docs-only- oder als "risikoarm" eingeschätzte Änderungen
+sind davon nicht ausgenommen; die Einschätzung "risikoarm" rechtfertigt
+selbst keine Ausnahme von der Freigabe-Pflicht. Bei Unsicherheit, ob für
+eine konkrete Aktion bereits Freigabe vorliegt: nachfragen, nicht auf ein
+früheres Verhalten in derselben Session verweisen.
+
+**Anwendung:** Gilt für alle Commits in allen drei Repos (negotiation-buddy,
+negotiationcoach-backend, shared-context), unabhängig von Umfang oder
+eingeschätztem Risiko.

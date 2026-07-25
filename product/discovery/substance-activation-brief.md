@@ -573,3 +573,189 @@ markiert und ausdrücklich nicht in dieser Klammer gelöst:
 
 **STOP. Warte auf GO / HOLD / SPLIT / BACK TO DOCS.**
 Kein Code, keine Migration, keine Prompt-Änderung ohne GO.
+
+---
+
+## Addendum 2026-07-25 — A-5: Tier-Zugang Product Owner (bewusste Ausnahme)
+
+**Status:** Umgesetzt — Diagnose (Phase 1), minimale Datenänderung (Phase 2,
+nach Freigabe), Live-Verifikation (Phase 3), Dokumentation (Phase 4).
+**Rolle:** Diagnose + minimale Datenänderung, negotiationcoach-backend
+(Analyse) + Supabase MCP (`gpllrgkuozytyrmpfwbb`). Kein Schema-Eingriff,
+kein Trigger-Umbau, keine Migration.
+**Klassifikation je Aussage:** Observed | Inferred | Missing | Proposed.
+
+### Phase 1 — Diagnose (vollständig, vor jeder Änderung)
+
+Drei getrennte Tier-Gates bestätigt (Observed, Code-Lesung):
+
+| Gate | Quelle | Feld |
+|---|---|---|
+| Backend Express (`requireTier`, `src/api/middleware.ts:100-108`) | JWT-Claims | `auth.users.raw_user_meta_data.tier` (Fallback `raw_app_meta_data.tier`) |
+| Frontend (`OpponentSimulator.tsx`, `WhatIfSimulator.tsx`) | `localStorage`, befüllt aus DB in `Index.tsx`/`Profile.tsx` | `public.user_profiles.subscription_tier` |
+| Edge Function (`chat`, `generate-plan`) | Live-Query per JWT-User-ID, serverseitig | `public.user_profiles.persona_type` (`pro→profi`) |
+
+Die 2026-04 vermutete Doppelstruktur besteht strukturell weiterhin (drei
+Felder, zwei Tabellen) — die HIGH-03-Konsolidierung betraf die
+Auflösungslogik, nicht die Datenkonsistenz zwischen den Feldern selbst.
+
+**Ist-Zustand (Observed, `execute_sql` gegen `gpllrgkuozytyrmpfwbb`):**
+
+Product Owner (`hhfigur@gmx.net`, `02b07a8a-b392-498c-8c8b-c3838a85a3ec`) —
+**alle drei Felder bereits korrekt, keine Änderung nötig:**
+`auth.users.raw_user_meta_data.tier = "profi"`,
+`user_profiles.subscription_tier = "profi"`,
+`user_profiles.persona_type = "pro"`.
+
+`verify-harness@internal.test` (`878c7ac6-...`) — **echte, live bestätigte
+Divergenz vor der Änderung:** `auth_tier = "kmu"`,
+`subscription_tier = "free"`, `persona_type = "pro"` (→profi). Eingefrorener
+RED-Zustand aus der ursprünglichen BUG-20260719-Reproduktion
+(`docs/delivery/bugs/BUG-20260719-signup-trigger-tier-mismatch.md:29-32`) —
+der Trigger-Fix korrigierte nur künftige Signups, nicht diese bereits
+bestehende Zeile.
+
+**Neuer Fund (nicht vorher dokumentiert):** `verify-harness-profi@internal.test`
+(`0cad139c-...`, dediziert für profi-gated Endpoint-Tests seit NC-L3-SIM
+Phase 3) hat `auth_tier = "profi"` korrekt gesetzt, aber
+`persona_type = "private"` und `subscription_tier = "free"` — deckt also
+nur das Backend-Express-Gate ab, nicht das Frontend- oder EF-Gate. Ein
+UI-Test mit diesem Account hätte die "Profi-Funktion"-Sperrseite gezeigt,
+obwohl die API selbst korrekt profi-gated Endpoints bedient. **Nicht Teil
+der erteilten Freigabe (2.2 galt nur für `verify-harness@internal.test`),
+daher nicht verändert — als offener Folgepunkt vermerkt.**
+
+### Phase 2 — Umgesetzte Änderung (nach Freigabe)
+
+**2.1 (Product Owner):** No-Op, wie in Phase 1 festgestellt — keine Zeile
+verändert.
+
+**2.2 (verify-harness@internal.test), nach expliziter Freigabe:**
+```sql
+UPDATE public.user_profiles SET subscription_tier = 'profi'
+  WHERE user_id = '878c7ac6-edf6-482b-b49c-e971dce57306';
+UPDATE auth.users SET raw_user_meta_data = raw_user_meta_data || '{"tier":"profi"}'::jsonb
+  WHERE id = '878c7ac6-edf6-482b-b49c-e971dce57306';
+```
+Beide per `execute_sql` ausgeführt, `RETURNING` bestätigt: alle drei Felder
+jetzt `profi`/`pro`. Kein Trigger, keine Migration, kein Schema-Eingriff.
+Nur dieser eine, namentlich benannte Account betroffen (WHERE-Klausel auf
+exakte UUID).
+
+**Prozess-Lücke, transparent vermerkt (Missing):** Der volle
+Vorher-Zustand von `auth.users.raw_user_meta_data` wurde vor dem Update
+nicht vollständig erfasst (nur der `tier`-Wert war bekannt). Der
+`jsonb ||`-Merge-Operator überschreibt ausschließlich kollidierende Keys
+und löscht nachweislich keine anderen — das Ergebnis
+(`{"tier":"profi","email_verified":true}`) legt nahe, dass dieser
+programmatisch angelegte Test-Account nie mehr Keys besaß, ist aber nicht
+durch einen echten Vorher-Snapshot belegt. Kein Datenverlust zu erwarten,
+aber für künftige Datenänderungen an `auth.users`: **vor jedem UPDATE den
+vollständigen Ist-Zustand per SELECT sichern**, nicht nur das eine
+relevante Feld.
+
+### Phase 3 — Verifikation
+
+**3.1 — curl gegen profi-gated Endpoint:** `POST /api/simulate/start` mit
+JWT für `verify-harness@internal.test` (per `scripts/lib-jwt.sh`,
+`fetch_verify_harness_jwt`) → `HTTP/1.1 201 Created`, echte
+`clarifying_questions` zurückgegeben. **Hinweis zur Account-Wahl:** Phase
+3 nutzt `verify-harness@internal.test` (jetzt profi-aligned), nicht den
+Product-Owner-Account selbst — für Letzteren liegt kein Passwort/keine
+Session vor, ein Login als echter Mensch ohne dessen Zugangsdaten wäre ein
+Grenzübertritt, kein technisches Problem. Phase 1s SQL-Evidenz bleibt der
+maßgebliche Beleg für den Product-Owner-Account selbst.
+
+**3.2/3.3 — Headless-Chrome, vollständiger Simulationsdurchlauf + DOM-Nachweis:**
+Playwright gegen System-Chrome (`/Applications/Google Chrome.app`,
+headless), echter Login als `verify-harness@internal.test` über die
+tatsächliche `/auth`-Seite, `AnalysisContext`-`localStorage` mit einem
+echten, per `/api/analyze` erzeugten Analyseergebnis geprimt (kein
+fabriziertes Fixture), Navigation zu `/app/opponent`, `Simulation starten`,
+5 echte Turns (inkl. Intake-Antwort), `Verhandlung beenden`,
+`Auswerten` — Debrief nach ~22s (echter LLM-Call) gerendert.
+
+**DOM-Textauszug, wörtlich (Auswertungs-Phase, vollständig erfasst):**
+```
+04 · AUSWERTUNG                                    KEIN DEAL ERZIELT
+GESAMTEINSCHÄTZUNG
+4.928,2 € unter dem rechnerisch fairen Ausgleichspunkt (Nash-Lösung). Ihr
+Ergebnis liegt über dem Median (P50) und unter den besten 10 % (P90) der
+simulierten Verhandlungsverläufe (Monte-Carlo-Simulation).
+ENDANGEBOT: 64.000 €   GESAMT-SCORE: 52 / 100   ZOPA · PERZENTIL: 50 %
+EIGENES ZUGESTÄNDNIS: 0 %   GEGNER · ZUGESTÄNDNIS: 0 %
+Ihr Ergebnis liegt bei 50 % der Spanne zwischen dem Minimum und Maximum
+des Verhandlungsspielraums (ZOPA).
+AUFGEDECKT — ECHTE GEGNER-WERTE
+GEGNER · ECHTES MINIMUM: 65.000 €   GEGNER · ECHTES ZIEL: 62.000 €
+```
+(Taktik-Listen — GUT GEMACHT / VERPASST / GEGNERISCHE TAKTIKEN / FEHLER /
+EMPFEHLUNGEN — ebenfalls vollständig gerendert, in dieser Zusammenfassung
+aus Platzgründen nicht zitiert; alle fünf Listen enthalten mehrere reale,
+konversationsbezogene Einträge, keine Platzhalter.)
+
+**Damit erbracht — AC-2 (A-3) und Sprachvorlage (A-2):** Drei der vier in
+Task 3 (A-3) genannten Zielfelder sind wörtlich im DOM bestätigt:
+`final_vs_nash_distance`+`_direction` (Nash-Satz), `vs_monte_carlo_p50`+`_p90`
+(Monte-Carlo-Satz), `final_vs_zopa_percentile` (ZOPA-Satz). Terminologie
+entspricht exakt P-1 (Fachbegriff + Klammer-Erklärung, z. B.
+"Nash-Lösung", "ZOPA", "Monte-Carlo-Simulation") — das ist die reale
+Sprachvorlage für A-2, nicht mehr nur die illustrative Beispielformel aus
+dem ursprünglichen Task-3-Brief.
+
+**Vierte Feldgruppe — `concession_timeline` — real leer, kein neuer Bug:**
+Die Liste erschien in diesem Lauf nicht (0 %/0 % bei beiden
+Zugeständnis-Metriken). Das ist die bereits in A-3s Whole-Branch-Review
+dokumentierte, aus dem Backend stammende Eigenheit
+(`debriefEngine.ts`/`computeConcessionTimeline` — braucht mindestens zwei
+distinkte erkannte Angebote pro Seite; das Gespräch dieses Laufs hat das
+nicht in der erwarteten Form geliefert) — kein neuer Fund, sondern die
+erste reale Beobachtung eines bereits bekannten, akzeptierten
+Backend-Verhaltens in einem echten Durchlauf.
+
+**Screenshot:** vollflächige Aufnahme der Auswertungs-Phase gesichert
+(lokal, nicht Teil dieses Commits — Bildschirmfoto bestätigt DOM-Textauszug
+1:1, keine Abweichung zwischen visueller Darstellung und extrahiertem Text).
+
+### Phase 4 — Dokumentation
+
+**4.1 — Bekannte Ausnahme.** Analog zum bestehenden Muster für
+`verify-harness@internal.test`
+(`docs/features/loop-coding-integration.md` Abschnitt 9, "Als dokumentierte
+Ausnahme vertretbar"): Der Product-Owner-Account `hhfigur@gmx.net` hat
+`tier='profi'` auf allen drei Gates, gesetzt außerhalb des regulären
+Stripe-Wegs (der nicht existiert — AR-032 weiterhin Paused). Dies ist
+**keine neue Ausnahme durch diese Lieferung** — die Felder standen bereits
+so (Phase 1, No-Op bestätigt); diese Lieferung dokumentiert den
+Bestandszustand erstmals explizit. Zusätzlich: `verify-harness@internal.test`
+wurde in Phase 2.2 auf `profi` auf allen drei Gates angeglichen, um
+profi-gated Endpunkte (`/api/simulate/*`, OpponentSimulator-UI) testbar zu
+machen, ohne den dedizierten `verify-harness-profi@internal.test`-Account
+anzufassen.
+
+**4.2 — Ausdrücklicher Rücknahme-Vermerk.** Beide Ausnahmen (Product-Owner-
+Account UND `verify-harness@internal.test`-Angleichung) sind **vor GA oder
+vor Aktivierung eines Bezahlmodells (Stripe go-live, AR-032) zurückzunehmen**
+bzw. durch den dann realen, regulären Tier-Zuweisungsweg zu ersetzen. Bis
+dahin gilt: manuell gesetzter `tier='profi'` auf einem einzelnen,
+namentlich benannten internen Account ist eine Übergangslösung, kein
+Präzedenzfall für weitere Accounts.
+
+**Offener Folgepunkt (nicht in dieser Lieferung behoben):**
+`verify-harness-profi@internal.test` hat dieselbe Art von Cross-Gate-
+Divergenz wie `verify-harness@internal.test` vor Phase 2.2 (Backend-Gate
+korrekt, Frontend-/EF-Gate nicht) — Empfehlung: bei Bedarf (sobald ein
+UI-Test mit diesem speziellen Account nötig wird) per separater Freigabe
+angleichen, analog zu Phase 2.2 dieses Addendums.
+
+---
+
+## Lessons — separater, thematisch unabhängiger Eintrag
+
+Siehe `shared-context/tasks/lessons.md`, Eintrag 2026-07-25
+"Commit-Freigabe pro Lieferung, kein Präzedenzfall aus toleriertem Ablauf" —
+korrigiert die in der A-3-Lieferung (Abschlussnachricht) verwendete
+Begründung "committet ... per this session's established pattern" als
+fehlerhafte Herleitung einer Autorisierung aus einem früheren,
+unautorisierten Subagent-Commit (Content Inventory), nicht aus dieser
+Lieferung selbst.

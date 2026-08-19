@@ -39,9 +39,9 @@ What the Delivery Controller must know before the first Wave 2 session.
 
 | Repo | Path | Role |
 |------|------|------|
-| `negotiation-buddy` | `/Users/maikfigur/app-workspace/negotiation-buddy/` | React SPA + Supabase Edge Functions (Lovable-managed) |
-| `negotiationcoach-backend` | `/Users/maikfigur/app-workspace/negotiationcoach-backend/` | Railway Express API, Layer 1/2 algorithms |
-| `shared-context` | `/Users/maikfigur/app-workspace/shared-context/` | Docs only — this repo |
+| `negotiation-buddy` | `/Volumes/MF_extern/app-workspace/negotiation-buddy/` | React SPA + Supabase Edge Functions (Lovable-managed) |
+| `negotiationcoach-backend` | `/Volumes/MF_extern/app-workspace/negotiationcoach-backend/` | Railway Express API, Layer 1/2 algorithms |
+| `shared-context` | `/Volumes/MF_extern/app-workspace/shared-context/` | Docs only — this repo |
 
 **Auth model:**
 - Supabase issues JWTs on login

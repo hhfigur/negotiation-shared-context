@@ -81,9 +81,9 @@ Full details: `docs/audits/current-state-report.md`
 
 | Repo | Path | Role |
 |------|------|------|
-| Frontend | `/Users/maikfigur/app-workspace/negotiation-buddy/` | React SPA, Supabase Edge Functions |
-| Backend | `/Users/maikfigur/app-workspace/negotiationcoach-backend/` | Express Backend (Render.com), Layer 1/2 algorithms |
-| Shared context | `/Users/maikfigur/app-workspace/shared-context/` | This repo — documentation only |
+| Frontend | `/Volumes/MF_extern/app-workspace/negotiation-buddy/` | React SPA, Supabase Edge Functions |
+| Backend | `/Volumes/MF_extern/app-workspace/negotiationcoach-backend/` | Express Backend (Render.com), Layer 1/2 algorithms |
+| Shared context | `/Volumes/MF_extern/app-workspace/shared-context/` | This repo — documentation only |
 
 ---
 

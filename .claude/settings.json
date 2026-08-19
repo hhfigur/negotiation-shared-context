@@ -54,7 +54,7 @@
       "Read(~/app-workspace/**/*.pem)"
     ],
     "additionalDirectories": [
-      "/Users/maikfigur/app-workspace/shared-context/.claude/skills"
+      "/Volumes/MF_extern/app-workspace/shared-context/.claude/skills"
     ]
   }
 }

@@ -51,12 +51,12 @@ NegotiationCoach AI is a React SPA (`negotiation-buddy`) backed by two services:
 |----|----------|---------|
 | CRIT-01 | Critical | Layer 1 algorithms duplicated in Backend Layer 1 AND Supabase Edge Function with incompatible schemas |
 | CRIT-02 | Critical | Team admin check is frontend React code only — no server-side enforcement verified |
-| CRIT-03 | Critical | backend authMiddleware never returns 401 — all endpoints publicly accessible |
+| ~~CRIT-03~~ | ~~Critical~~ | ~~backend authMiddleware never returns 401~~ — **RESOLVED (verified 2026-09-04)**: current `negotiationcoach-backend/src/api/middleware.ts` returns 401 via `AuthError` when a required token is missing/invalid (code comment cites "RFB-001 — 401 enforced"). |
 | HIGH-01 | High | Frontend writes negotiation_sessions, session_messages, teams directly (no API mediation) |
 | HIGH-02 | High | Message saves are fire-and-forget — silent data loss possible |
 | HIGH-03 | High | Three incompatible tier systems: backend tier, Supabase persona_type, Edge Function hardcoded "free" |
 | MED-01 | Medium | modelRouter bypassed in /api/chat and /api/plan — cost optimization and tier routing absent |
-| MED-02 | Medium | CORS wildcard header overrides allowlist in Express backend |
+| ~~MED-02~~ | ~~Medium~~ | ~~CORS wildcard header overrides allowlist~~ — **RESOLVED (verified 2026-09-04)**: current `negotiationcoach-backend/src/api/routes.ts` uses a proper origin-callback allowlist (`cors({ origin: (origin, callback) => ... })`), no wildcard header present. |
 
 Full details: `docs/audits/current-state-report.md`
 

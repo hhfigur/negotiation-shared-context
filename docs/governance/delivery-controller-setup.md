@@ -1,6 +1,12 @@
 # Delivery Controller — Setup Package
 
-> **Status:** Active | **Type:** Governance | **Created:** 2026-04-16
+> **SUPERSEDE_LATER (2026-09-04):** repositioned by the repo-native `controllers/DEVELOPMENT_CONTROLLER.md`
+> installed via the AI-native SDLC migration (owner-approved, `sdlc/migration/20260904T132634Z/10-conflicts-and-decisions.md`).
+> This document also describes a superseded world-state (Railway hosting, ADR-003-active
+> two-provider AI split) — do not paste it into a fresh Claude.ai Project without first reviewing
+> `controllers/DEVELOPMENT_CONTROLLER.md`. Not deleted; preserved for historical reference.
+>
+> **Status:** Active (historical) | **Type:** Governance | **Created:** 2026-04-16
 > **Path:** `shared-context/docs/governance/delivery-controller-setup.md`
 
 **Purpose:** Complete setup package for a new Claude.ai Delivery Controller project. Used when handing off from Wave 1 closure to Wave 2 execution.

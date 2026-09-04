@@ -1,0 +1,8 @@
+{
+  "name": "negotiation-ai-sdlc",
+  "description": "Artifact-driven SDLC Skills and independent read-only agents for Negotiation AI across Shared-context, frontend, and backend repositories.",
+  "version": "0.1.0",
+  "author": {
+    "name": "Negotiation AI"
+  }
+}

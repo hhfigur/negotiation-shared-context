@@ -18,7 +18,9 @@ trigger: vor jeder Änderung die shared state, API-Vertrag, DB-Schema oder
 
 Lies:
 - CLAUDE.md (Repo-Mapping + Architekturregeln)
-- docs/contracts/frontend-backend.md — aktuelle API-Verträge und Type-Drift-Register
+- `../NegotiationCoach-backend/docs/api-catalog.md` — kanonische API-Verträge (seit C1, 2026-09-04)
+- `docs/contracts/frontend-backend.md` — Transport-Übersicht und Type-Drift-Register (keine
+  eigenen Endpunkt-Contracts mehr)
 - Relevante ADRs in docs/decision-log/ die diesen Layer betreffen
 
 Notiere:
@@ -34,7 +36,7 @@ Bewerte für jede Dimension:
 | negotiation-buddy (Frontend) | Ja / Nein / Unklar | ... | Niedrig / Mittel / Hoch |
 | negotiationcoach-backend (Backend) | Ja / Nein / Unklar | ... | Niedrig / Mittel / Hoch |
 | shared-context (Docs) | Ja / Nein / Unklar | ... | Niedrig / Mittel / Hoch |
-| API-Vertrag (frontend-backend.md) | Ja / Nein / Unklar | ... | Niedrig / Mittel / Hoch |
+| API-Vertrag (api-catalog.md, kanonisch) | Ja / Nein / Unklar | ... | Niedrig / Mittel / Hoch |
 | Supabase Schema / RLS / Migrations | Ja / Nein / Unklar | ... | Niedrig / Mittel / Hoch |
 | Tier-Gates | Ja / Nein / Unklar | ... | Niedrig / Mittel / Hoch |
 | Layer-Abhängigkeit (0→1→2→3) | Ja / Nein / Unklar | ... | Niedrig / Mittel / Hoch |

@@ -1,0 +1,56 @@
+schema_version: 1
+change_id: "{{CHANGE_ID}}"
+title: "{{TITLE}}"
+status: active
+created: "{{DATE}}"
+updated: "{{DATE}}"
+artifacts:
+  intent: intent.md
+  specification: null
+  plan: null
+  debug_evidence: null
+  verification: null
+  review: null
+  release: null
+  outcome: null
+  incident: null
+repositories:
+  shared_context:
+    branch: null
+    commits: []
+    pull_requests: []
+  frontend:
+    logical_name: negotiation-Buddy
+    branch: null
+    commits: []
+    pull_requests: []
+  backend:
+    logical_name: NegotiationCoach-backend
+    branch: null
+    commits: []
+    pull_requests: []
+requirements: []
+# Example entry:
+# - id: FR-001
+#   acceptance_criteria: [AC-001]
+#   plan_steps: [FE-01, BE-01]
+#   implementation:
+#     - repository: frontend
+#       paths: [src/example.ts]
+#   tests:
+#     - repository: frontend
+#       path: src/example.test.ts
+#       command: npm test -- example
+#   evidence: [E-001]
+evidence: []
+# Example entry:
+# - id: E-001
+#   type: test
+#   path_or_url: evidence/test-output.txt
+#   produced_at: 2026-09-02T00:00:00Z
+#   producer: verifier
+#   result: pass
+risks: []
+findings: []
+releases: []
+outcomes: []

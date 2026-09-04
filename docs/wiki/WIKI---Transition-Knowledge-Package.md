@@ -1,5 +1,13 @@
 # WIKI — Transition Knowledge Package
 
+> **STALE SNAPSHOT (flagged 2026-09-04):** part of the April-2026 wiki bundle, not updated since.
+> Describes a superseded world-state (Railway hosting, Lovable/Gemini two-provider AI split) —
+> superseded by [ADR-012](../docs/decision-log/ADR-012-ai-provider-anthropic-only.md) (2026-07-18)
+> and `MEMORY.md` (Render.com). Also references the now-confirmed-wrong Supabase project ID
+> `ujnyioggxipvuxxxcivr` (see `docs/infrastructure/supabase-instances.md`, corrected 2026-09-04) —
+> that reference here is a historical record of a past (itself later found incorrect) action, left
+> as-is. Not rewritten line-by-line (out of this pass's scope); treat as historical.
+
 **Klassifikation:** Observed | Inferred | Missing | Proposed
 **Erstellt:** 2026-04-17
 **Ablageort:** `shared-context/docs/wiki/`

@@ -1,5 +1,10 @@
 # README-AUDIT.md
 
+> **SUPERSEDE_LATER (2026-09-04):** near-duplicate of `docs/governance/GOV-01-audit-runbook.md`,
+> itself repositioned by the repo-native `controllers/AUDIT_REFACTORING_CONTROLLER.md` (owner-approved,
+> `sdlc/migration/20260904T132634Z/10-conflicts-and-decisions.md`). Not deleted; preserved for
+> historical reference.
+
 ## Audit Runbook für [APP_NAME]
 
 ### Ziel

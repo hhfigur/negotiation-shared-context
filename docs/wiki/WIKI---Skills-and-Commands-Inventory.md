@@ -75,9 +75,9 @@ und `docs/features/pdf-export.md` fehlen. Aus ENGB01 abzuleiten in Wave-2-Step-8
 | ID | Prompt-ID | Trigger | Tool | Status |
 |---|---|---|---|---|
 | EXE-01 | Template 1 / CC-RP-01 | `PLAN ONLY. DO NOT CHANGE CODE YET.` | Claude Code Plan Mode | Observed — kanonisch |
-| EXE-02 | Template 2 / CC-RI-01 | `IMPLEMENT THE APPROVED PLAN ONLY.` | Claude Code / Lovable | Observed — kanonisch |
-| EXE-06 | LOV-01 | Lovable Knowledge Sync | Lovable Plan Mode | Observed — aktiv, recurring |
-| EXE-07 | LOV-02 | Risikoreiche Änderung vor Coding | Lovable Plan Mode | Observed — aktiv, recurring |
+| EXE-02 | Template 2 / CC-RI-01 | `IMPLEMENT THE APPROVED PLAN ONLY.` | Claude Code (Lovable historical — no longer used for active development, 2026-09-04) | Observed — kanonisch |
+| EXE-06 | LOV-01 | Lovable Knowledge Sync | Lovable Plan Mode | **RETIRED (2026-09-04)** — Lovable no longer used for active development; ~~Observed — aktiv, recurring~~ |
+| EXE-07 | LOV-02 | Risikoreiche Änderung vor Coding | Lovable Plan Mode | **RETIRED (2026-09-04)** — Lovable no longer used for active development; ~~Observed — aktiv, recurring~~ |
 
 **Kanonische Quelle:** `docs/templates/claude-code-prompt-templates.md`
 (Template 1 + 2). `ALL-PROMPTS-AUDIT.md` enthält CC-RP-01 / CC-RI-01 als
@@ -186,7 +186,7 @@ Beide bleiben erhalten — unterschiedliche Phasen, keine Redundanz.
 | GAP-03 | `layer2-diagnosis-plan.md` fehlt | Mittel | Nach Layer-2-Diagnose-Sprint erstellen |
 | GAP-04 | `ALL-PROMPTS-DELIVERY.md` fehlt | Niedrig | Nach Wave 2: Delivery-Prompts aus `ALL-PROMPTS-AUDIT.md` separieren |
 | GAP-05 | Repo-Skill-Installation nicht verifiziert | Niedrig | Bei nächster Session `/session-start` aufrufen |
-| GAP-06 | Lovable Project Knowledge Aktualität unbekannt | Mittel | LOV-01 als ersten Lovable-Step Wave 2 ausführen |
+| GAP-06 | ~~Lovable Project Knowledge Aktualität unbekannt~~ — **moot (2026-09-04)**: Lovable is no longer used for active development, so LOV-01/LOV-02 sync steps no longer apply | ~~Mittel~~ — n/a | ~~LOV-01 als ersten Lovable-Step Wave 2 ausführen~~ |
 
 ---
 

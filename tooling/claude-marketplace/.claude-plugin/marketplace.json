@@ -1,0 +1,14 @@
+{
+  "name": "negotiation-ai-local",
+  "owner": {
+    "name": "Negotiation AI"
+  },
+  "plugins": [
+    {
+      "name": "negotiation-ai-sdlc",
+      "source": "./plugins/negotiation-ai-sdlc",
+      "description": "Artifact-driven lifecycle Skills and read-only assurance agents for the Negotiation AI repositories.",
+      "version": "0.1.0"
+    }
+  ]
+}

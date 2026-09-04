@@ -1,4 +1,11 @@
 WIKI — Repo Profile: negotiationcoach-backend (Backend & Engine)
+
+> **STALE SNAPSHOT (flagged 2026-09-04):** part of the April-2026 wiki bundle, not updated since.
+> Describes a superseded world-state (Railway hosting, Lovable/Gemini two-provider AI split) —
+> superseded by ADR-012 (../docs/decision-log/ADR-012-ai-provider-anthropic-only.md, 2026-07-18)
+> and MEMORY.md (Render.com). Not rewritten line-by-line (out of this pass's scope); treat as
+> historical.
+
 Klassifikation: Observed | Inferred | Missing | Proposed Erstellt: 2026-04-17 | Ablageort: shared-context/docs/wiki/ Basis: Audit-Dokumente (current-state-report.md, audit-findings.md, refactor-backlog.md), ADRs 001–007, PDFs (ENGB01, IMP01–04, IMP03), initial-setup-baseline.md Korrespondierende Seite: WIKI — Repo Profile: negotiation-buddy (Frontend)
 
 1. Zweck und Scope

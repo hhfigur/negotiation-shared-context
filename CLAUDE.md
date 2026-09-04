@@ -63,9 +63,9 @@ Skills laufen immer im Kontext des aktiven TARGET REPO:
 | `/session-start` | Lädt shared-context-Kontext + TARGET REPO CLAUDE.md + AGENTS.md  |
 | `/session-end`   | Am Ende jeder Session — MEMORY.md, Lessons-Check, Session-Dump   |
 | `/impact-check`  | Prüft Auswirkungen auf ALLE drei Repos, nicht nur TARGET REPO     |
-| `/contract-check`| Prüft shared-context/docs/contracts/ gegen TARGET REPO           |
+| `/contract-check`| Prüft TARGET REPO gegen die kanonische API-Contract-Quelle (`NegotiationCoach-backend/docs/api-catalog.md`, seit C1 2026-09-04 — shared-context/docs/contracts/ ist nur noch ein Verweis, keine eigene Contract-Kopie) |
 | `/cleanup-audit` | Read-only — läuft im TARGET REPO, schreibt nach shared-context/  |
-| `/close-task`    | Commit-Verifikation im TARGET REPO + Docs-Update in shared-context|
+| `/close-task`    | **LEGACY (2026-09-04)** — ersetzt durch `/negotiation-ai-sdlc:close-change` für neue SDLC-verwaltete Changes; weiterhin nutzbar für bereits abgeschlossene, nicht-SDLC-verwaltete Aufgaben. Commit-Verifikation im TARGET REPO + Docs-Update in shared-context|
 
 ### Architekturregeln (nicht verhandelbar, immer aktiv)
 

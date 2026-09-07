@@ -1,5 +1,6 @@
 {
   "name": "negotiation-ai-local",
+  "description": "Local marketplace distributing the negotiation-ai-sdlc lifecycle plugin across the Negotiation AI frontend, backend, and Shared-context workspaces.",
   "owner": {
     "name": "Negotiation AI"
   },
@@ -8,7 +9,7 @@
       "name": "negotiation-ai-sdlc",
       "source": "./plugins/negotiation-ai-sdlc",
       "description": "Artifact-driven lifecycle Skills and read-only assurance agents for the Negotiation AI repositories.",
-      "version": "0.1.0"
+      "version": "0.1.1"
     }
   ]
 }

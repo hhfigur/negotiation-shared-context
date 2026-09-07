@@ -10,6 +10,7 @@ updated: "{{DATE}}"
 root_cause_status: unconfirmed
 confidence: low
 fix_authorized: false
+diagnosis_mode: full
 ---
 
 # Debug Evidence: {{TITLE}}
@@ -46,7 +47,30 @@ fix_authorized: false
 |---|---|---|---|
 | `<TIME>` | `<EVENT>` | `<REFERENCE>` | `<DETAILS>` |
 
+## Diagnosis mode
+
+- Mode: `<FULL_OR_DETERMINISTIC_FAST_PATH>`
+- If `deterministic_fast_path`: this section replaces full hypothesis testing per
+  `GATE_MODEL.md`'s "Deterministic-remediation fast path." State explicitly which of the six
+  required criteria are satisfied and cite the evidence for each; do not merely assert the
+  exception.
+
+| Criterion | Satisfied | Evidence |
+|---|---|---|
+| Exact defect already independently evidenced | `<YES_NO>` | `<REFERENCE>` |
+| Root cause is deterministic (not probabilistic/environment-dependent) | `<YES_NO>` | `<REFERENCE>` |
+| No competing plausible root-cause hypothesis remains | `<YES_NO>` | `<REFERENCE>` |
+| Affected artifact/location identified precisely | `<YES_NO>` | `<REFERENCE>` |
+| Remediation is mechanical/minimal, no design decision required | `<YES_NO>` | `<REFERENCE>` |
+| Owner explicitly authorized skipping full diagnosis, with rationale | `<YES_NO>` | `<REFERENCE>` |
+
+Leave this table's rows as `<...>` placeholders and proceed directly to "Competing hypotheses"
+when `Mode: full`.
+
 ## Competing hypotheses
+
+Complete this section when `Mode: full`. When `Mode: deterministic_fast_path`, write "Not
+applicable — see Diagnosis mode section above" instead of a hypothesis table.
 
 | ID | Hypothesis | Supporting evidence | Contradicting evidence | Discriminating test | Result | Status |
 |---|---|---|---|---|---|---|
@@ -87,8 +111,10 @@ Describe the chain from triggering condition through faulty behavior to observed
 ## Diagnosis gate
 
 - [ ] Symptom and expected behavior are precise.
-- [ ] Reproduction was attempted and evidence is attached.
-- [ ] At least one competing hypothesis was evaluated.
+- [ ] Reproduction was attempted and evidence is attached (or, for `deterministic_fast_path`, the
+      cited independent evidence stands in for a fresh reproduction attempt).
+- [ ] At least one competing hypothesis was evaluated (or, for `deterministic_fast_path`, all six
+      criteria in the Diagnosis mode table are satisfied and evidenced).
 - [ ] Root-cause conclusion is supported or explicitly remains unconfirmed.
 - [ ] Regression-test strategy can distinguish broken from fixed behavior.
 - [ ] Fix boundary and residual uncertainty are visible.

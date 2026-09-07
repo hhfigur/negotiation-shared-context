@@ -16,6 +16,25 @@ Pass only when the specification is accepted; current-state evidence supports th
 
 For defects, pass only when reproduction was attempted, raw evidence exists, competing hypotheses were evaluated, the root-cause conclusion is supported or uncertainty is explicit, a discriminating regression-test strategy exists, and `fix_authorized` is true.
 
+### Deterministic-remediation fast path
+
+The competing-hypotheses requirement above may be satisfied by an explicit, evidenced statement
+that no competing hypothesis is credible, instead of a hypothesis table, only when **all** of the
+following hold:
+
+- the exact defect is already independently evidenced (not merely asserted);
+- the root cause is deterministic, not probabilistic or environment-dependent;
+- no competing plausible root-cause hypothesis remains once the evidence is read;
+- the affected artifact or location is identified precisely;
+- the remediation is mechanical and minimal — no architectural or design decision is required;
+- a named owner explicitly authorizes skipping full hypothesis-driven diagnosis, with rationale.
+
+If any one of these is false, use the full diagnosis workflow. The fast path still requires every
+other diagnosis-gate element unchanged: owner authorization, a bounded remediation, evidence,
+traceability, and independent re-verification before disposition becomes `FIXED`. A fast-path
+diagnosis record must state which criteria were satisfied and why, not merely assert the
+exception.
+
 ## Verification gate
 
 Pass only when an independent verifier evaluates the accepted criteria and relevant quality checks against a defined implementation revision and records failures, unavailable checks, and limitations honestly.
@@ -37,3 +56,7 @@ Close only when measurement evidence exists or the record explicitly states why 
 - `blocked` is a valid conclusion and must name the blocker and owner.
 - Never infer acceptance from silence, a chat statement without persistence, or the existence of a file.
 - A material change to an accepted artifact reopens the relevant gate.
+- During Verification, Review, or the diagnosis portion of debugging, the read-only boundary
+  applies to the orchestrating session as well as any delegated agent (`ASSURANCE_BOUNDARY.md`).
+  A stale or inconsistent artifact discovered during one of these stages is recorded as a finding
+  in that stage's own output, never silently corrected in the same turn.

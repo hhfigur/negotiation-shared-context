@@ -16,6 +16,13 @@ At session start, resolve:
 4. Canonical change directory and `traceability.yaml`.
 5. Repository status, branch, HEAD, and uncommitted work.
 6. Relevant root instructions, scoped rules, existing project Skills, and approved policies.
+7. **Lifecycle command availability.** Installing or updating the `negotiation-ai-sdlc` plugin
+   does not hot-load it into an already-running session — registering the marketplace and
+   installing the plugin update on-disk configuration only. Before starting any stage-changing
+   work, confirm the lifecycle Skills actually resolve as live slash commands in *this* session
+   (e.g. via `/skills`). If they do not, the required action is `/reload-plugins` followed by a
+   fresh confirmation — see `tooling/claude-marketplace/README.md`. Do not assume a prior
+   successful install implies current-session availability.
 
 Do not scan the full home directory. If the canonical artifact home is inaccessible, stop stage-changing work and issue a handoff or access-gap record.
 
@@ -125,6 +132,17 @@ For a bug or incident, do not authorize code edits until `debug-evidence.md` rec
 - `fix_authorized: true` with owner and date.
 
 A plausible explanation is not a confirmed root cause.
+
+### Deterministic-remediation fast path
+
+A defect may skip full hypothesis-driven diagnosis only when `debug-evidence.md` records
+`diagnosis_mode: deterministic_fast_path` with all six criteria in `GATE_MODEL.md`'s
+"Deterministic-remediation fast path" satisfied and evidenced — not merely asserted. Default to
+full diagnosis whenever any criterion is uncertain. The fast path still requires owner
+authorization with rationale and date, a bounded remediation, evidence, traceability, and
+independent re-verification before disposition becomes `FIXED`. It exists for cases where the
+defect and its cause are already established by prior independent evidence (e.g. a finding from
+`review-change`) and the fix is mechanical — not for genuine uncertainty.
 
 ## Policy handling
 

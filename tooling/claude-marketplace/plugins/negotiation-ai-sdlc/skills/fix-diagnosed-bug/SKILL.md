@@ -23,12 +23,15 @@ Editing and shell execution are intentionally not pre-authorized by this Skill. 
 Confirm all of the following:
 
 - the bug is associated with one canonical change;
-- reproduction and raw evidence are recorded;
+- reproduction and raw evidence are recorded — for a fast-path diagnosis (`debug-evidence.md`
+  states which deterministic-remediation criteria were satisfied, per `GATE_MODEL.md`), the
+  independent evidence cited there stands in for a fresh reproduction attempt;
 - root-cause conclusion is accepted or a bounded uncertainty decision is explicit;
 - regression-test strategy exists;
 - `fix_authorized: true` has a named owner, date, and rationale;
-- an accepted plan defines the smallest fix boundary, tests, risks, and rollback;
-- requested plan steps belong to the current repository and no blocker remains.
+- `debug-evidence.md`'s own "Fix boundary and authorization" section defines the smallest fix
+  boundary, tests, and non-goals (a separate plan.md is not required for a defect fix);
+- requested fix boundary belongs to the current repository and no blocker remains.
 
 Stop with `BLOCKED` if any condition fails.
 

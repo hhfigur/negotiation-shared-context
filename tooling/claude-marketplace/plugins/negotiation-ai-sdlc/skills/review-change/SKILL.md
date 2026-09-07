@@ -13,10 +13,11 @@ allowed-tools: Read, Grep, Glob, Write, Edit
 1. `${CLAUDE_PLUGIN_ROOT}/references/REPOSITORY_RESOLUTION.md`
 2. `${CLAUDE_PLUGIN_ROOT}/references/ARTIFACT_CONTRACT.md`
 3. `${CLAUDE_PLUGIN_ROOT}/references/GATE_MODEL.md`
-4. `${CLAUDE_PLUGIN_ROOT}/references/POLICY_APPLICATION.md`
-5. `${CLAUDE_PLUGIN_ROOT}/references/EVIDENCE_STANDARD.md`
-6. `${CLAUDE_PLUGIN_ROOT}/references/TRACEABILITY.md`
-7. Accepted artifacts, implementation revision, verification, repository review contract, and applicable approved policies
+4. `${CLAUDE_PLUGIN_ROOT}/references/ASSURANCE_BOUNDARY.md`
+5. `${CLAUDE_PLUGIN_ROOT}/references/POLICY_APPLICATION.md`
+6. `${CLAUDE_PLUGIN_ROOT}/references/EVIDENCE_STANDARD.md`
+7. `${CLAUDE_PLUGIN_ROOT}/references/TRACEABILITY.md`
+8. Accepted artifacts, implementation revision, verification, repository review contract, and applicable approved policies
 
 ## Entry gate
 
@@ -29,9 +30,10 @@ Require an unambiguous implementation target and verification record. A failed o
 3. Invoke relevant read-only policy assessment Skills for security, privacy, architecture, UX, Supabase, and AI quality based on actual scope. Apply only approved policies as mandatory.
 4. Delegate an end-to-end mapping check to `negotiation-ai-sdlc:traceability-auditor`.
 5. Consolidate findings without erasing disagreement or uncertainty. Use stable IDs, severity, evidence, impact, recommendation, disposition, and re-verification need.
-6. Persist results in `review.md`; do not edit implementation or tests during this Skill.
-7. Update finding and review references in `traceability.yaml`.
+6. Persist results in `review.md`. This applies to the orchestrating session, not only any delegated agent (see `ASSURANCE_BOUNDARY.md`): do not edit implementation, tests, or any accepted upstream artifact (`intent.md`, `spec.md`, `plan.md`, `verification.md`) during this Skill.
+7. Update finding and review references in `traceability.yaml` — nothing beyond that.
 8. Return unresolved findings to the Development Controller. A remediation must be independently re-verified before disposition becomes `FIXED`.
+9. If a stale or inconsistent *other* lifecycle artifact is noticed during review (e.g. a disposition in `traceability.yaml` that has drifted from what a prior artifact records), record it as a finding here rather than editing that other artifact in this Skill invocation. Its correction is a separate, subsequently authorized step.
 
 ## Gate rule
 

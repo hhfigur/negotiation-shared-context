@@ -1,12 +1,19 @@
 ---
 name: contract-check
-description: Prüft API-Vertrag zwischen TARGET REPO und shared-context/docs/contracts/.
+description: Prüft API-Vertrag zwischen TARGET REPO und der kanonischen API-Contract-Quelle
+  (NegotiationCoach-backend/docs/api-catalog.md, seit Owner-Entscheidung C1, 2026-09-04).
   Erzwingt Type-Drift-Check und Violation-Scan vor jedem Merge oder Ship.
 trigger: vor Merge oder Ship wenn Änderungen Request/Response-Shapes, Auth-Muster,
   Typen, Endpunkte oder Tier-Gates betreffen
 ---
 
 # Skill: contract-check
+
+> **Korrektur (2026-09-04, C1):** die kanonische API-Contract-Quelle ist seit Owner-Entscheidung
+> `NegotiationCoach-backend/docs/api-catalog.md` — `docs/contracts/frontend-backend.md` in diesem
+> Repo ist nur noch ein Verweis (Transport-Übersicht, Type-Drift-Register, Known-Violations bleiben
+> dort; die vollständigen Endpunkt-Contracts wurden dorthin verschoben). Schritt 1 und Schritt 5
+> unten sind entsprechend angepasst.
 
 ## Eingabe (vom User)
 
@@ -17,12 +24,15 @@ trigger: vor Merge oder Ship wenn Änderungen Request/Response-Shapes, Auth-Must
 ## Schritt 1 — Contracts laden
 
 Lies vollständig:
-- docs/contracts/frontend-backend.md
+- `../NegotiationCoach-backend/docs/api-catalog.md` (kanonische Endpunkt-Contracts, inkl. Backend
+  API Routes und Supabase Edge Function API Routes — seit C1, 2026-09-04)
+- `docs/contracts/frontend-backend.md` (nur noch Transport-Übersicht, Type-Drift-Register Section 4,
+  Known Contract Violations Section 6 — keine eigenen Endpunkt-Contracts mehr)
 
 Notiere:
-- Aktuelle Type-Drift-Register-Einträge (Section 4)
-- Aktuelle Known Contract Violations (Section 6)
-- Betroffene Endpunkte basierend auf geänderten Bereichen
+- Aktuelle Type-Drift-Register-Einträge (frontend-backend.md Section 4)
+- Aktuelle Known Contract Violations (frontend-backend.md Section 6)
+- Betroffene Endpunkte basierend auf geänderten Bereichen (aus api-catalog.md)
 
 ## Schritt 2 — Drift-Prüfung: Typen
 
@@ -34,7 +44,7 @@ grep -r "NegotiationInputs\|ExtractedInputs\|AnalysisResult\|PlanResponse\|ChatM
   src/lib/types.ts src/types/index.ts 2>/dev/null
 ```
 
-Vergleiche gegen docs/contracts/frontend-backend.md:
+Vergleiche gegen `../NegotiationCoach-backend/docs/api-catalog.md`:
 
 | Typ | Frontend-Definition | Backend-Definition | Drift? |
 |---|---|---|---|
@@ -46,7 +56,7 @@ Vergleiche gegen docs/contracts/frontend-backend.md:
 
 Für jeden betroffenen Endpunkt:
 
-| Endpunkt | Contract (frontend-backend.md) | Aktuell im Repo | Abweichung? |
+| Endpunkt | Contract (api-catalog.md) | Aktuell im Repo | Abweichung? |
 |---|---|---|---|
 | POST /api/analyze | Request: NegotiationInputs, Auth: Bearer JWT | ... | OK / DRIFT |
 | POST /api/enrich | Tier-Gate: requireTier('kmu') | ... | OK / DRIFT |
@@ -60,7 +70,7 @@ Auth-Muster prüfen:
 
 Scan auf die bekannten Contract Violations (CON-01 bis CON-06):
 
-| Violation | Status in frontend-backend.md | Durch diese Änderung betroffen? |
+| Violation | Status (frontend-backend.md Section 6) | Durch diese Änderung betroffen? |
 |---|---|---|
 | CON-01 | RESOLVED RFB-009 | Ja / Nein |
 | CON-02 | PARTIAL RESOLVED RFB-007 | Ja / Nein |
@@ -70,26 +80,32 @@ Scan auf die bekannten Contract Violations (CON-01 bis CON-06):
 | CON-06 | Offen | Ja / Nein |
 
 Falls eine Änderung eine bestehende Violation verschlimmert oder neue einführt:
-HOLD — docs/contracts/frontend-backend.md muss zuerst aktualisiert werden.
+HOLD — die kanonische Quelle (`NegotiationCoach-backend/docs/api-catalog.md`) muss zuerst
+aktualisiert werden (Type-Drift/Violations-Kontext bleibt in `docs/contracts/frontend-backend.md`).
 
 STOP — zeige mir Drift-Tabelle und Violations-Scan.
 Warte auf GO / HOLD vom User.
 
-## Schritt 5 — docs/contracts/frontend-backend.md aktualisieren
+## Schritt 5 — Kanonische Quelle aktualisieren
 
 Nur nach GO vom User:
 
-Falls Endpunkte, Typen oder Auth-Muster geändert wurden:
-- Type-Drift-Register aktualisieren
-- Betroffene Endpunkt-Sections aktualisieren
-- Neue oder resolved Violations in Section 6 eintragen
+Falls Endpunkte oder Auth-Muster geändert wurden — **im Backend-Repo**, nicht hier:
+- `../NegotiationCoach-backend/docs/api-catalog.md` — betroffene Endpunkt-Sections aktualisieren
+  (Commit erfolgt im Backend-Repo)
+
+Falls Typen, Type-Drift oder Violations betroffen sind — **in diesem Repo**:
+- Type-Drift-Register (Section 4) und Known Contract Violations (Section 6) in
+  `docs/contracts/frontend-backend.md` aktualisieren — dies ist weiterhin der richtige Ort für
+  diesen Cross-Repo-Audit-Trail, nicht für die Endpunkt-Contracts selbst.
 
 ```bash
+# Nur falls Section 4/6 in diesem Repo geändert wurden:
 git add docs/contracts/frontend-backend.md
-git commit -m "docs(contracts): update frontend-backend contract — [kurze Beschreibung]"
+git commit -m "docs(contracts): update type-drift/violations register — [kurze Beschreibung]"
 ```
 
-STOP — Contract aktualisiert. Zeige Commit-Hash.
+STOP — Contract-Quelle(n) aktualisiert. Zeige Commit-Hash(es) je Repo.
 
 ---
 **OUTPUT-SIGNAL:**

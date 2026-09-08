@@ -1,5 +1,10 @@
 # All Prompts — Audit, Governance, Refactoring
 
+> **SUPERSEDE_LATER (2026-09-04):** repositioned by the repo-native `controllers/AUDIT_REFACTORING_CONTROLLER.md`
+> and the `negotiation-ai-sdlc` plugin's Skills, installed via the AI-native SDLC migration
+> (owner-approved, `sdlc/migration/20260904T132634Z/10-conflicts-and-decisions.md`). Not deleted;
+> preserved for historical reference.
+
 This file consolidates all prompts from the full workflow.
 
 ## How to use this file

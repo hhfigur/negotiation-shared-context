@@ -39,12 +39,17 @@ Full backlog: [../docs/audits/refactor-backlog.md](../docs/audits/refactor-backl
 | [docs/contracts/frontend-backend.md](../docs/contracts/frontend-backend.md) | API contracts, transport table, request/response shapes, type drift |
 | [docs/audits/current-state-report.md](../docs/audits/current-state-report.md) | Full finding registry (CRIT / HIGH / MED / LOW) |
 | [docs/audits/refactor-backlog.md](../docs/audits/refactor-backlog.md) | Refactor item registry with body entries, Summary Index, and dependency graph |
-| [docs/decision-log/ADR-001-system-boundaries.md](../docs/decision-log/ADR-001-system-boundaries.md) | Where code belongs: browser vs Railway vs Supabase |
+| [docs/decision-log/ADR-001-system-boundaries.md](../docs/decision-log/ADR-001-system-boundaries.md) | Where code belongs: browser vs backend vs Supabase |
 | [docs/decision-log/ADR-002-data-ownership.md](../docs/decision-log/ADR-002-data-ownership.md) | Who writes which tables and the write path rules |
-| [docs/decision-log/ADR-003-ai-provider-strategy.md](../docs/decision-log/ADR-003-ai-provider-strategy.md) | Two-provider split: Lovable/Gemini for EFs, Anthropic for Railway |
+| [docs/decision-log/ADR-003-ai-provider-strategy.md](../docs/decision-log/ADR-003-ai-provider-strategy.md) | Two-provider split: Lovable/Gemini for EFs, Anthropic for Railway — **superseded by [ADR-012](../docs/decision-log/ADR-012-ai-provider-anthropic-only.md)** (Anthropic-only, 2026-07-18); kept as historical record, not current fact |
 | [docs/decision-log/ADR-004-chat-path-routing.md](../docs/decision-log/ADR-004-chat-path-routing.md) | Edge Function is canonical chat path for all tiers; tier enforcement inside EF |
-| [docs/decision-log/ADR-005-plan-generation-path.md](../docs/decision-log/ADR-005-plan-generation-path.md) | Railway `/api/plan` is canonical long-term path; `generate-plan` EF is temporary |
-| [docs/decision-log/ADR-006-tier-mapping.md](../docs/decision-log/ADR-006-tier-mapping.md) | `subscription_tier` DB enum migrated to Railway Tier labels (ADR-006 Option A) |
+| [docs/decision-log/ADR-005-plan-generation-path.md](../docs/decision-log/ADR-005-plan-generation-path.md) | Backend `/api/plan` is canonical long-term path; `generate-plan` EF is temporary |
+| [docs/decision-log/ADR-006-tier-mapping.md](../docs/decision-log/ADR-006-tier-mapping.md) | `subscription_tier` DB enum migrated to backend Tier labels (ADR-006 Option A) |
+
+> **Note (2026-09-04):** this index does not list ADR-007 through ADR-012 — it was not kept current
+> despite its "LLM-maintained" self-label. Not backfilled as part of this pass (out of scope: this
+> pass corrects stale Lovable/Railway/Supabase-separateness statements, not general index
+> completeness). See `../docs/decision-log/` directly for the full, current ADR list.
 
 ---
 

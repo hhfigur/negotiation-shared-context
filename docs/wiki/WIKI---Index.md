@@ -1,5 +1,13 @@
 # WIKI — Index: NegotiationCoach AI
 
+> **STALE SNAPSHOT (flagged 2026-09-04):** part of the April-2026 wiki bundle, not updated since.
+> Describes a superseded world-state (Railway hosting, Lovable/Gemini two-provider AI split) —
+> superseded by [ADR-012](../docs/decision-log/ADR-012-ai-provider-anthropic-only.md) (2026-07-18)
+> and `MEMORY.md` (Render.com). Not rewritten line-by-line (out of this pass's scope); treat as
+> historical. Also contains a pre-existing broken link to
+> `WIKI---Repo-Profile-negotiation-buddy.md` (file does not exist) — not fixed as part of this
+> pass, out of scope (not a Lovable/Railway/Supabase-separateness issue).
+
 **Erstellt:** 2026-04-17
 **Ablageort:** `shared-context/docs/wiki/WIKI---Index.md`
 **Zweck:** Navigationszentrale für alle Governance-, Architektur- und Betriebsdokumente in `shared-context`. Jede Seite hat eine Beschreibung in einem Satz. Für operative Navigation — kein Inhaltsduplikat.

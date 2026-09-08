@@ -11,6 +11,13 @@ basis: Extends close-task skill — same step structure, additional Wave Scope s
 
 # Close Task Dev — /close-task-dev
 
+> **LEGACY (2026-09-04):** superseded by `/negotiation-ai-sdlc:close-change` for all new
+> SDLC-managed changes (owner decision, `sdlc/migration/20260904T132634Z/10-conflicts-and-decisions.md` C3).
+> Do not use this Skill for new `sdlc/changes/<id>/` work — including the auto-invocation from
+> Template 2-DEV, for any change now being run through the new lifecycle. Preserved, unmodified
+> below (including its automatic-trigger frontmatter, which is not disabled by this marker), for
+> traceability and rollback of already-closed items and non-SDLC-managed tasks.
+
 Run at the end of every Template 2-DEV / Template 2b-DEV implementation, or
 before declaring any feature/bug item complete. Enforces verification,
 documentation hygiene, and atomic two-location backlog stamping.

@@ -1,5 +1,12 @@
 # WIKI — Delivery Controller Betriebsmodell
 
+> **STALE SNAPSHOT (flagged 2026-09-04):** part of the April-2026 wiki bundle, not updated since.
+> Describes a superseded world-state (Railway hosting, Lovable/Gemini two-provider AI split) —
+> superseded by [ADR-012](../docs/decision-log/ADR-012-ai-provider-anthropic-only.md) (2026-07-18)
+> and `MEMORY.md` (Render.com). Not rewritten line-by-line (out of this pass's scope); treat as
+> historical. The repo-native `Shared-context/controllers/DEVELOPMENT_CONTROLLER.md` (installed
+> 2026-09-04) is the current Development Controller definition.
+
 **Erstellt:** 2026-04-18
 **Status:** Established
 **Klassifizierung:** Observed

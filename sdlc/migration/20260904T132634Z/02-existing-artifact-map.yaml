@@ -1,0 +1,1218 @@
+schema_version: 1
+generated_at_utc: "2026-09-04T13:26:34Z"
+notes: >
+  Machine-readable companion to 01-current-inventory.md. proposed_action is one of
+  KEEP, LINK, MERGE, MOVE_LATER, SUPERSEDE_LATER, REMOVE_DUPLICATE_LATER — per the
+  master prompt's Stage 1 vocabulary. No deletions are proposed anywhere in this file;
+  REMOVE_DUPLICATE_LATER and SUPERSEDE_LATER are deferred proposals only, per
+  ALLOW_DELETIONS_OR_RENAMES: false.
+
+shared_context:
+  repo_path: /Volumes/MF_extern/app-workspace/shared-context
+  artifacts:
+    - path: CLAUDE.md
+      purpose: Root memory entry point; imports AGENTS.md + product/*; cross-repo TARGET REPO protocol
+      owner: unknown
+      consumers: [Claude Code sessions in this repo]
+      lifecycle_stage: cross-cutting
+      authority_classification: repository_specific_commands_and_constraints
+      proposed_action: KEEP
+      rationale: Actively maintained, matches current architecture (ADR-012)
+      risk: low
+    - path: AGENTS.md
+      purpose: Neutral repo rules, system summary, critical-issues quick-ref, repo pointers
+      owner: unknown
+      consumers: [CLAUDE.md via @import, all sessions]
+      lifecycle_stage: cross-cutting
+      authority_classification: project_wide_policy
+      proposed_action: KEEP
+      rationale: Current, concise, imported by CLAUDE.md
+      risk: low
+    - path: MEMORY.md
+      purpose: Working memory - last session state, next steps, infra facts
+      owner: unknown
+      consumers: [session-start/session-end skills, CLAUDE.md]
+      lifecycle_stage: cross-cutting
+      authority_classification: traceability_index
+      proposed_action: KEEP
+      rationale: Only reliably-current infra pointer in repo
+      risk: low
+    - path: README-AUDIT.md
+      purpose: Original German audit runbook (600 perms) - step sequence, prompt matrix, cadence
+      owner: unknown
+      consumers: [historical - superseded by docs/governance/GOV-01]
+      lifecycle_stage: cross-cutting
+      authority_classification: project_wide_policy
+      proposed_action: SUPERSEDE_LATER
+      rationale: Near-duplicate of docs/governance/GOV-01-audit-runbook.md
+      risk: low
+    - path: shared-context.code-workspace
+      purpose: VS Code multi-root workspace over the three repo folders
+      owner: unknown
+      consumers: [human/editor only]
+      lifecycle_stage: n/a
+      authority_classification: other-editor_convenience
+      proposed_action: KEEP
+      rationale: Trivial, harmless
+      risk: none
+    - path: .claude/settings.json
+      purpose: Sandbox + permission allow/deny lists
+      owner: unknown
+      consumers: [Claude Code harness]
+      lifecycle_stage: cross-cutting
+      authority_classification: repository_specific_commands_and_constraints
+      proposed_action: KEEP
+      rationale: Standard harness config
+      risk: none
+    - path: .claude/settings.local.json
+      purpose: Local permission additions (gitignored)
+      owner: unknown
+      consumers: [Claude Code harness]
+      lifecycle_stage: cross-cutting
+      authority_classification: repository_specific_commands_and_constraints
+      proposed_action: KEEP
+      rationale: Local-only
+      risk: none
+    - path: .claude/commands/update-diagrams.md
+      purpose: "Slash command: update docs/ARCHITECTURE.md diagrams from git diff"
+      owner: unknown
+      consumers: [manual invocation]
+      lifecycle_stage: Implement/Verify
+      authority_classification: reusable_sdlc_workflow
+      proposed_action: KEEP
+      rationale: Small, focused, still relevant
+      risk: low
+    - path: .claude/skills/* (18 skills)
+      purpose: Full lifecycle skill set - session mgmt, PM release cycle, feature/bug delivery, audit, ADR, contract/impact checks
+      owner: unknown
+      consumers: [Claude Code sessions, cross-repo]
+      lifecycle_stage: Plan/Implement/Verify/Release
+      authority_classification: reusable_sdlc_workflow
+      proposed_action: KEEP
+      rationale: Actively used and iterated; see 05-instruction-and-skill-map.md for per-skill detail and known bugs
+      risk: medium
+    - path: docs/ARCHITECTURE.md
+      purpose: Auto-maintained architecture doc (user/data flows, service boundaries, error handling)
+      owner: unknown
+      consumers: [update-diagrams command]
+      lifecycle_stage: Implement/cross-cutting
+      authority_classification: product_and_system_specification
+      proposed_action: KEEP
+      rationale: Referenced and enforced by CLAUDE.md
+      risk: low
+    - path: docs/system-overview.md
+      purpose: System architecture, runtime map, data flows
+      owner: unknown
+      consumers: [AGENTS.md, wiki index, delivery controller docs]
+      lifecycle_stage: Define
+      authority_classification: product_and_system_specification
+      proposed_action: KEEP
+      rationale: Central architecture doc; currency not independently spot-checked this pass
+      risk: medium
+    - path: docs/bounded-contexts.md
+      purpose: Six bounded contexts with ownership and violations
+      owner: unknown
+      consumers: [AGENTS.md, wiki]
+      lifecycle_stage: Define
+      authority_classification: product_and_system_specification
+      proposed_action: KEEP
+      rationale: Central; not opened in full this pass, flagged for spot check
+      risk: medium
+    - path: docs/source-of-truth-matrix.md
+      purpose: Canonical owner/write-path/verification-gap matrix for core entities
+      owner: unknown
+      consumers: [Delivery Controller, GOV-01]
+      lifecycle_stage: Define/Verify
+      authority_classification: product_and_system_specification
+      proposed_action: KEEP
+      rationale: Header dated Mar 27 but body updated through Apr 30; heavy Railway terminology unreconciled with Render.com; VG-04 still open
+      risk: medium
+    - path: docs/auth-permission-map.md
+      purpose: Auth flows, tier gates, permission violations
+      owner: unknown
+      consumers: [AGENTS.md, wiki]
+      lifecycle_stage: Define
+      authority_classification: product_and_system_specification
+      proposed_action: KEEP
+      rationale: Not opened this pass
+      risk: medium
+    - path: docs/db-map.md
+      purpose: Table overview - fields, RLS, ownership, migrations
+      owner: unknown
+      consumers: [wiki]
+      lifecycle_stage: Define
+      authority_classification: product_and_system_specification
+      proposed_action: KEEP
+      rationale: Not opened this pass
+      risk: medium
+    - path: docs/contracts/frontend-backend.md
+      purpose: API contracts, request/response shapes, model-selection table
+      owner: unknown
+      consumers: [Delivery Controller, close-task contract-check]
+      lifecycle_stage: Define/Verify
+      authority_classification: product_and_system_specification
+      proposed_action: KEEP
+      rationale: Explicitly kept current by ADR-012 (provider names corrected)
+      risk: low
+    - path: docs/contracts/verify-harness.md
+      purpose: Contract for scripts/verify.sh - mandatory step order for code delivery
+      owner: Feature Delivery Controller (stated)
+      consumers: [verify-loop skill, feature-implement, bug-fix]
+      lifecycle_stage: Verify
+      authority_classification: project_wide_policy
+      proposed_action: KEEP
+      rationale: Active; correctly cross-references ADR-011 as still PROPOSED
+      risk: low
+    - path: docs/audits/current-state-report.md
+      purpose: Full CRIT/HIGH/MED/LOW finding registry
+      owner: unknown
+      consumers: [AGENTS.md]
+      lifecycle_stage: Review/cross-cutting
+      authority_classification: independent_review
+      proposed_action: SUPERSEDE_LATER
+      rationale: Last modified Apr 17; several findings resolved since per source-of-truth-matrix - drift likely
+      risk: medium
+    - path: docs/audits/refactor-backlog.md
+      purpose: Full technical refactor backlog (~2300 lines), RFB-* items + dependency graph
+      owner: unknown
+      consumers: [close-task/close-task-dev skills, product/audit/refactor-backlog.md pointer]
+      lifecycle_stage: Plan/Review/cross-cutting
+      authority_classification: traceability_index
+      proposed_action: KEEP
+      rationale: Actively maintained, authoritative technical backlog
+      risk: low
+    - path: docs/audits/provider-drift-diagnosis.md
+      purpose: Diagnosis of AI-provider documentation drift (ADR-003 vs actual Anthropic migration)
+      owner: unknown
+      consumers: [ADR-012]
+      lifecycle_stage: Verify/defect_diagnosis
+      authority_classification: defect_diagnosis
+      proposed_action: KEEP
+      rationale: Directly cited as evidence source in ADR-012
+      risk: low
+    - path: docs/audits/rls-audit-2026.md
+      purpose: RLS audit results for VG-01/VG-02
+      owner: unknown
+      consumers: [NC-SEC-01 brief]
+      lifecycle_stage: Verify
+      authority_classification: independent_verification
+      proposed_action: KEEP
+      rationale: Short, resolved-gap record
+      risk: low
+    - path: docs/audits/wave1-completion-gate.md
+      purpose: Formal Wave-1 release gate checklist, CLEARED 2026-04-16
+      owner: unknown
+      consumers: [delivery-controller-setup.md]
+      lifecycle_stage: Release/Review
+      authority_classification: release_decision
+      proposed_action: KEEP
+      rationale: Historical release-gate record
+      risk: low
+    - path: docs/audit-dashboard.md
+      purpose: Legacy Wave-1 dashboard (workstream table)
+      owner: unknown
+      consumers: []
+      lifecycle_stage: n/a
+      authority_classification: other-legacy_dashboard
+      proposed_action: REMOVE_DUPLICATE_LATER
+      rationale: Self-labeled Legacy by WIKI-Index; superseded by refactor-backlog.md
+      risk: low
+    - path: docs/decision-log/ADR-001..012 (12 files)
+      purpose: Architecture Decision Records
+      owner: Maik Figur (decider, stated in later ADRs)
+      consumers: [CLAUDE.md, delivery controller, wiki]
+      lifecycle_stage: Define/cross-cutting
+      authority_classification: business_intent
+      proposed_action: KEEP
+      rationale: Core decision log; ADR-003 deliberately superseded-in-place by ADR-012
+      risk: low
+    - path: docs/governance/GOV-01-audit-runbook.md
+      purpose: Full audit workflow - steps, cadence, prompt matrix, DoD
+      owner: unknown
+      consumers: [ALL-PROMPTS-AUDIT.md]
+      lifecycle_stage: cross-cutting
+      authority_classification: project_wide_policy
+      proposed_action: SUPERSEDE_LATER
+      rationale: Stale terminology (Railway, generic folder names); largely duplicated by README-AUDIT.md
+      risk: medium
+    - path: docs/governance/ALL-PROMPTS-AUDIT.md
+      purpose: Consolidated prompt library for the audit workflow
+      owner: unknown
+      consumers: [GOV-01 runbook]
+      lifecycle_stage: cross-cutting
+      authority_classification: reusable_sdlc_workflow
+      proposed_action: SUPERSEDE_LATER
+      rationale: Uses placeholder folder names and Railway/Lovable-Gemini references stale vs current stack
+      risk: medium
+    - path: docs/governance/delivery-controller-setup.md
+      purpose: Setup package for the Development Controller Claude.ai Project
+      owner: unknown
+      consumers: [manual paste into Claude.ai project instructions]
+      lifecycle_stage: Plan/cross-cutting
+      authority_classification: business_intent
+      proposed_action: SUPERSEDE_LATER
+      rationale: Dated 2026-04-16, describes Railway hosting, references ADR-003 as active; this is the closest thing to the Development Controller definition, but stale
+      risk: medium-high
+    - path: docs/governance/delivery-controller-grundinstruktion.md
+      purpose: Lean German project-instruction variant of the Development Controller
+      owner: unknown
+      consumers: [manual paste into Claude.ai]
+      lifecycle_stage: Plan/cross-cutting
+      authority_classification: business_intent
+      proposed_action: SUPERSEDE_LATER
+      rationale: Same staleness as delivery-controller-setup.md
+      risk: medium-high
+    - path: docs/infrastructure/supabase-instances.md
+      purpose: Supabase project ID map, access matrix
+      owner: unknown
+      consumers: [should be referenced by session-start, currently is not confirmed]
+      lifecycle_stage: Define/cross-cutting
+      authority_classification: product_and_system_specification
+      proposed_action: SUPERSEDE_LATER
+      rationale: >
+        Actively wrong - labels ujnyioggxipvuxxxcivr as production; both code repos'
+        MEMORY.md/lessons.md confirm gpllrgkuozytyrmpfwbb is the real active project.
+        Highest-risk stale document found in this inventory.
+      risk: high
+    - path: docs/features/knowledge-pipeline.md
+      purpose: Feature doc for removed Knowledge Pipeline (status REMOVED)
+      owner: unknown
+      consumers: [roadmap references]
+      lifecycle_stage: Learn
+      authority_classification: production_outcome
+      proposed_action: KEEP
+      rationale: Correctly self-marked as removed/historical
+      risk: none
+    - path: docs/features/layer3-simulation.md
+      purpose: Design doc for Layer 3 Simulation Engine
+      owner: unknown
+      consumers: [feature-register, briefs]
+      lifecycle_stage: Plan/Implement
+      authority_classification: product_and_system_specification
+      proposed_action: KEEP
+      rationale: Actively used, status GO, up to date with delivery
+      risk: low
+    - path: docs/features/loop-coding-integration.md
+      purpose: Cross-cutting engineering-process plan (verify-loop introduction)
+      owner: unknown
+      consumers: [ADR-011, lessons.md]
+      lifecycle_stage: Plan/cross-cutting
+      authority_classification: cross_repository_implementation_plan
+      proposed_action: KEEP
+      rationale: Tied to ADR-011 (still PROPOSED) and verify-harness contract
+      risk: low
+    - path: docs/claude-code-prompt-templates.md
+      purpose: Template 1-DEV (Plan) / Template 2-DEV (Implement) prompt templates
+      owner: unknown
+      consumers: [feature-plan/feature-implement/bug-fix skills]
+      lifecycle_stage: Plan/Implement
+      authority_classification: reusable_sdlc_workflow
+      proposed_action: KEEP
+      rationale: Not opened in full this pass; referenced consistently elsewhere
+      risk: low
+    - path: docs/delivery/* (baseline, wave2-scope, NC-L2-FIX plan/spec, session-dumps, follow-ups)
+      purpose: Delivery-wave planning docs and dated session logs
+      owner: unknown
+      consumers: [Delivery Controller, lessons.md cross-refs]
+      lifecycle_stage: Plan/Implement/Learn
+      authority_classification: cross_repository_implementation_plan
+      proposed_action: KEEP
+      rationale: Working delivery history, legitimate point-in-time logs
+      risk: low
+    - path: docs/delivery/bugs/*.md (~18 files) + README.md
+      purpose: Per-bug diagnosis/fix docs, current convention (BUG-[YYYYMMDD]-[name].md)
+      owner: unknown
+      consumers: [bug-report/bug-fix/close-task skills]
+      lifecycle_stage: Implement/Verify
+      authority_classification: defect_diagnosis
+      proposed_action: KEEP
+      rationale: Convention actively followed and documented
+      risk: low
+    - path: docs/delivery/bugs/BUG-20260619-canvas-fetch-aborted-diagnosis-report.md
+      purpose: Uncommitted, pre-existing user work - diagnosis doc
+      owner: user (uncommitted working-tree file)
+      consumers: [R-2026-11 release scope]
+      lifecycle_stage: Implement
+      authority_classification: defect_diagnosis
+      proposed_action: KEEP
+      rationale: Pre-existing in-progress user work - do not touch
+      risk: low
+    - path: docs/delivery/bug-reports/*.md + ARCHIVED.md
+      purpose: Older bug-report convention (BUG-BE-01, BUG-INFRA-01 naming)
+      owner: unknown
+      consumers: [superseded convention]
+      lifecycle_stage: n/a
+      authority_classification: defect_diagnosis
+      proposed_action: REMOVE_DUPLICATE_LATER
+      rationale: Retired predecessor of docs/delivery/bugs/; confirm via ARCHIVED.md (not read this pass) before any action
+      risk: low-medium
+    - path: docs/wiki/index.md, docs/wiki/session-log.md
+      purpose: Legacy-labeled wiki index + append-only session log, still live
+      owner: unknown
+      consumers: [close-task skill Step J - path-mismatched, see 05]
+      lifecycle_stage: cross-cutting
+      authority_classification: traceability_index
+      proposed_action: KEEP
+      rationale: Confirmed real and current despite Legacy self-label
+      risk: low
+    - path: docs/wiki/architecture.md
+      purpose: Standalone architecture summary
+      owner: unknown
+      consumers: [wiki/index.md]
+      lifecycle_stage: Define
+      authority_classification: product_and_system_specification
+      proposed_action: SUPERSEDE_LATER
+      rationale: Dated Apr 15, states Railway/ADR-003 split as current fact - superseded by ADR-012 and MEMORY.md
+      risk: medium-high
+    - path: docs/wiki/WIKI---*.md (9 files)
+      purpose: Parallel, more elaborate full-Wiki bundle (9-area target model)
+      owner: unknown
+      consumers: [cross-reference each other; not referenced from CLAUDE.md/AGENTS.md]
+      lifecycle_stage: Define/Review/cross-cutting
+      authority_classification: product_and_system_specification
+      proposed_action: SUPERSEDE_LATER
+      rationale: Built around the Railway/Lovable-Gemini/"backend not started" world-state; contains an orphaned link to a nonexistent file
+      risk: medium-high
+    - path: product/README.md
+      purpose: Defines product/ as operational source of truth, read-order rules, vocabulary
+      owner: unknown
+      consumers: [CLAUDE.md via @import, all PM skills]
+      lifecycle_stage: Define/cross-cutting
+      authority_classification: project_wide_policy
+      proposed_action: KEEP
+      rationale: Clear, current, actively followed
+      risk: low
+    - path: product/strategy.md, product/roadmap.md, product/metrics.md
+      purpose: 90-day strategy, roadmap, metrics/telemetry baseline
+      owner: unknown
+      consumers: [CLAUDE.md via @import]
+      lifecycle_stage: Define/Plan
+      authority_classification: business_intent
+      proposed_action: KEEP
+      rationale: Actively maintained
+      risk: low
+    - path: product/releases/current.md
+      purpose: Current release (R-2026-11) scope/status/exit-criteria
+      owner: unknown
+      consumers: [CLAUDE.md via @import, pm skills]
+      lifecycle_stage: Plan/Release
+      authority_classification: business_intent
+      proposed_action: KEEP
+      rationale: Actively maintained
+      risk: low
+    - path: product/releases/archive/R-2026-{05,06,08,09,10}.md
+      purpose: Archived prior-release snapshots
+      owner: unknown
+      consumers: [pm-plan-release/pm-release-review skills]
+      lifecycle_stage: Release/Learn
+      authority_classification: release_decision
+      proposed_action: KEEP
+      rationale: R-2026-09 was previously missing, now backfilled per git log
+      risk: low
+    - path: product/release-reviews/{R-2026-05,09,10}.md + README.md
+      purpose: Post-release review docs and convention doc
+      owner: unknown
+      consumers: [pm-release-review skill]
+      lifecycle_stage: Review
+      authority_classification: independent_review
+      proposed_action: KEEP
+      rationale: Convention actively followed
+      risk: low
+    - path: product/feature-register.md
+      purpose: Flat register of all NC-/AR- items - type/status/repos/release/notes
+      owner: unknown
+      consumers: [pm-* skills, close-task-dev - format-mismatched, see 05]
+      lifecycle_stage: Plan/cross-cutting
+      authority_classification: traceability_index
+      proposed_action: KEEP
+      rationale: Actively maintained, single source for item status
+      risk: low
+    - path: product/audit/refactor-backlog.md
+      purpose: Thin PM-view pointer into docs/audits/refactor-backlog.md
+      owner: unknown
+      consumers: [pm-normalize-state skill]
+      lifecycle_stage: Plan
+      authority_classification: traceability_index
+      proposed_action: KEEP
+      rationale: Deliberate thin pointer per its own text, not an accidental duplicate
+      risk: low
+    - path: product/briefs/*.md (16 items) + README.md
+      purpose: Per-item delivery briefs and convention doc
+      owner: unknown
+      consumers: [pm-prepare-delivery, feature-plan]
+      lifecycle_stage: Plan
+      authority_classification: product_and_system_specification
+      proposed_action: KEEP
+      rationale: Convention followed consistently
+      risk: low
+    - path: product/decisions/README.md
+      purpose: Empty-shell convention doc for lightweight product/release decisions
+      owner: unknown
+      consumers: []
+      lifecycle_stage: Define
+      authority_classification: project_wide_policy
+      proposed_action: KEEP
+      rationale: Convention defined but never exercised - no decision files exist under it
+      risk: low
+    - path: product/discovery/content-inventory-backend.md, substance-activation-brief.md
+      purpose: Large discovery docs feeding NC-L3-SIM substance work
+      owner: unknown
+      consumers: [NC-L3-SIM brief]
+      lifecycle_stage: Capture/Define
+      authority_classification: product_and_system_specification
+      proposed_action: KEEP
+      rationale: Recent, large but purposeful
+      risk: low
+    - path: tasks/lessons.md
+      purpose: Append-only lessons log - process-failure/correction history
+      owner: unknown
+      consumers: [session-start review, close-task append]
+      lifecycle_stage: Learn/cross-cutting
+      authority_classification: production_outcome
+      proposed_action: KEEP
+      rationale: Highest-value process-history artifact found; documents multiple unresolved skill bugs
+      risk: low
+    - path: tasks/todo.md
+      purpose: Template-only active-task tracker, currently empty
+      owner: unknown
+      consumers: [session-start/close-task-dev, stated]
+      lifecycle_stage: Plan/cross-cutting
+      authority_classification: traceability_index
+      proposed_action: KEEP
+      rationale: Format defined but no live entries - confirm whether idle-by-design or unmaintained
+      risk: low
+    - path: .claude/worktrees/quizzical-poitras-6b3676/
+      purpose: Locked, detached-HEAD git worktree with an older docs/product snapshot
+      owner: unknown
+      consumers: []
+      lifecycle_stage: n/a
+      authority_classification: other-orphaned_worktree
+      proposed_action: REMOVE_DUPLICATE_LATER
+      rationale: Gitignored, stale fork of docs/ - housekeeping only, not canonical content
+      risk: low
+    - path: sdlc/migration/20260904T132634Z/*
+      purpose: This migration process's own Stage 0/1/2 report output
+      owner: this migration process
+      consumers: [this analysis]
+      lifecycle_stage: cross-cutting
+      authority_classification: other-migration_working_artifact
+      proposed_action: KEEP
+      rationale: Not pre-existing project content
+      risk: none
+
+frontend_negotiation_buddy:
+  repo_path: /Volumes/MF_extern/app-workspace/negotiation-buddy
+  artifacts:
+    - path: CLAUDE.md
+      purpose: Root operating rules + delivery workflow (session-start/impact-check gates, PLAN/IMPLEMENT triggers)
+      owner: unknown
+      consumers: [Claude Code agent]
+      lifecycle_stage: cross-cutting
+      authority_classification: repository_specific_commands_and_constraints
+      proposed_action: KEEP
+      rationale: Authoritative entry point, actively referenced
+      risk: medium
+    - path: AGENTS.md
+      purpose: Agent quick-start - architecture, critical rules, debt table, personas, env vars
+      owner: unknown
+      consumers: [any AI agent - Lovable, Claude]
+      lifecycle_stage: cross-cutting
+      authority_classification: repository_specific_commands_and_constraints
+      proposed_action: KEEP
+      rationale: Concise, current for boundaries
+      risk: low
+    - path: MEMORY.md
+      purpose: Rolling working memory - stack, deploy target, screen status, session log, next steps
+      owner: unknown
+      consumers: [Claude Code]
+      lifecycle_stage: cross-cutting
+      authority_classification: repository_specific_commands_and_constraints
+      proposed_action: KEEP
+      rationale: Most current/accurate source on real deploy target and architecture drift
+      risk: low
+    - path: README.md
+      purpose: Generic Lovable-generated onboarding boilerplate + env var section
+      owner: unknown
+      consumers: [human devs]
+      lifecycle_stage: n/a
+      authority_classification: other-human_onboarding
+      proposed_action: MERGE
+      rationale: Unfilled Lovable placeholder URL; env var section duplicates AGENTS.md content
+      risk: low
+    - path: .claude/settings.json
+      purpose: Hook wiring (PreToolUse/Stop), additionalDirectories to ../shared-context
+      owner: unknown
+      consumers: [Claude Code harness]
+      lifecycle_stage: cross-cutting
+      authority_classification: repository_specific_commands_and_constraints
+      proposed_action: KEEP
+      rationale: Defines the actual enforcement mechanism
+      risk: low
+    - path: .claude/settings.local.json
+      purpose: Local permission allowlist, additionalDirectories
+      owner: unknown
+      consumers: [Claude Code harness]
+      lifecycle_stage: cross-cutting
+      authority_classification: repository_specific_commands_and_constraints
+      proposed_action: KEEP
+      rationale: Contains some task-specific one-off allow entries that look narrow/stale
+      risk: low
+    - path: .claude/hooks/audit-block.sh
+      purpose: Blocks Edit/Write/destructive Bash under src//supabase/ during audit sessions
+      owner: unknown
+      consumers: [hook runtime]
+      lifecycle_stage: Verify/cross-cutting
+      authority_classification: repository_specific_commands_and_constraints
+      proposed_action: KEEP
+      rationale: Functional, scoped read-only-mode guard
+      risk: none
+    - path: .claude/hooks/protected-file-warn.sh
+      purpose: Hard-blocks edits to types.ts, client.ts, config.toml, settings.local.json
+      owner: unknown
+      consumers: [hook runtime]
+      lifecycle_stage: cross-cutting
+      authority_classification: repository_specific_commands_and_constraints
+      proposed_action: KEEP
+      rationale: Matches protected-files.md list 1:1
+      risk: none
+    - path: .claude/hooks/impact-check-warn.sh
+      purpose: Non-blocking warning on high-impact file edits
+      owner: unknown
+      consumers: [hook runtime]
+      lifecycle_stage: Implement
+      authority_classification: repository_specific_commands_and_constraints
+      proposed_action: KEEP
+      rationale: Working advisory hook
+      risk: none
+    - path: .claude/hooks/stop-reminder.sh
+      purpose: Stop-hook checklist reminder when src//supabase/ changed
+      owner: unknown
+      consumers: [hook runtime]
+      lifecycle_stage: Review
+      authority_classification: repository_specific_commands_and_constraints
+      proposed_action: KEEP
+      rationale: References tasks/todo.md which does not exist in this repo
+      risk: low
+    - path: .claude/rules/architecture.md
+      purpose: Ownership table + layer rules
+      owner: unknown
+      consumers: [Claude Code]
+      lifecycle_stage: cross-cutting
+      authority_classification: repository_specific_commands_and_constraints
+      proposed_action: SUPERSEDE_LATER
+      rationale: Calls backend "Railway API calls" - contradicts actual Render.com code
+      risk: medium
+    - path: .claude/rules/data-access.md
+      purpose: Supabase client rule, DB access allowlist, backend endpoint table, env vars
+      owner: unknown
+      consumers: [Claude Code]
+      lifecycle_stage: Implement
+      authority_classification: repository_specific_commands_and_constraints
+      proposed_action: SUPERSEDE_LATER
+      rationale: Endpoint table doesn't match actual apiClient.ts exports; still says Railway
+      risk: medium
+    - path: .claude/rules/db-boundaries.md
+      purpose: Schema summary for negotiation_sessions, migration rules, RLS notes
+      owner: unknown
+      consumers: [Claude Code]
+      lifecycle_stage: Plan/Implement
+      authority_classification: repository_specific_commands_and_constraints
+      proposed_action: KEEP
+      rationale: Directionally correct, approximate schema detail by design
+      risk: low
+    - path: .claude/rules/ui-boundaries.md
+      purpose: Component layering, notification system, persona-aware UI, forms convention
+      owner: unknown
+      consumers: [Claude Code]
+      lifecycle_stage: Implement
+      authority_classification: repository_specific_commands_and_constraints
+      proposed_action: KEEP
+      rationale: Consistent with observed code
+      risk: none
+    - path: .claude/rules/api-contracts.md
+      purpose: Frontend/backend contract source of truth
+      owner: unknown
+      consumers: [Claude Code, cross-repo coordination with backend]
+      lifecycle_stage: Plan/Verify
+      authority_classification: repository_specific_commands_and_constraints
+      proposed_action: SUPERSEDE_LATER
+      rationale: >
+        Base URL is the old Railway URL, not the actual onrender.com default; missing
+        /api/enrich and /api/simulate/*. Self-declared canonical contract file, and wrong.
+        Source-of-truth conflict with backend docs/api-catalog.md - see 10-conflicts-and-decisions.md.
+      risk: high
+    - path: .claude/rules/protected-files.md
+      purpose: Consolidated protected-file + audit-only debt list
+      owner: unknown
+      consumers: [Claude Code]
+      lifecycle_stage: cross-cutting
+      authority_classification: repository_specific_commands_and_constraints
+      proposed_action: KEEP
+      rationale: Matches hook behavior
+      risk: none
+    - path: .claude/skills/{session-start,impact-check,contract-check,cleanup-audit}
+      purpose: Read-only/advisory lifecycle skills
+      owner: unknown
+      consumers: [Claude Code]
+      lifecycle_stage: cross-cutting
+      authority_classification: repository_specific_commands_and_constraints
+      proposed_action: KEEP
+      rationale: Functional, read-only/advisory
+      risk: none-low
+    - path: .claude/skills/close-task/SKILL.md
+      purpose: Cross-repo task-closing flow - stamps shared-context backlog+wiki, runs tsc/test
+      owner: unknown
+      consumers: [Claude Code]
+      lifecycle_stage: Release/Review
+      authority_classification: repository_specific_commands_and_constraints
+      proposed_action: SUPERSEDE_LATER
+      rationale: >
+        Independently written, distinct from CLAUDE.md's referenced /close-task-dev flow;
+        also targets docs/api-catalog.md and docs/db-map.md paths that do not exist in this repo
+      risk: medium
+    - path: docs/repo-map.md
+      purpose: Directory tree, tech stack, route map, provider stack, env vars
+      owner: unknown
+      consumers: [AGENTS.md points here first]
+      lifecycle_stage: Capture/Plan
+      authority_classification: repository_specific_commands_and_constraints
+      proposed_action: SUPERSEDE_LATER
+      rationale: Dated 2026-03-27; route map, active-hooks list, and backend naming are all stale
+      risk: medium
+    - path: docs/feature-catalog.md
+      purpose: All features + component files, 16 feature areas
+      owner: unknown
+      consumers: [agents]
+      lifecycle_stage: Capture
+      authority_classification: repository_specific_commands_and_constraints
+      proposed_action: KEEP
+      rationale: Not fully diffed against current code this pass; likely shares repo-map.md's staleness pattern
+      risk: medium
+    - path: docs/data-access-map.md
+      purpose: Every Supabase/API call by file, incl. localStorage access
+      owner: unknown
+      consumers: [agents]
+      lifecycle_stage: Implement/Verify
+      authority_classification: repository_specific_commands_and_constraints
+      proposed_action: SUPERSEDE_LATER
+      rationale: Same Railway naming staleness as api-contracts.md
+      risk: medium
+    - path: docs/audit-findings.md
+      purpose: F-001..F-011 catalogued issues with severity
+      owner: unknown
+      consumers: [agents, protected-files.md references]
+      lifecycle_stage: Review
+      authority_classification: repository_specific_commands_and_constraints
+      proposed_action: SUPERSEDE_LATER
+      rationale: "F-007's quoted hardcoded Railway URL no longer matches current apiClient.ts"
+      risk: low-medium
+    - path: docs/redundancy-register.md
+      purpose: R-001..R-008 duplication catalogue
+      owner: unknown
+      consumers: [agents]
+      lifecycle_stage: Review
+      authority_classification: repository_specific_commands_and_constraints
+      proposed_action: KEEP
+      rationale: Referenced consistently elsewhere
+      risk: low
+    - path: docs/dead-code-candidates.md
+      purpose: DC-001..007, DCC-FE-01..03 dead code tags
+      owner: unknown
+      consumers: [agents, cleanup-audit skill]
+      lifecycle_stage: Review
+      authority_classification: repository_specific_commands_and_constraints
+      proposed_action: KEEP
+      rationale: Actively used, items closed out over time per git history
+      risk: none
+    - path: docs/hook-spec.md
+      purpose: Spec/documentation of the 5 Claude Code hooks
+      owner: unknown
+      consumers: [agents, humans]
+      lifecycle_stage: cross-cutting
+      authority_classification: repository_specific_commands_and_constraints
+      proposed_action: KEEP
+      rationale: Matches actual hook implementations observed
+      risk: none
+    - path: docs/lovable-project-knowledge.md
+      purpose: Product/domain knowledge for AI assistants
+      owner: unknown
+      consumers: [Lovable + Claude]
+      lifecycle_stage: Capture
+      authority_classification: repository_specific_commands_and_constraints
+      proposed_action: SUPERSEDE_LATER
+      rationale: Dated 2026-03-27, Railway naming, missing later critical files
+      risk: medium
+    - path: docs/lovable-workspace-knowledge.md
+      purpose: Tooling/conventions - build commands, Lovable tagger, edge function list, deploy notes
+      owner: unknown
+      consumers: [Lovable + Claude]
+      lifecycle_stage: cross-cutting
+      authority_classification: repository_specific_commands_and_constraints
+      proposed_action: SUPERSEDE_LATER
+      rationale: Build commands accurate; deployment notes section still describes Railway
+      risk: medium
+    - path: docs/design-system.md
+      purpose: Design-system spec (tokens, PDF report rules, forbidden patterns)
+      owner: unknown
+      consumers: [Claude Code, Lovable]
+      lifecycle_stage: Implement
+      authority_classification: repository_specific_commands_and_constraints
+      proposed_action: KEEP
+      rationale: Recently authored, currently authoritative
+      risk: none
+    - path: .lovable/plan.md
+      purpose: One-off design migration plan (report/app to Synthese style)
+      owner: unknown
+      consumers: [Lovable/Claude executing that plan]
+      lifecycle_stage: Plan
+      authority_classification: repository_specific_commands_and_constraints
+      proposed_action: MOVE_LATER
+      rationale: Task-scoped plan artifact, no status marker for done/pending
+      risk: low
+    - path: tasks/lessons.md
+      purpose: Self-improvement log (4 lessons, all from one RFB-036 task)
+      owner: unknown
+      consumers: [Claude Code session-start]
+      lifecycle_stage: Learn
+      authority_classification: repository_specific_commands_and_constraints
+      proposed_action: KEEP
+      rationale: Small, real, still relevant
+      risk: none
+    - path: tasks/ (no todo.md)
+      purpose: "n/a - missing file"
+      owner: n/a
+      consumers: [CLAUDE.md, close-task skill, stop-reminder.sh all reference it]
+      lifecycle_stage: Plan
+      authority_classification: n/a
+      proposed_action: MOVE_LATER
+      rationale: Dangling reference across 3 artifacts - candidate to either create or remove the references
+      risk: low
+    - path: .superpowers/sdd/*
+      purpose: Subagent-driven-development artifacts - task briefs/reports, review diffs
+      owner: unknown
+      consumers: [superpowers skill workflow]
+      lifecycle_stage: Implement/Review
+      authority_classification: other-execution_trace
+      proposed_action: MOVE_LATER
+      rationale: Working artifacts of completed work, archive candidates
+      risk: low
+    - path: scripts/verify.sh
+      purpose: Mechanical verification oracle (tsc, vitest, build, contract-check[skip], smoke[skip], lint[warn])
+      owner: unknown
+      consumers: [humans, close-task skill]
+      lifecycle_stage: Verify
+      authority_classification: repository_specific_commands_and_constraints
+      proposed_action: KEEP
+      rationale: Well-documented; not invoked by any CI
+      risk: low
+    - path: scripts/repro/BUG-20260719-signup-trigger-tier-mismatch.sql
+      purpose: Bug repro SQL for a fixed signup-trigger bug
+      owner: unknown
+      consumers: []
+      lifecycle_stage: Verify
+      authority_classification: other-repro_artifact
+      proposed_action: MOVE_LATER
+      rationale: Point-in-time repro artifact tied to a closed bug
+      risk: none
+    - path: package.json
+      purpose: Manifest - scripts, deps
+      owner: unknown
+      consumers: [npm/CI/devs]
+      lifecycle_stage: cross-cutting
+      authority_classification: frontend_implementation_and_tests
+      proposed_action: KEEP
+      rationale: Canonical
+      risk: none
+    - path: package-lock.json, bun.lock, bun.lockb
+      purpose: Three coexisting lockfiles for two different package managers
+      owner: unknown
+      consumers: [npm vs bun]
+      lifecycle_stage: cross-cutting
+      authority_classification: frontend_implementation_and_tests
+      proposed_action: REMOVE_DUPLICATE_LATER
+      rationale: Ambiguous canonical package manager, timestamps don't resolve it
+      risk: medium
+    - path: supabase/config.toml
+      purpose: Project ref + per-function JWT verification config
+      owner: unknown
+      consumers: [Supabase CLI, edge functions]
+      lifecycle_stage: cross-cutting
+      authority_classification: frontend_implementation_and_tests
+      proposed_action: KEEP
+      rationale: Protected file, matches rules/hooks
+      risk: none
+    - path: supabase/migrations/*.sql (15 files)
+      purpose: Schema history 2026-03-09 to 2026-07-21
+      owner: unknown
+      consumers: [Supabase; several explicitly reconcile drift with negotiationcoach-backend]
+      lifecycle_stage: Implement/cross-repo
+      authority_classification: frontend_implementation_and_tests
+      proposed_action: KEEP
+      rationale: >
+        Real, sequential, several migrations explicitly reconcile schema with the backend -
+        evidence the Supabase project is shared/coupled, not two separate instances. See
+        04-supabase-boundary-map.md.
+      risk: medium
+
+backend_negotiationcoach:
+  repo_path: /Volumes/MF_extern/app-workspace/negotiationcoach-backend
+  artifacts:
+    - path: CLAUDE.md
+      purpose: Root operating rules, delivery workflow (PLAN/IMPLEMENT/close-task triggers), shared-context links
+      owner: unknown
+      consumers: [Claude Code sessions]
+      lifecycle_stage: cross-cutting
+      authority_classification: repository_specific_commands_and_constraints
+      proposed_action: KEEP
+      rationale: Primary entrypoint instructions, actively used
+      risk: low
+    - path: agents.md
+      purpose: Agent navigation guide, quick-nav table, known issues
+      owner: unknown
+      consumers: [Claude Code / agents]
+      lifecycle_stage: cross-cutting
+      authority_classification: repository_specific_commands_and_constraints
+      proposed_action: KEEP
+      rationale: Distinct, useful nav doc; some overlap with CLAUDE.md
+      risk: low
+    - path: MEMORY.md
+      purpose: "Working memory: env, current state, open bugs, do-not-touch list"
+      owner: unknown
+      consumers: [session-start workflow]
+      lifecycle_stage: cross-cutting
+      authority_classification: repository_specific_commands_and_constraints
+      proposed_action: KEEP
+      rationale: Actively maintained state log, last touched 2026-05-22 - older than latest commits
+      risk: medium
+    - path: .claude/settings.json
+      purpose: Hook config (PreToolUse audit-guard, Stop contract-reminder), additionalDirectories
+      owner: unknown
+      consumers: [Claude Code harness]
+      lifecycle_stage: cross-cutting
+      authority_classification: repository_specific_commands_and_constraints
+      proposed_action: KEEP
+      rationale: Small, functioning hook wiring
+      risk: low
+    - path: .claude/settings.local.json
+      purpose: Local permission allowlist
+      owner: unknown
+      consumers: [Claude Code harness]
+      lifecycle_stage: cross-cutting
+      authority_classification: other-local_machine_config
+      proposed_action: KEEP
+      rationale: Local-only permissions, not a durable contract
+      risk: low
+    - path: .claude/hooks/audit-guard.sh
+      purpose: Blocks Edit/Write outside docs/tasks during audit session marker
+      owner: unknown
+      consumers: [PreToolUse hook]
+      lifecycle_stage: Verify/cross-cutting
+      authority_classification: repository_specific_commands_and_constraints
+      proposed_action: KEEP
+      rationale: Enforces read-only audit sessions mechanically
+      risk: low
+    - path: .claude/hooks/contract-reminder.sh
+      purpose: Advisory Stop-hook reminding to sync docs after touching contracts
+      owner: unknown
+      consumers: [Stop hook]
+      lifecycle_stage: Verify
+      authority_classification: repository_specific_commands_and_constraints
+      proposed_action: KEEP
+      rationale: Advisory only, functioning
+      risk: low
+    - path: .claude/rules/architecture.md
+      purpose: Layer ordering, supabase client, model routing, migration rules
+      owner: unknown
+      consumers: [Claude Code]
+      lifecycle_stage: Plan/Implement
+      authority_classification: repository_specific_commands_and_constraints
+      proposed_action: KEEP
+      rationale: Durable guardrail
+      risk: low
+    - path: .claude/rules/data-access.md
+      purpose: Access hierarchy, ownership enforcement pattern, tier-based access table
+      owner: unknown
+      consumers: [Claude Code]
+      lifecycle_stage: Implement
+      authority_classification: repository_specific_commands_and_constraints
+      proposed_action: KEEP
+      rationale: Durable guardrail
+      risk: low
+    - path: .claude/rules/db-boundaries.md
+      purpose: Migration/RLS rules
+      owner: unknown
+      consumers: [Claude Code]
+      lifecycle_stage: Implement
+      authority_classification: repository_specific_commands_and_constraints
+      proposed_action: MERGE
+      rationale: References src/engine/simulationEngine.ts which does not exist (real paths are src/layer1/*, src/layer3/*)
+      risk: medium
+    - path: .claude/rules/ui-boundaries.md
+      purpose: Backend/frontend boundary enforcement table
+      owner: unknown
+      consumers: [Claude Code]
+      lifecycle_stage: cross-cutting
+      authority_classification: repository_specific_commands_and_constraints
+      proposed_action: KEEP
+      rationale: Clear, still accurate
+      risk: low
+    - path: .claude/rules/protected-files.md
+      purpose: Protected/review-required file lists
+      owner: unknown
+      consumers: [Claude Code]
+      lifecycle_stage: cross-cutting
+      authority_classification: repository_specific_commands_and_constraints
+      proposed_action: KEEP
+      rationale: Matches audit-guard hook behavior
+      risk: low
+    - path: .claude/rules/api-contracts.md
+      purpose: API contract source-of-truth rules, checklist
+      owner: unknown
+      consumers: [Claude Code]
+      lifecycle_stage: Plan/Implement/Review
+      authority_classification: repository_specific_commands_and_constraints
+      proposed_action: KEEP
+      rationale: Correct in principle; the contract artifact it governs (api-catalog.md) has drifted
+      risk: medium
+    - path: .claude/skills/cleanup-audit/SKILL.md
+      purpose: Read-only dead-code/redundancy audit procedure
+      owner: unknown
+      consumers: [Claude Code]
+      lifecycle_stage: Review/cross-cutting
+      authority_classification: backend_implementation_and_tests
+      proposed_action: KEEP
+      rationale: Matches actual docs/audit-findings.md structure
+      risk: low
+    - path: .claude/skills/close-task/SKILL.md
+      purpose: Verification + two-repo backlog stamping procedure (local backlog variant)
+      owner: unknown
+      consumers: [Claude Code]
+      lifecycle_stage: Release/Review
+      authority_classification: repository_specific_commands_and_constraints
+      proposed_action: KEEP
+      rationale: Detailed and actionable, though CLAUDE.md's workflow section points to close-task-dev in shared-context instead
+      risk: low
+    - path: .claude/skills/contract-check/SKILL.md
+      purpose: API/DB/type contract sync checklist
+      owner: unknown
+      consumers: [Claude Code]
+      lifecycle_stage: Verify
+      authority_classification: repository_specific_commands_and_constraints
+      proposed_action: KEEP
+      rationale: Directly actionable
+      risk: low
+    - path: .claude/skills/impact-check/SKILL.md
+      purpose: Blast-radius assessment before non-trivial changes
+      owner: unknown
+      consumers: [Claude Code]
+      lifecycle_stage: Plan
+      authority_classification: repository_specific_commands_and_constraints
+      proposed_action: KEEP
+      rationale: Directly actionable
+      risk: low
+    - path: .claude/skills/session-start/SKILL.md
+      purpose: Session bootstrap checklist (lessons, git, MCP, migrations, scope)
+      owner: unknown
+      consumers: [Claude Code]
+      lifecycle_stage: cross-cutting
+      authority_classification: repository_specific_commands_and_constraints
+      proposed_action: KEEP
+      rationale: Directly actionable; MCP step is misleading given L-004 finding
+      risk: medium
+    - path: .claude/skills/{pm-normalize-state,pm-plan-release,pm-prepare-delivery,pm-release-review,pm-sync-status}
+      purpose: Symlinks to ../../../shared-context/.claude/skills/*
+      owner: shared-context (control plane)
+      consumers: [Claude Code]
+      lifecycle_stage: Capture/Define/Plan/Release
+      authority_classification: other-shared_cross_repo_controller
+      proposed_action: LINK
+      rationale: Confirms this repo participates in the shared-context PM/Delivery Controller workflow
+      risk: low
+    - path: docs/repo-map.md
+      purpose: Directory tree, entry points, layer architecture, dependency table
+      owner: unknown
+      consumers: [agents.md nav]
+      lifecycle_stage: cross-cutting
+      authority_classification: backend_implementation_and_tests
+      proposed_action: KEEP
+      rationale: Accurate high-level map, dated 2026-03-27 but mostly still correct
+      risk: low
+    - path: docs/api-catalog.md
+      purpose: Authoritative API contract doc
+      owner: unknown
+      consumers: [contract-check skill, api-contracts.md rule]
+      lifecycle_stage: Define/Implement/Review
+      authority_classification: repository_specific_commands_and_constraints
+      proposed_action: SUPERSEDE_LATER
+      rationale: >
+        Missing /api/simulate/* (3 routes) and /api/opponent-simulation/* (3 routes) entirely -
+        violates the repo's own api-contracts.md sync rule. Source-of-truth conflict with
+        frontend .claude/rules/api-contracts.md - see 10-conflicts-and-decisions.md.
+      risk: high
+    - path: docs/db-map.md
+      purpose: DB schema map with RLS/ownership annotations
+      owner: unknown
+      consumers: [contract-check, db-boundaries rule]
+      lifecycle_stage: Implement/Review
+      authority_classification: repository_specific_commands_and_constraints
+      proposed_action: KEEP
+      rationale: Detailed, self-correcting; missing coverage of two newest migrations' tables
+      risk: medium
+    - path: docs/service-catalog.md
+      purpose: Service/function-level catalog for layers 0-2 + middleware + edge fn
+      owner: unknown
+      consumers: [cleanup-audit skill]
+      lifecycle_stage: cross-cutting
+      authority_classification: backend_implementation_and_tests
+      proposed_action: KEEP
+      rationale: Does not cover src/layer3/* (newer than doc's last edit)
+      risk: medium
+    - path: docs/dead-code-candidates.md
+      purpose: Dead-code register with per-item status
+      owner: unknown
+      consumers: [cleanup-audit skill]
+      lifecycle_stage: Review
+      authority_classification: backend_implementation_and_tests
+      proposed_action: KEEP
+      rationale: Well-maintained, entries updated as resolved
+      risk: low
+    - path: docs/redundancy-register.md
+      purpose: Duplicate-logic register
+      owner: unknown
+      consumers: [cleanup-audit, impact-check]
+      lifecycle_stage: Review
+      authority_classification: backend_implementation_and_tests
+      proposed_action: KEEP
+      rationale: All 5 entries resolved/closed, useful history
+      risk: low
+    - path: docs/audit-findings.md
+      purpose: Master audit findings doc, dated 2026-03-27
+      owner: unknown
+      consumers: [cleanup-audit skill]
+      lifecycle_stage: Review
+      authority_classification: backend_implementation_and_tests
+      proposed_action: SUPERSEDE_LATER
+      rationale: Several findings stale/contradicted by current code and other docs in the same repo
+      risk: medium
+    - path: docs/hook-spec.md
+      purpose: Design spec for the two Claude Code hooks
+      owner: unknown
+      consumers: []
+      lifecycle_stage: Define
+      authority_classification: repository_specific_commands_and_constraints
+      proposed_action: REMOVE_DUPLICATE_LATER
+      rationale: Duplicates already-implemented hooks; matcher description slightly out of sync with actual settings.json
+      risk: low
+    - path: docs/audits/refactor-backlog.md
+      purpose: Local (repo-specific) refactor backlog - only 1 entry, marked Done
+      owner: unknown
+      consumers: [close-task skill local variant]
+      lifecycle_stage: Review
+      authority_classification: repository_specific_commands_and_constraints
+      proposed_action: MERGE
+      rationale: >
+        Nearly empty; the actual active backlog referenced everywhere (RFB- IDs) lives in
+        shared-context/docs/audits/refactor-backlog.md. Same-named file in two repos is a
+        duplication risk.
+      risk: medium
+    - path: docs/superpowers/plans/*.md (3 files)
+      purpose: Superpowers-authored implementation plans (RFB-003, RFB-007, RFB-031)
+      owner: unknown
+      consumers: [superpowers:writing-plans workflow]
+      lifecycle_stage: Plan
+      authority_classification: backend_implementation_and_tests
+      proposed_action: KEEP
+      rationale: Historical planning artifacts, low ongoing relevance
+      risk: low
+    - path: .superpowers/sdd/* (~30 files)
+      purpose: Spec-driven-development plans, task briefs/reports, review diffs for NC-L3-SIM
+      owner: unknown
+      consumers: [superpowers workflow]
+      lifecycle_stage: Plan/Implement/Review
+      authority_classification: backend_implementation_and_tests
+      proposed_action: KEEP
+      rationale: Large volume of session-scoped artifacts, candidate for later pruning, not authoritative
+      risk: low
+    - path: tasks/todo.md
+      purpose: Per-item implementation/verification/review log
+      owner: unknown
+      consumers: [close-task skill]
+      lifecycle_stage: Implement/Verify/Review
+      authority_classification: repository_specific_commands_and_constraints
+      proposed_action: KEEP
+      rationale: Actively maintained, matches close-task skill format
+      risk: low
+    - path: tasks/lessons.md
+      purpose: Numbered lessons (L-001..L-006) from past corrections
+      owner: unknown
+      consumers: [session-start skill]
+      lifecycle_stage: Learn
+      authority_classification: repository_specific_commands_and_constraints
+      proposed_action: KEEP
+      rationale: High-value; L-004 is a critical structural finding (Supabase MCP wrong-project)
+      risk: low
+    - path: package.json
+      purpose: Deps + scripts (dev/build/start/test/typecheck)
+      owner: unknown
+      consumers: [npm]
+      lifecycle_stage: cross-cutting
+      authority_classification: repository_specific_commands_and_constraints
+      proposed_action: KEEP
+      rationale: Source of truth for commands
+      risk: low
+    - path: .env.example
+      purpose: Env var names template
+      owner: unknown
+      consumers: [new setup/onboarding]
+      lifecycle_stage: cross-cutting
+      authority_classification: repository_specific_commands_and_constraints
+      proposed_action: KEEP
+      rationale: Names only reviewed, no values printed
+      risk: low
+    - path: supabase/migrations/*.sql (8 files)
+      purpose: Append-only schema migrations
+      owner: unknown
+      consumers: [db-boundaries rule, contract-check]
+      lifecycle_stage: Implement
+      authority_classification: repository_specific_commands_and_constraints
+      proposed_action: KEEP
+      rationale: >
+        Append-only convention followed; targets the same Supabase project as the frontend's
+        migrations - see 04-supabase-boundary-map.md.
+      risk: low
+    - path: supabase/functions/negotiate/index.ts
+      purpose: Thin Deno proxy to Node /api/analyze
+      owner: unknown
+      consumers: [Supabase edge runtime]
+      lifecycle_stage: cross-cutting
+      authority_classification: backend_implementation_and_tests
+      proposed_action: KEEP
+      rationale: Confirmed proxy-only, matches docs
+      risk: low
+    - path: supabase/functions/_shared/
+      purpose: Empty directory (only .DS_Store)
+      owner: unknown
+      consumers: []
+      lifecycle_stage: n/a
+      authority_classification: other
+      proposed_action: REMOVE_DUPLICATE_LATER
+      rationale: Orphaned empty dir left over from ADR-007-A retirement of duplicate engine code
+      risk: none
+    - path: scripts/verify.sh, curl-assert.sh, lib-jwt.sh, smoke-enrich.sh
+      purpose: Manual/mechanical verification harness against a running dev server
+      owner: unknown
+      consumers: [close-task/verify workflow]
+      lifecycle_stage: Verify
+      authority_classification: backend_implementation_and_tests
+      proposed_action: KEEP
+      rationale: verify.sh references a nonexistent verify-loop skill file in this repo
+      risk: medium
+    - path: scripts/seed-verify-user.ts, seed-verify-user-profi.ts
+      purpose: Seed real Supabase Auth users for JWT-based verify harness
+      owner: unknown
+      consumers: [verify.sh, curl-assert.sh]
+      lifecycle_stage: Verify
+      authority_classification: backend_implementation_and_tests
+      proposed_action: KEEP
+      rationale: Recent, functioning per commit history
+      risk: low

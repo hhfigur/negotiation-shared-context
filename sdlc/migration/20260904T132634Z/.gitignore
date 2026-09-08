@@ -1,0 +1,3 @@
+# Local-machine-only artifacts for this migration report. Never canonical project knowledge.
+access-and-paths.local.yaml
+*.local.yaml

@@ -1,6 +1,11 @@
 # GOV-01 — Audit Runbook & Governance System
 
-> **Status:** Aktiv | **Typ:** Governance | **Version:** 1.0 | **Datum:** 2026-03-30
+> **SUPERSEDE_LATER (2026-09-04):** repositioned by the repo-native `controllers/AUDIT_REFACTORING_CONTROLLER.md`
+> installed via the AI-native SDLC migration (owner-approved, `sdlc/migration/20260904T132634Z/10-conflicts-and-decisions.md`).
+> Do not paste this runbook into a fresh Claude.ai Project without first reviewing
+> `controllers/AUDIT_REFACTORING_CONTROLLER.md`. Not deleted; preserved for historical reference.
+>
+> **Status:** Aktiv (historisch) | **Typ:** Governance | **Version:** 1.0 | **Datum:** 2026-03-30
 > **Zielpfad:** `shared-context/docs/governance/GOV-01-audit-runbook.md`
 
 ---

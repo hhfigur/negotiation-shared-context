@@ -1,0 +1,39 @@
+schema_version: 1
+project_id: negotiation-ai
+artifact_home: sdlc/changes
+change_id_pattern: '^[0-9]{8}-[a-z0-9]+(?:-[a-z0-9]+)*$'
+status_vocabulary:
+  - draft
+  - in_review
+  - accepted
+  - rejected
+  - superseded
+  - blocked
+  - completed
+  - released
+  - measured
+required_at_creation:
+  - intent.md
+  - traceability.yaml
+stage_artifacts:
+  capture: intent.md
+  define: spec.md
+  plan: plan.md
+  diagnose: debug-evidence.md
+  verify: verification.md
+  review: review.md
+  release: release.md
+  learn: outcome.md
+  incident: incident.md
+repositories:
+  # Logical names only. Real absolute local paths stay in each repo's gitignored
+  # .sdlc/config.local.yaml and are never committed here.
+  shared_context: Shared-context
+  frontend: negotiation-Buddy
+  backend: NegotiationCoach-backend
+policies:
+  root: sdlc/policies
+  enforce_only_when_status: approved
+plugin:
+  marketplace: tooling/claude-marketplace
+  name: negotiation-ai-sdlc

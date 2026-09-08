@@ -1,5 +1,10 @@
 # Skill: close-task
 
+> **LEGACY (2026-09-04):** superseded by `/negotiation-ai-sdlc:close-change` for all new
+> SDLC-managed changes (owner decision, `sdlc/migration/20260904T132634Z/10-conflicts-and-decisions.md` C3).
+> Do not use this Skill for new `sdlc/changes/<id>/` work. Preserved, unmodified below, for
+> traceability and rollback of already-closed items only.
+
 Run before declaring any task complete. Enforces verification, contract hygiene,
 and atomic two-location backlog stamping.
 

@@ -1,5 +1,10 @@
 # Delivery Controller — NegotiationCoach AI
 
+> **SUPERSEDE_LATER (2026-09-04):** repositioned by the repo-native `controllers/DEVELOPMENT_CONTROLLER.md`
+> installed via the AI-native SDLC migration (owner-approved, `sdlc/migration/20260904T132634Z/10-conflicts-and-decisions.md`).
+> Same superseded-world-state caveat as `delivery-controller-setup.md`. Not deleted; preserved for
+> historical reference.
+
 **Project type:** Feature Delivery  
 **For governance, audit, or refactoring:** use the Governance & Audit project  
 **Created:** 2026-04-16

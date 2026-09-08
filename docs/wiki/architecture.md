@@ -1,5 +1,21 @@
 # NegotiationCoach AI — Architecture Overview
 
+> **STALE SNAPSHOT (flagged 2026-09-04):** this file describes an April-2026 architecture state and
+> was not regenerated since despite its own "LLM-maintained" instruction below. Known-wrong facts,
+> not just naming: (1) "Railway" throughout should read "backend (Render.com)" — hosting moved
+> months ago (`MEMORY.md`). (2) The "AI Provider Split" section describing Lovable/Gemini for Edge
+> Functions is **factually superseded** by [ADR-012](../docs/decision-log/ADR-012-ai-provider-anthropic-only.md)
+> (2026-07-18, Anthropic-only) — the currently deployed `chat` Edge Function hardcodes
+> `claude-haiku-4-5-20251001` for all tiers, not Gemini via a Lovable AI Gateway (see
+> `../docs/audits/provider-drift-diagnosis.md`). (3) "CRIT-01 / dual Layer 1 implementations" is
+> **resolved** — `supabase/functions/_shared/engine/` was retired 2026-04-21 (ADR-007-A, RFB-006).
+> (4) "RFB-036 / subscription_tier migration... pending" is **resolved** — closed via commit
+> `a28d28c`, 2026-04-16. Not rewritten line-by-line in this pass (multiple interlocking facts would
+> need re-verification beyond this pass's Lovable/Railway/Supabase-separateness scope, and this
+> file self-declares it should be LLM-regenerated, not hand-patched) — treat everything below as
+> historical unless cross-checked against `docs/decision-log/`, `docs/audits/refactor-backlog.md`,
+> and the two code repositories' current source.
+
 ---
 
 ## System Boundaries
